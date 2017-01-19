@@ -19,9 +19,9 @@ public class Connection {
 
     private String key;
 
-    private String kernelName;
+    private String kernel_name;
 
-    private String signatureScheme;
+    private String signature_scheme;
 
     public Connection() {
 
@@ -92,18 +92,18 @@ public class Connection {
     }
 
     public String getKernelName() {
-        return kernelName;
+        return kernel_name;
     }
 
     public void setKernelName(String kernelName) {
-        this.kernelName = kernelName;
+        this.kernel_name = kernelName;
     }
 
     public String getSignatureScheme() {
-        return signatureScheme;
+        return signature_scheme;
     }
 
     public void setSignatureScheme(String signatureScheme) {
-        this.signatureScheme = signatureScheme;
+        this.signature_scheme = signatureScheme;
     }
 }
