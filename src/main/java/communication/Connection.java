@@ -1,17 +1,19 @@
+package communication;
+
 /**
  * Created by Mauricio on 18/01/2017.
  */
 public class Connection {
 
-    private Long shell_port;
+    private Long shellPort;
 
-    private Long iopub_port;
+    private Long iopubPort;
 
-    private Long hb_port;
+    private Long hbPort;
 
-    private Long control_port;
+    private Long controlPort;
 
-    private Long stdin_port;
+    private Long stdinPort;
 
     private String ip;
 
@@ -19,52 +21,52 @@ public class Connection {
 
     private String key;
 
-    private String kernel_name;
+    private String kernelName;
 
-    private String signature_scheme;
+    private String signatureScheme;
 
     public Connection() {
 
     }
 
     public Long getShellPort() {
-        return shell_port;
+        return shellPort;
     }
 
     public void setShellPort(Long shellPort) {
-        this.shell_port = shellPort;
+        this.shellPort = shellPort;
     }
 
     public Long getIoPubPort() {
-        return iopub_port;
+        return iopubPort;
     }
 
     public void setIoPubPort(Long ioPubPort) {
-        this.iopub_port = ioPubPort;
+        this.iopubPort = ioPubPort;
     }
 
     public Long getHbPort() {
-        return hb_port;
+        return hbPort;
     }
 
     public void setHbPort(Long hb_port) {
-        this.hb_port = hb_port;
+        this.hbPort = hb_port;
     }
 
     public Long getControlPort() {
-        return control_port;
+        return controlPort;
     }
 
     public void setControlPort(Long controlPort) {
-        this.control_port = controlPort;
+        this.controlPort = controlPort;
     }
 
     public Long getStdinPort() {
-        return stdin_port;
+        return stdinPort;
     }
 
     public void setStdinPort(Long stdinPort) {
-        this.stdin_port = stdinPort;
+        this.stdinPort = stdinPort;
     }
 
     public String getIp() {
@@ -92,18 +94,18 @@ public class Connection {
     }
 
     public String getKernelName() {
-        return kernel_name;
+        return kernelName;
     }
 
     public void setKernelName(String kernelName) {
-        this.kernel_name = kernelName;
+        this.kernelName = kernelName;
     }
 
     public String getSignatureScheme() {
-        return signature_scheme;
+        return signatureScheme;
     }
 
     public void setSignatureScheme(String signatureScheme) {
-        this.signature_scheme = signatureScheme;
+        this.signatureScheme = signatureScheme;
     }
 }
