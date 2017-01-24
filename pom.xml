@@ -32,7 +32,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>JupyterServer</mainClass>
+                            <mainClass>server.JupyterServer</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
