@@ -1,0 +1,12 @@
+{
+  "protocol_version": "5.0",
+  "implementation": "javaKernel",
+  "implementation_version": "1.0",
+  "language_info": {
+    "name": "javaKernel",
+    "version": "8.0",
+    "mimetype": "application/java",
+    "file_extension": ".java"
+  },
+  "banner": "Java kernel banner"
+}
