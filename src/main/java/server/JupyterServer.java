@@ -44,35 +44,41 @@ public class JupyterServer {
 
 
         while (!Thread.currentThread().isInterrupted()) {
-            heartbeatChannel();
-            String zmqIdentity = new String(communication.getRequests().recv());
-            communication.getRequests().recv(); // Delimeter
-            String hmacSignature = new String(communication.getRequests().recv());
-            Header header = parser.fromJson(new String(communication.getRequests().recv()), Header.class);
-            String metadata = new String(communication.getRequests().recv());
-            String content = new String(communication.getRequests().recv());
-            String extra = new String(communication.getRequests().recv());
 
-            Message message = new Message(zmqIdentity, hmacSignature, header, null, content, metadata);
+            String zmqIdentity;
+            while ((zmqIdentity = communication.getRequests().recvStr(ZMQ.DONTWAIT)) != null) {
+                communication.getRequests().recv(); // Delimeter
+                String hmacSignature = new String(communication.getRequests().recv());
+                String hhead = new String(communication.getRequests().recv());
+                Header header = parser.fromJson(hhead, Header.class);
+                String metadata = new String(communication.getRequests().recv());
+                String content = new String(communication.getRequests().recv());
+                String extra = new String(communication.getRequests().recv());
 
-            if (message.getHeader().getMsgType().equals("kernel_info_request")) {
-                JsonObject busy = new JsonObject();
-                busy.addProperty("status", "busy");
-                sendMessage(communication.getPublish(), createHeader(header.getSession(), "status"), new JsonObject(), new JsonObject(), busy);
+                Message message = new Message(zmqIdentity, hmacSignature, header, null, content, metadata);
+//
+                if (message.getHeader().getMsgType().equals("kernel_info_request")) {
 
-                synchronized (communication.getRequests()) {
                     JsonObject parent = new JsonObject();
                     JsonObject cont = new JsonObject();
-                    cont.addProperty("protocol_version", "5.0");
+                    cont.addProperty("protocol_version", "5.");
                     cont.addProperty("implementation", "javaKernel");
                     cont.addProperty("implementation_version", "1.0");
                     LanguageInfo li = new LanguageInfo("java", "8.0", "application/java", ".java");
                     cont.add("language_info", new Gson().toJsonTree(li));
                     cont.addProperty("banner", "Java kernel banner");
 
-                    sendMessage(communication.getRequests(), createHeader(header.getSession(), "kernel_info_reply"), parent, parent, cont);
+                    sendMessage(communication.getRequests(), createHeader(header.getSession(), "kernel_info_reply"), hhead, parent, cont);
+                } else {
+                    System.out.println(message.getHeader().getMsgType());
+                    System.out.println(parser.toJson(message));
                 }
             }
+            String ping;
+            while ((ping = communication.getHeartbeat().recvStr(ZMQ.DONTWAIT)) != null) {
+                heartbeatChannel();
+            }
+
         }
         communication.getRequests().close();
         communication.getPublish().close();
@@ -80,20 +86,25 @@ public class JupyterServer {
         communication.getContext().term();
     }
 
-    public void sendMessage(ZMQ.Socket socket, Header header, JsonObject parent, JsonObject metadata, JsonObject content) {
-//        socket.sendMore(header.getSession());
-        socket.sendMore(DELIMITER);
-//        String header = parser.toJson(createHeader(session, "kernel_info_reply"));
-        socket.sendMore(signMessage(parser.toJson(header), String.valueOf(parent), String.valueOf(parent), parser.toJson(content)));
-        socket.sendMore(parser.toJson(header));
-        socket.sendMore(String.valueOf(parent));
-        socket.sendMore(String.valueOf(parent));
-        System.out.println("SEND: " + socket.send(parser.toJson(content)));
+    private void listenControlChannel() {
+        System.out.println("CONTROL: " + communication.getControl().recvStr());
+    }
 
+    public void sendMessage(ZMQ.Socket socket, Header header, String parent, JsonObject metadata, JsonObject content) {
+//        synchronized (communication.getRequests()) {
+        socket.sendMore(header.getSession().getBytes());
+        socket.sendMore(DELIMITER.getBytes());
+//        String header = parser.toJson(createHeader(session, "kernel_info_reply"));
+        socket.sendMore(signMessage(parser.toJson(header), parent, String.valueOf(metadata), parser.toJson(content)).getBytes());
+        socket.sendMore(parser.toJson(header).getBytes());
+        socket.sendMore(parent.getBytes());
+        socket.sendMore(String.valueOf(metadata).getBytes());
+        System.out.println("SEND: " + socket.send(parser.toJson(content), 0));
+//        }
     }
 
     public void heartbeatChannel() {
-        byte[] ping = communication.getHeartbeat().recv();
+//        byte[] ping = communication.getHeartbeat().recv();
         communication.getHeartbeat().send("ok", 0);
     }
 
