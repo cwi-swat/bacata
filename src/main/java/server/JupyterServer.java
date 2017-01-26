@@ -1,7 +1,6 @@
 package server;
 
-import Messages.Content;
-import Messages.ContentKernelInfoReply;
+import Messages.Content.*;
 import Messages.LanguageInfo;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -45,6 +44,8 @@ public class JupyterServer {
 
     private Communication communication;
 
+    private LanguageInfo languageInformation;
+
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
@@ -68,9 +69,24 @@ public class JupyterServer {
                 if (header.getMsgType().equals("kernel_info_request")) {
 //                    Message message = new Message(zmqIdentity, hmacSignature, header, header, new ContentKernelInfoReply(), metadata);
                     processKernelInfoRequest(header);
+                } else if (header.getMsgType().equals("shutdown_request")) {
+                    System.out.println("SHUTDOWN REQUEST");
+                    ContentShutdownRequest contentShutdownRequest = parser.fromJson(content, ContentShutdownRequest.class);
+                    processShutdownRequest(header, contentShutdownRequest);
+                } else if (header.getMsgType().equals("is_complete_request")) {
+                    System.out.println("CODEEEEE: " + content);
+                    ContentIsCompleteRequest actualCode = parser.fromJson(content, ContentIsCompleteRequest.class);
+                    processIsCompleteRequest(header, actualCode);
+                } else if (header.getMsgType().equals("history_request")) {
+                    System.out.println("HISTORY: " + parser.toJson(content));
                 } else {
-
+                    System.out.println("NUEVO TIPO DE MENSAJE: " + header.getMsgType());
                 }
+            }
+
+            String ctrlInput;
+            while ((ctrlInput = communication.getControl().recvStr(ZMQ.DONTWAIT)) != null) {
+                System.out.println("CONTROL MESSAGE RECEIVED: " + ctrlInput);
             }
 
             String ping;
@@ -88,13 +104,40 @@ public class JupyterServer {
     // Methods
     // -----------------------------------------------------------------
 
-    private void processKernelInfoRequest(Header parentHeader) {
-        LanguageInfo li = new LanguageInfo();
-        Content content = new ContentKernelInfoReply("5.0", "javaKernel", "0.1", li, "Java Kernel Banner");
+    public void processKernelInfoRequest(Header parentHeader) {
+        Content content = new ContentKernelInfoReply("5.0", "javaKernel", "0.1", languageInformation, "Java Kernel Banner");
         sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), "kernel_info_reply"), parentHeader, new JsonObject(), content);
     }
 
-    private void listenControlChannel() {
+    public void processShutdownRequest(Header parentHeader, ContentShutdownRequest contentShutdown) {
+        //TODO: verify if its a restarting or a final shutdown command
+        sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), "shutdown_reply"), parentHeader, new JsonObject(), new ContentShutdownReply(contentShutdown.getRestart()));
+//        System.exit(0);
+    }
+
+    /**
+     * complete code is ready to be executed
+     * incomplete code should prompt for another line
+     * invalid code will typically be sent for execution, so that the user sees the error soonest.
+     * unknown - if the kernel is not able to determine this.
+     *
+     * @param header
+     * @param content
+     */
+    public void processIsCompleteRequest(Header header, ContentIsCompleteRequest content) {
+        System.out.println("CODE: " + content.getCode());
+        ContentIsCompleteReply contentReply;
+        if (content.getCode() == "" || content.getCode() == null) {
+            contentReply = new ContentIsCompleteReply("unknown", "");
+        } else if (content.getCode().endsWith(";"))
+            contentReply = new ContentIsCompleteReply("complete", "");
+        else
+            contentReply = new ContentIsCompleteReply("incomplete", "");
+
+        sendMessage(communication.getRequests(), createHeader(header.getSession(), "is_complete_reply"), header, new JsonObject(), contentReply);
+    }
+
+    public void listenControlChannel() {
         System.out.println("CONTROL: " + communication.getControl().recvStr());
     }
 
@@ -114,7 +157,7 @@ public class JupyterServer {
 
     public static void main(String[] args) throws Exception {
         try {
-            System.out.println("Kernel started");
+            System.out.println("Java Kernel started");
             JupyterServer jupyterServer = new JupyterServer(args[0]);
         } catch (Exception e) {
             e.printStackTrace();

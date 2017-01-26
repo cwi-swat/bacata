@@ -1,5 +1,6 @@
 package Messages;
 
+import Messages.Content.Content;
 import communication.Header;
 
 /**

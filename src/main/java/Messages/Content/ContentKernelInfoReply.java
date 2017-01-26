@@ -1,9 +1,16 @@
-package Messages;
+package Messages.Content;
+
+import Messages.LanguageInfo;
 
 /**
  * Created by Mauricio on 26/01/2017.
  */
 public class ContentKernelInfoReply extends Content {
+
+    // -----------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------
+
     private String protocolVersion;
 
     private String implementation;
@@ -13,6 +20,10 @@ public class ContentKernelInfoReply extends Content {
     private LanguageInfo languageInformation;
 
     private String banner;
+
+    // -----------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------
 
     public ContentKernelInfoReply(String protocolVersion, String implementation, String implementationVersion, LanguageInfo languageInformation, String banner) {
         this.protocolVersion = protocolVersion;
@@ -29,8 +40,4 @@ public class ContentKernelInfoReply extends Content {
         this.languageInformation = new LanguageInfo("", "", "", "");
         this.banner = "";
     }
-//        cont.addProperty("implementation_version", "1.0");
-//    LanguageInfo li = new LanguageInfo("java", "8.0", "application/java", ".java");
-//        cont.add("language_info", new Gson().toJsonTree(li));
-//        cont.addProperty("banner", "Java kernel banner");
 }
