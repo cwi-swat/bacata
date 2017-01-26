@@ -39,8 +39,7 @@ public class JupyterServer {
     public JupyterServer(String connectionFilePath) throws Exception {
         parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
         connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
-//        connection.printConnectionSettings();
-        communication = new Communication(this, connection);
+        communication = new Communication(this);
 
 
         while (!Thread.currentThread().isInterrupted()) {

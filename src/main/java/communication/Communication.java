@@ -8,16 +8,29 @@ import server.JupyterServer;
  */
 public class Communication {
 
+    // -----------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------
+
     private ZMQ.Context context;
+
     private ZMQ.Socket publish;
+
     private ZMQ.Socket requests;
+
     private ZMQ.Socket control;
+
     private ZMQ.Socket stdin;
+
     private ZMQ.Socket heartbeat;
 
     private JupyterServer server;
 
-    public Communication(JupyterServer jupyterServer, Connection connection) {
+    // -----------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------
+
+    public Communication(JupyterServer jupyterServer) {
         server = jupyterServer;
         context = ZMQ.context(1);
         publish = context.socket(ZMQ.PUB);
@@ -26,12 +39,16 @@ public class Communication {
         stdin = context.socket(ZMQ.ROUTER);
         heartbeat = context.socket(ZMQ.REP);
 
-        publish.bind(toUri(connection.getIoPubPort()));
-        requests.bind(toUri(connection.getShellPort()));
-        control.bind(toUri(connection.getControlPort()));
-        stdin.bind(toUri(connection.getStdinPort()));
-        heartbeat.bind(toUri(connection.getHbPort()));
+        publish.bind(toUri(server.getConnection().getIoPubPort()));
+        requests.bind(toUri(server.getConnection().getShellPort()));
+        control.bind(toUri(server.getConnection().getControlPort()));
+        stdin.bind(toUri(server.getConnection().getStdinPort()));
+        heartbeat.bind(toUri(server.getConnection().getHbPort()));
     }
+
+    // -----------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------
 
     public ZMQ.Context getContext() {
         return context;
@@ -58,6 +75,6 @@ public class Communication {
     }
 
     public String toUri(Long pPort) {
-        return server.getConnection().getTransport() + "://" + server.getConnection().getIp() + ":" + pPort;
+        return String.format("%s://%s:%d", server.getConnection().getTransport(), server.getConnection().getIp(), pPort);
     }
 }
