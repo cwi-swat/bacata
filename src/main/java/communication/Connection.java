@@ -6,6 +6,10 @@ package communication;
  */
 public class Connection {
 
+    // -----------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------
+
     private Long shellPort;
 
     private Long iopubPort;
@@ -26,8 +30,16 @@ public class Connection {
 
     private String signatureScheme;
 
+    // -----------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------
+
     public Connection() {
     }
+
+    // -----------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------
 
     public Long getShellPort() {
         return shellPort;

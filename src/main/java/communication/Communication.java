@@ -74,7 +74,7 @@ public class Communication {
         return heartbeat;
     }
 
-    public String toUri(Long pPort) {
+    private String toUri(Long pPort) {
         return String.format("%s://%s:%d", server.getConnection().getTransport(), server.getConnection().getIp(), pPort);
     }
 }

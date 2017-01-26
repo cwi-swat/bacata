@@ -5,6 +5,23 @@ package Messages;
  */
 public class LanguageInfo {
 
+
+    // -----------------------------------------------------------------
+    // Constants
+    // -----------------------------------------------------------------
+
+    public static final String LANGUAGE_NAME = "Java";
+
+    public static final String LANGUAGE_VERSION = "8.0";
+
+    public static final String LANGUAGE_MIMETYPE = "application/java";
+
+    public static final String LANGUAGE_EXTENSION = ".java";
+
+    // -----------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------
+
     private String name;
 
     private String version;
@@ -19,6 +36,19 @@ public class LanguageInfo {
 
     private String nbconvertExporter;
 
+    // -----------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------
+
+    public LanguageInfo() {
+        this.name = LANGUAGE_NAME;
+        this.version = LANGUAGE_VERSION;
+        this.mimetype = LANGUAGE_MIMETYPE;
+        this.file_extension = LANGUAGE_EXTENSION;
+        this.pygmentsLexer = null;
+        this.codemirroMode = null;
+        this.nbconvertExporter = null;
+    }
 
     public LanguageInfo(String name, String version, String mimetype, String file_extension) {
         this.name = name;
@@ -29,6 +59,10 @@ public class LanguageInfo {
         this.codemirroMode = null;
         this.nbconvertExporter = null;
     }
+
+    // -----------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------
 
     public String getName() {
         return name;

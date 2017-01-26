@@ -1,4 +1,4 @@
-package server;
+package Messages;
 
 import communication.Header;
 
@@ -7,14 +7,9 @@ import communication.Header;
  */
 public class Message {
 
-//    b'u-u-i-d',         # zmq identity(ies)
-//    b'<IDS|MSG>',       # delimiter
-//    b'baddad42',        # HMAC signature
-//    b'{header}',        # serialized header dict
-//    b'{parent_header}', # serialized parent header dict
-//    b'{metadata}',      # serialized metadata dict
-//    b'{content}',       # serialized content dict
-//    b'\xf0\x9f\x90\xb1' # extra raw data buffer(s)
+    // -----------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------
 
     private String zmqIdentity;
 
@@ -22,17 +17,21 @@ public class Message {
 
     private Header header;
 
-    private String parentHeader;
+    private Header parentHeader;
 
-    private String content;
+    private Content content;
 
     private String metadata;
+
+    // -----------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------
 
     public Message() {
 
     }
 
-    public Message(String zmqIdentity, String hmacSignature, Header header, String parentHeader, String content, String metadata) {
+    public Message(String zmqIdentity, String hmacSignature, Header header, Header parentHeader, Content content, String metadata) {
         this.zmqIdentity = zmqIdentity;
         this.hmacSignature = hmacSignature;
         this.header = header;
@@ -40,6 +39,10 @@ public class Message {
         this.content = content;
         this.metadata = metadata;
     }
+
+    // -----------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------
 
     public String getZmqIdentity() {
         return zmqIdentity;
@@ -57,19 +60,19 @@ public class Message {
         this.header = header;
     }
 
-    public String getParentHeader() {
+    public Header getParentHeader() {
         return parentHeader;
     }
 
-    public void setParentHeader(String parentHeader) {
+    public void setParentHeader(Header parentHeader) {
         this.parentHeader = parentHeader;
     }
 
-    public String getContent() {
+    public Content getContent() {
         return content;
     }
 
-    public void setContent(String content) {
+    public void setContent(Content content) {
         this.content = content;
     }
 
