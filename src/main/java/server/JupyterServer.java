@@ -1,5 +1,7 @@
 package server;
 
+import Messages.Content;
+import Messages.ContentKernelInfoReply;
 import Messages.LanguageInfo;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -27,8 +29,15 @@ import java.util.UUID;
  */
 public class JupyterServer {
 
+    // -----------------------------------------------------------------
+    // Constants
+    // -----------------------------------------------------------------
+
     public final static String DELIMITER = "<IDS|MSG>";
 
+    // -----------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------
 
     private Connection connection;
 
@@ -36,48 +45,38 @@ public class JupyterServer {
 
     private Communication communication;
 
+    // -----------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------
     public JupyterServer(String connectionFilePath) throws Exception {
         parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
         connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
         communication = new Communication(this);
-
 
         while (!Thread.currentThread().isInterrupted()) {
 
             String zmqIdentity;
             while ((zmqIdentity = communication.getRequests().recvStr(ZMQ.DONTWAIT)) != null) {
                 communication.getRequests().recv(); // Delimeter
-                String hmacSignature = new String(communication.getRequests().recv());
-                String hhead = new String(communication.getRequests().recv());
-                Header header = parser.fromJson(hhead, Header.class);
-                String metadata = new String(communication.getRequests().recv());
-                String content = new String(communication.getRequests().recv());
-                String extra = new String(communication.getRequests().recv());
+                String hmacSignature = communication.getRequests().recvStr();
+                Header header = parser.fromJson(communication.getRequests().recvStr(), Header.class);
+                String metadata = communication.getRequests().recvStr();
+                String content = communication.getRequests().recvStr();
+                String extra = communication.getRequests().recvStr();
 
-                Message message = new Message(zmqIdentity, hmacSignature, header, null, content, metadata);
-//
-                if (message.getHeader().getMsgType().equals("kernel_info_request")) {
 
-                    JsonObject parent = new JsonObject();
-                    JsonObject cont = new JsonObject();
-                    cont.addProperty("protocol_version", "5.");
-                    cont.addProperty("implementation", "javaKernel");
-                    cont.addProperty("implementation_version", "1.0");
-                    LanguageInfo li = new LanguageInfo("java", "8.0", "application/java", ".java");
-                    cont.add("language_info", new Gson().toJsonTree(li));
-                    cont.addProperty("banner", "Java kernel banner");
-
-                    sendMessage(communication.getRequests(), createHeader(header.getSession(), "kernel_info_reply"), hhead, parent, cont);
+                if (header.getMsgType().equals("kernel_info_request")) {
+//                    Message message = new Message(zmqIdentity, hmacSignature, header, header, new ContentKernelInfoReply(), metadata);
+                    processKernelInfoRequest(header);
                 } else {
-                    System.out.println(message.getHeader().getMsgType());
-                    System.out.println(parser.toJson(message));
+
                 }
             }
+
             String ping;
             while ((ping = communication.getHeartbeat().recvStr(ZMQ.DONTWAIT)) != null) {
                 heartbeatChannel();
             }
-
         }
         communication.getRequests().close();
         communication.getPublish().close();
@@ -85,25 +84,31 @@ public class JupyterServer {
         communication.getContext().term();
     }
 
+    // -----------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------
+
+    private void processKernelInfoRequest(Header parentHeader) {
+        LanguageInfo li = new LanguageInfo();
+        Content content = new ContentKernelInfoReply("5.0", "javaKernel", "0.1", li, "Java Kernel Banner");
+        sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), "kernel_info_reply"), parentHeader, new JsonObject(), content);
+    }
+
     private void listenControlChannel() {
         System.out.println("CONTROL: " + communication.getControl().recvStr());
     }
 
-    public void sendMessage(ZMQ.Socket socket, Header header, String parent, JsonObject metadata, JsonObject content) {
-//        synchronized (communication.getRequests()) {
+    public void sendMessage(ZMQ.Socket socket, Header header, Header parent, JsonObject metadata, Content content) {
         socket.sendMore(header.getSession().getBytes());
         socket.sendMore(DELIMITER.getBytes());
-//        String header = parser.toJson(createHeader(session, "kernel_info_reply"));
-        socket.sendMore(signMessage(parser.toJson(header), parent, String.valueOf(metadata), parser.toJson(content)).getBytes());
+        socket.sendMore(signMessage(parser.toJson(header), parser.toJson(parent), String.valueOf(metadata), parser.toJson(content)).getBytes());
         socket.sendMore(parser.toJson(header).getBytes());
-        socket.sendMore(parent.getBytes());
+        socket.sendMore(parser.toJson(parent));
         socket.sendMore(String.valueOf(metadata).getBytes());
-        System.out.println("SEND: " + socket.send(parser.toJson(content), 0));
-//        }
+        socket.send(parser.toJson(content), 0);
     }
 
     public void heartbeatChannel() {
-//        byte[] ping = communication.getHeartbeat().recv();
         communication.getHeartbeat().send("ok", 0);
     }
 
@@ -141,12 +146,9 @@ public class JupyterServer {
     }
 
     public String signMessage(String header, String parentHeader, String metadata, String content) {
-        String tmp = header + parentHeader + metadata + content;
-//        System.out.println("MESSAGE TO SIGN:" +  tmp);
-        return encode(tmp);
-//        return encode(key, key)+encode(key, header)+encode(key, parentHeader)+encode(key, metadata)+encode(key, content);
+        String message = header + parentHeader + metadata + content;
+        return encode(message);
     }
-
 
     public Connection getConnection() {
         return connection;
