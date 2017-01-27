@@ -1,7 +1,6 @@
 package server;
 
 import Messages.Content.*;
-import Messages.LanguageInfo;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -44,7 +43,7 @@ public class JupyterServer {
 
     private Communication communication;
 
-    private LanguageInfo languageInformation;
+//    private LanguageInfo languageInformation;
 
     // -----------------------------------------------------------------
     // Constructor
@@ -58,30 +57,40 @@ public class JupyterServer {
 
             String zmqIdentity;
             while ((zmqIdentity = communication.getRequests().recvStr(ZMQ.DONTWAIT)) != null) {
-                communication.getRequests().recv(); // Delimeter
+                String delimeter = communication.getRequests().recvStr(); // Delimeter
                 String hmacSignature = communication.getRequests().recvStr();
                 Header header = parser.fromJson(communication.getRequests().recvStr(), Header.class);
+                Header parentHeader = parser.fromJson(communication.getRequests().recvStr(), Header.class);
                 String metadata = communication.getRequests().recvStr();
                 String content = communication.getRequests().recvStr();
-                String extra = communication.getRequests().recvStr();
 
+//                System.out.println("%%%z"+zmqIdentity);
+//                System.out.println("%%%d"+delimeter);
+//                System.out.println("%%%h"+hmacSignature);
+//                System.out.println("%%%h"+parser.toJson(header));
+//                System.out.println("%%%m"+metadata);
+//                System.out.println("%%%c"+content);
 
+                statusUpdate(header, "busy");
                 if (header.getMsgType().equals("kernel_info_request")) {
-//                    Message message = new Message(zmqIdentity, hmacSignature, header, header, new ContentKernelInfoReply(), metadata);
+                    System.out.println("KERNEL INFO REQUEST: ");
                     processKernelInfoRequest(header);
                 } else if (header.getMsgType().equals("shutdown_request")) {
                     System.out.println("SHUTDOWN REQUEST");
                     ContentShutdownRequest contentShutdownRequest = parser.fromJson(content, ContentShutdownRequest.class);
                     processShutdownRequest(header, contentShutdownRequest);
                 } else if (header.getMsgType().equals("is_complete_request")) {
-                    System.out.println("CODEEEEE: " + content);
-                    ContentIsCompleteRequest actualCode = parser.fromJson(content, ContentIsCompleteRequest.class);
-                    processIsCompleteRequest(header, actualCode);
+                    System.out.println("IS_COMPLETE_REQUEST: ");
+                    processIsCompleteRequest(header, parser.fromJson(content, ContentIsCompleteRequest.class));
                 } else if (header.getMsgType().equals("history_request")) {
-                    System.out.println("HISTORY: " + parser.toJson(content));
+                    System.out.println("HISTORY: ");
+                } else if (header.getMsgType().equals("execute_request")) {
+                    System.out.println("EXECUTE_REQUEST: ");
+                    processExecuteRequest(header, parser.fromJson(content, ContentExecuteRequest.class));
                 } else {
                     System.out.println("NUEVO TIPO DE MENSAJE: " + header.getMsgType());
                 }
+                statusUpdate(header, "idle");
             }
 
             String ctrlInput;
@@ -94,25 +103,37 @@ public class JupyterServer {
                 heartbeatChannel();
             }
         }
-        communication.getRequests().close();
-        communication.getPublish().close();
-        communication.getControl().close();
-        communication.getContext().term();
     }
+
 
     // -----------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------
 
+    public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest) {
+
+    }
+
+    public void statusUpdate(Header parentHeader, String status) {
+        System.out.println("STATUS: " + parser.toJson(new ContentStatus("dfd")));
+        sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), "status"), parentHeader, new JsonObject(), new ContentStatus(status));
+    }
+
+
     public void processKernelInfoRequest(Header parentHeader) {
-        Content content = new ContentKernelInfoReply("5.0", "javaKernel", "0.1", languageInformation, "Java Kernel Banner");
-        sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), "kernel_info_reply"), parentHeader, new JsonObject(), content);
+        sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), "kernel_info_reply"), parentHeader, new JsonObject(), new ContentKernelInfoReply());
     }
 
     public void processShutdownRequest(Header parentHeader, ContentShutdownRequest contentShutdown) {
         //TODO: verify if its a restarting or a final shutdown command
         sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), "shutdown_reply"), parentHeader, new JsonObject(), new ContentShutdownReply(contentShutdown.getRestart()));
-//        System.exit(0);
+        communication.getRequests().close();
+        communication.getPublish().close();
+        communication.getControl().close();
+        communication.getContext().term();
+        communication.getContext().close();
+        communication.getContext().term();
+        //        System.exit(0);
     }
 
     /**
@@ -126,15 +147,12 @@ public class JupyterServer {
      */
     public void processIsCompleteRequest(Header header, ContentIsCompleteRequest content) {
         System.out.println("CODE: " + content.getCode());
-        ContentIsCompleteReply contentReply;
-        if (content.getCode() == "" || content.getCode() == null) {
-            contentReply = new ContentIsCompleteReply("unknown", "");
-        } else if (content.getCode().endsWith(";"))
-            contentReply = new ContentIsCompleteReply("complete", "");
+        String status;
+        if (content.getCode().endsWith(";"))
+            status = "complete";
         else
-            contentReply = new ContentIsCompleteReply("incomplete", "");
-
-        sendMessage(communication.getRequests(), createHeader(header.getSession(), "is_complete_reply"), header, new JsonObject(), contentReply);
+            status = "incomplete";
+        sendMessage(communication.getRequests(), createHeader(header.getSession(), "is_complete_reply"), header, new JsonObject(), new ContentIsCompleteReply(status, ""));
     }
 
     public void listenControlChannel() {

@@ -8,6 +8,18 @@ import Messages.LanguageInfo;
 public class ContentKernelInfoReply extends Content {
 
     // -----------------------------------------------------------------
+    // Constants
+    // -----------------------------------------------------------------
+
+    public final static String PROTOCOL_VERSION = "5.0";
+
+    public final static String IMPLEMENTATION = "Java kernel";
+
+    public final static String IMPLEMENTATION_VERSION = "0.1";
+
+    public final static String BANNER = "Java Kernel Banner";
+
+    // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------
 
@@ -34,10 +46,10 @@ public class ContentKernelInfoReply extends Content {
     }
 
     public ContentKernelInfoReply() {
-        this.protocolVersion = "ss";
-        this.implementation = "S";
-        this.implementationVersion = "";
-        this.languageInformation = new LanguageInfo("", "", "", "");
-        this.banner = "";
+        this.protocolVersion = PROTOCOL_VERSION;
+        this.implementation = IMPLEMENTATION;
+        this.implementationVersion = IMPLEMENTATION_VERSION;
+        this.languageInformation = new LanguageInfo();
+        this.banner = BANNER;
     }
 }
