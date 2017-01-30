@@ -1,21 +1,19 @@
-package Messages.Content;
+package entities;
 
 /**
- * Created by Mauricio on 26/01/2017.
+ * Created by Mauricio on 27/01/2017.
  */
-public class ContentIsCompleteRequest extends Content {
+public class ContentStatus extends Content {
 
     // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------
-
-    private String code;
+    private String executionState;
 
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
-
-    public String getCode() {
-        return code;
+    public ContentStatus(String executionState) {
+        this.executionState = executionState;
     }
 }

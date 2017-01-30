@@ -1,4 +1,4 @@
-package Messages;
+package entities;
 
 /**
  * Created by Mauricio on 19/01/2017.

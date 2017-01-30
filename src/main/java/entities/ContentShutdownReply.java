@@ -1,9 +1,9 @@
-package Messages.Content;
+package entities;
 
 /**
  * Created by Mauricio on 26/01/2017.
  */
-public class ContentShutdownRequest extends Content {
+public class ContentShutdownReply extends Content {
 
     // -----------------------------------------------------------------
     // Fields
@@ -13,14 +13,8 @@ public class ContentShutdownRequest extends Content {
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
-    public ContentShutdownRequest(boolean pRestart) {
-        this.restart = pRestart;
-    }
 
-    // -----------------------------------------------------------------
-    // Methods
-    // -----------------------------------------------------------------
-    public boolean getRestart() {
-        return restart;
+    public ContentShutdownReply(boolean pRestart) {
+        this.restart = pRestart;
     }
 }

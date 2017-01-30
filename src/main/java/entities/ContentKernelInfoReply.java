@@ -1,6 +1,4 @@
-package Messages.Content;
-
-import Messages.LanguageInfo;
+package entities;
 
 /**
  * Created by Mauricio on 26/01/2017.

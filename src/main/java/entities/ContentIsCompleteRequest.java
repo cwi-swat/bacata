@@ -1,24 +1,21 @@
-package Messages.Content;
+package entities;
 
 /**
  * Created by Mauricio on 26/01/2017.
  */
-public class ContentIsCompleteReply extends Content {
+public class ContentIsCompleteRequest extends Content {
 
     // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------
 
-    private String status;
-
-    private String indent;
+    private String code;
 
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
 
-    public ContentIsCompleteReply(String status, String indent) {
-        this.status = status;
-        this.indent = indent;
+    public String getCode() {
+        return code;
     }
 }

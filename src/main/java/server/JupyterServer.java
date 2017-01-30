@@ -1,6 +1,5 @@
 package server;
 
-import Messages.Content.*;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -8,6 +7,7 @@ import com.google.gson.JsonObject;
 import communication.Communication;
 import communication.Connection;
 import communication.Header;
+import entities.*;
 import org.apache.commons.codec.binary.Hex;
 import org.zeromq.ZMQ;
 
@@ -43,6 +43,7 @@ public class JupyterServer {
 
     private Communication communication;
 
+    private int executionNumber;
 //    private LanguageInfo languageInformation;
 
     // -----------------------------------------------------------------
@@ -52,6 +53,8 @@ public class JupyterServer {
         parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
         connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
         communication = new Communication(this);
+        executionNumber = 0;
+
 
         while (!Thread.currentThread().isInterrupted()) {
 
@@ -111,11 +114,14 @@ public class JupyterServer {
     // -----------------------------------------------------------------
 
     public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest) {
+        System.out.println("PROCESS: " + parser.toJson(contentExecuteRequest));
+        if (contentExecuteRequest.isStoreHistory())
+            executionNumber++;
 
+        sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), "execute_reply"), parentHeader, new JsonObject(), new ContentExecuteReply("ok", executionNumber));
     }
 
     public void statusUpdate(Header parentHeader, String status) {
-        System.out.println("STATUS: " + parser.toJson(new ContentStatus("dfd")));
         sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), "status"), parentHeader, new JsonObject(), new ContentStatus(status));
     }
 
@@ -132,8 +138,7 @@ public class JupyterServer {
         communication.getControl().close();
         communication.getContext().term();
         communication.getContext().close();
-        communication.getContext().term();
-        //        System.exit(0);
+        System.exit(-1);
     }
 
     /**

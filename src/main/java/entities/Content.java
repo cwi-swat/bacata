@@ -1,4 +1,4 @@
-package Messages.Content;
+package entities;
 
 /**
  * Created by Mauricio on 26/01/2017.
