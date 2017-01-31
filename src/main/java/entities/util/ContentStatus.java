@@ -1,24 +1,19 @@
-package entities;
+package entities.util;
 
 /**
- * Created by Mauricio on 26/01/2017.
+ * Created by Mauricio on 27/01/2017.
  */
-public class ContentIsCompleteReply extends Content {
+public class ContentStatus extends Content {
 
     // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------
-
-    private String status;
-
-    private String indent;
+    private String executionState;
 
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
-
-    public ContentIsCompleteReply(String status, String indent) {
-        this.status = status;
-        this.indent = indent;
+    public ContentStatus(String executionState) {
+        this.executionState = executionState;
     }
 }

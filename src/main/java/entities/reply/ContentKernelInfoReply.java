@@ -1,4 +1,7 @@
-package entities;
+package entities.reply;
+
+import entities.util.Content;
+import entities.util.LanguageInfo;
 
 /**
  * Created by Mauricio on 26/01/2017.

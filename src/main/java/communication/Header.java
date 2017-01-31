@@ -11,6 +11,8 @@ public class Header {
 
     public final static String VERSION = "5.0";
 
+    public final static String USERNAME = "JavaKernel";
+
     // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------

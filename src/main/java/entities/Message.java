@@ -1,6 +1,7 @@
 package entities;
 
 import communication.Header;
+import entities.util.Content;
 
 /**
  * Created by Mauricio on 18/01/2017.

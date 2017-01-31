@@ -1,5 +1,7 @@
 package entities;
 
+import entities.util.Content;
+
 import java.util.Map;
 
 /**

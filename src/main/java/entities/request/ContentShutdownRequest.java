@@ -1,9 +1,11 @@
-package entities;
+package entities.request;
+
+import entities.util.Content;
 
 /**
  * Created by Mauricio on 26/01/2017.
  */
-public class ContentShutdownReply extends Content {
+public class ContentShutdownRequest extends Content {
 
     // -----------------------------------------------------------------
     // Fields
@@ -13,8 +15,14 @@ public class ContentShutdownReply extends Content {
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
-
-    public ContentShutdownReply(boolean pRestart) {
+    public ContentShutdownRequest(boolean pRestart) {
         this.restart = pRestart;
+    }
+
+    // -----------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------
+    public boolean getRestart() {
+        return restart;
     }
 }

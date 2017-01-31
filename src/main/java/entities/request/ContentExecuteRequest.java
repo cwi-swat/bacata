@@ -1,4 +1,6 @@
-package entities;
+package entities.request;
+
+import entities.util.Content;
 
 import java.util.Map;
 

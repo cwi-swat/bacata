@@ -1,19 +1,22 @@
-package entities;
+package entities.reply;
+
+import entities.util.Content;
 
 /**
- * Created by Mauricio on 27/01/2017.
+ * Created by Mauricio on 26/01/2017.
  */
-public class ContentStatus extends Content {
+public class ContentShutdownReply extends Content {
 
     // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------
-    private String executionState;
+    private boolean restart;
 
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
-    public ContentStatus(String executionState) {
-        this.executionState = executionState;
+
+    public ContentShutdownReply(boolean pRestart) {
+        this.restart = pRestart;
     }
 }
