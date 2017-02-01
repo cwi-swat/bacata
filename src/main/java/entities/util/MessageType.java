@@ -41,9 +41,14 @@ public class MessageType {
 
     public final static String INSPECT_REPLY = "inspect_reply";
 
+    public final static String EXECUTE_RESULT = "execute_result";
+
+    public final static String DISPLAY_DATA = "display_data";
+
     // -----------------------------------------------------------------
     // Common constants
     // -----------------------------------------------------------------
     public final static String STATUS = "status";
+
 
 }

@@ -26,6 +26,8 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -164,6 +166,7 @@ public class JupyterServer {
             executionNumber++;
         // TODO evaluate user Expressions
 
+        processExecuteResult(parentHeader, contentExecuteRequest.getCode());
         sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber, null, null));
     }
 
@@ -204,7 +207,6 @@ public class JupyterServer {
 
     /**
      * This method processes the is_complete_request message and replies with a is_complete_reply message.
-     *
      * @param header
      * @param content
      */
@@ -220,6 +222,16 @@ public class JupyterServer {
         else
             status = Status.UNKNOWN;
         sendMessage(communication.getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new JsonObject(), new ContentIsCompleteReply(status, indent));
+    }
+
+    public void processExecuteResult(Header parentHeader, String code) {
+        System.out.println("EXECUTE_RESULT");
+        Map<String, String> data = new HashMap<>();
+        data.put("text/plain", "kernel answer");
+        data.put("text/plain", code);
+        ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, new HashMap<String, String>());
+        sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new JsonObject(), content);
+        sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
     }
 
     /**
