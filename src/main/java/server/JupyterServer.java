@@ -34,7 +34,7 @@ import java.util.UUID;
 /**
  * Created by Mauricio on 17/01/2017.
  */
-public class JupyterServer {
+public abstract class JupyterServer {
 
     // -----------------------------------------------------------------
     // Constants
@@ -58,8 +58,6 @@ public class JupyterServer {
 
     private Communication communication;
 
-    private int executionNumber;
-
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
@@ -68,8 +66,6 @@ public class JupyterServer {
         parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
         connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
         communication = new Communication(this);
-        executionNumber = 0;
-
 
         while (!Thread.currentThread().isInterrupted()) {
             listenShellSocket();
@@ -107,8 +103,7 @@ public class JupyterServer {
                 break;
             case MessageType.SHUTDOWN_REQUEST:
                 System.out.println("SHUTDOWN REQUEST");
-                ContentShutdownRequest contentShutdownRequest = parser.fromJson(content, ContentShutdownRequest.class);
-                processShutdownRequest(communication.getRequests(), header, contentShutdownRequest);
+                processShutdownRequest(communication.getRequests(), header, parser.fromJson(content, ContentShutdownRequest.class));
                 break;
             case MessageType.IS_COMPLETE_REQUEST:
                 System.out.println("IS_COMPLETE_REQUEST: ");
@@ -160,22 +155,12 @@ public class JupyterServer {
     /**
      * This method processes the execute_request message and replies with a execute_reply message.
      */
-    public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest) {
-        System.out.println("PROCESS: " + parser.toJson(contentExecuteRequest));
-        if (contentExecuteRequest.isStoreHistory())
-            executionNumber++;
-        // TODO evaluate user Expressions
-
-        processExecuteResult(parentHeader, contentExecuteRequest.getCode());
-        sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber, null, null));
-    }
+    public abstract void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest);
 
     /**
      * This method processes the history_request message and replies with a history_reply message.
      */
-    public void processHistoryRequest(Header parentHeader) {
-        sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), MessageType.HISTORY_REPLY), parentHeader, new JsonObject(), new ContentHistoryReply());
-    }
+    public abstract void processHistoryRequest(Header parentHeader);
 
     /**
      * This method updates the kernel status with the value received as a parameter.
@@ -187,42 +172,19 @@ public class JupyterServer {
     /**
      * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
      */
-    public void processKernelInfoRequest(Header parentHeader) {
-        sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
-    }
+    public abstract void processKernelInfoRequest(Header parentHeader);
 
     /**
      * This method processes the shutdown_request message and replies with a shutdown_reply message.
      */
-    public void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown) {
-        //TODO: verify if its a restarting or a final shutdown command
-        sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, new JsonObject(), new ContentShutdownReply(contentShutdown.getRestart()));
-        communication.getRequests().close();
-        communication.getPublish().close();
-        communication.getControl().close();
-        communication.getContext().term();
-        communication.getContext().close();
-        System.exit(-1);
-    }
+    public abstract void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown);
 
     /**
      * This method processes the is_complete_request message and replies with a is_complete_reply message.
      * @param header
      * @param content
      */
-    public void processIsCompleteRequest(Header header, ContentIsCompleteRequest content) {
-        System.out.println("CODE: " + content.getCode());
-        String status, indent = "";
-        if (content.getCode().endsWith(";"))
-            status = Status.COMPLETE;
-        else if (content.getCode().endsWith("-")) {
-            status = Status.INCOMPLETE;
-            indent = "\t \t";
-        }
-        else
-            status = Status.UNKNOWN;
-        sendMessage(communication.getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new JsonObject(), new ContentIsCompleteReply(status, indent));
-    }
+    public abstract void processIsCompleteRequest(Header header, ContentIsCompleteRequest content);
 
     public void processExecuteResult(Header parentHeader, String code) {
         System.out.println("EXECUTE_RESULT");
@@ -282,22 +244,13 @@ public class JupyterServer {
         return connection;
     }
 
-    // -----------------------------------------------------------------
-    // Execution
-    // -----------------------------------------------------------------
-
-    /**
-     * This method runs the application.
-     *
-     * @param args application parameters
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-        try {
-            System.out.println("Java Kernel started");
-            JupyterServer jupyterServer = new JupyterServer(args[0]);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public Communication getCommunication() {
+        return communication;
     }
+
+    public Gson getParser() {
+        return parser;
+    }
+
+
 }

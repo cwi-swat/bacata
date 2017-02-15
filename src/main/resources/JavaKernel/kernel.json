@@ -2,7 +2,7 @@
   "argv": [
     "java",
     "-jar",
-    "/Users/Mauricio/IdeaProjects/jupyterJavaKernel/target/JupyterJavaKernel-1.0-SNAPSHOT-jar-with-dependencies.jar",
+    "/home/maveme/IdeaProjects/jupyter_java_kernel/target/JupyterJavaKernel-1.0-SNAPSHOT-jar-with-dependencies.jar",
     "{connection_file}"
   ],
   "display_name": "Java Kernel",
