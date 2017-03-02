@@ -172,7 +172,9 @@ public abstract class JupyterServer {
     /**
      * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
      */
-    public abstract void processKernelInfoRequest(Header parentHeader);
+    public void processKernelInfoRequest(Header parentHeader){
+    	sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
+    }
 
     /**
      * This method processes the shutdown_request message and replies with a shutdown_reply message.
@@ -186,15 +188,7 @@ public abstract class JupyterServer {
      */
     public abstract void processIsCompleteRequest(Header header, ContentIsCompleteRequest content);
 
-    public void processExecuteResult(Header parentHeader, String code) {
-        System.out.println("EXECUTE_RESULT");
-        Map<String, String> data = new HashMap<>();
-        data.put("text/plain", "kernel answer");
-        data.put("text/plain", code);
-        ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, new HashMap<String, String>());
-        sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new JsonObject(), content);
-        sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
-    }
+    public abstract void processExecuteResult(Header parentHeader, String code, int executionNumber);
 
     /**
      * This method sends a message according to The Wire Protocol through the socket received as parameter.
