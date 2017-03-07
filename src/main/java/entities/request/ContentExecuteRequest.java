@@ -13,12 +13,25 @@ public class ContentExecuteRequest extends Content {
     // Fields
     // -----------------------------------------------------------------
 
+	/**
+	 * Source code to be executed by the kernel, one or more lines.
+	 */
     private String code;
 
+    /**
+     * This flag signals the kernel to execute this code as quietly as possible.
+     */
     private boolean silent;
 
+    /**
+     * Boolean flag which, if True, signals the kernel to populate history.
+     * The default is True if silent is False.  If silent is True, store_history is forced to be False.
+     */
     private boolean storeHistory;
 
+    /**
+     * A dict mapping names to expressions to be evaluated in the user's dict.
+     */
     private Map<String, String> userExpressions;
 
     private boolean allowStdin;

@@ -8,6 +8,7 @@ import communication.Communication;
 import communication.Connection;
 import communication.Header;
 import entities.reply.*;
+import entities.request.ContentCompleteRequest;
 import entities.request.ContentExecuteRequest;
 import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
@@ -119,6 +120,7 @@ public abstract class JupyterServer {
                 break;
             case MessageType.COMPLETE_REQUEST:
                 System.out.println("COMPLETE_REQUEST: ");
+                processCompleteRequest(header, parser.fromJson(content, ContentCompleteRequest.class));
                 break;
             case MessageType.INSPECT_REQUEST:
                 System.out.println("INSPECT_REQUEST: ");
@@ -129,7 +131,7 @@ public abstract class JupyterServer {
         }
     }
 
-    public void listenHeartbeatSocket() {
+	public void listenHeartbeatSocket() {
         String ping;
         while ((ping = communication.getHeartbeat().recvStr(ZMQ.DONTWAIT)) != null) {
             heartbeatChannel();
@@ -157,6 +159,11 @@ public abstract class JupyterServer {
      */
     public abstract void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest);
 
+    /**
+     * This method processes the complete_request message and replies with a complete_reply message.
+     */
+    public abstract void processCompleteRequest(Header parentHeader, ContentCompleteRequest request);
+    
     /**
      * This method processes the history_request message and replies with a history_reply message.
      */
@@ -191,7 +198,7 @@ public abstract class JupyterServer {
     public abstract void processExecuteResult(Header parentHeader, String code, int executionNumber);
 
     /**
-     * This method sends a message according to The Wire Protocol through the socket received as parameter.
+     * This method sends a message according to the Wire Protocol through the socket received as parameter.
      */
     public void sendMessage(ZMQ.Socket socket, Header header, Header parent, JsonObject metadata, Content content) {
         socket.sendMore(header.getSession().getBytes());

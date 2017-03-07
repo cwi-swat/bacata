@@ -10,7 +10,11 @@ public class ContentShutdownRequest extends Content {
     // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------
-    private boolean restart;
+	
+    /**
+     * False if final shutdown, or True if shutdown precedes a restart
+     */
+	private boolean restart;
 
     // -----------------------------------------------------------------
     // Constructor
@@ -22,6 +26,10 @@ public class ContentShutdownRequest extends Content {
     // -----------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------
+    /**
+     * This method returns False if final shutdown, or True if shutdown precedes a restart.
+     * @return
+     */
     public boolean getRestart() {
         return restart;
     }

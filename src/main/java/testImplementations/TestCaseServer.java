@@ -3,6 +3,7 @@ package testImplementations;
 import com.google.gson.JsonObject;
 import communication.Header;
 import entities.reply.*;
+import entities.request.ContentCompleteRequest;
 import entities.request.ContentExecuteRequest;
 import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
@@ -107,6 +108,15 @@ public class TestCaseServer extends JupyterServer {
     public void processHistoryRequest(Header parentHeader) {
         sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.HISTORY_REPLY), parentHeader, new JsonObject(), new ContentHistoryReply());
     }
+    
+    /**
+     * 
+     */
+	@Override
+	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request) {
+		// TODO 
+		
+	}
     
     // -----------------------------------------------------------------
     // Execution
