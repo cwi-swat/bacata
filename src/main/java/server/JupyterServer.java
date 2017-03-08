@@ -67,12 +67,6 @@ public abstract class JupyterServer {
         parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
         connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
         communication = new Communication(this);
-
-        while (!Thread.currentThread().isInterrupted()) {
-            listenShellSocket();
-            listenControlSocket();
-            listenHeartbeatSocket();
-        }
     }
 
 
@@ -80,6 +74,13 @@ public abstract class JupyterServer {
     // Methods
     // -----------------------------------------------------------------
 
+    public void startServer(){
+    	while (!Thread.currentThread().isInterrupted()) {
+            listenShellSocket();
+            listenControlSocket();
+            listenHeartbeatSocket();
+        }
+    }
     public void listenShellSocket() {
         String zmqIdentity;
         while ((zmqIdentity = communication.getRequests().recvStr(ZMQ.DONTWAIT)) != null) {

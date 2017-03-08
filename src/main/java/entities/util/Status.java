@@ -38,4 +38,9 @@ public class Status {
      * This constant is used if the kernel is idle
      */
     public final static String IDLE = "idle";
+    
+    /**
+     * This constant is used to inform an ok answer.
+     */
+    public final static String OK = "ok";
 }
