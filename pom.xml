@@ -23,6 +23,11 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.10</version>
 		</dependency>
+		<dependency>
+			<groupId>org.rascalmpl</groupId>
+			<artifactId>rascal</artifactId>
+			<version>0.8.4-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -31,7 +36,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>testImplementations.TestCaseServer</mainClass>
+							<mainClass>testImplementations.MetaJupyterServer</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
