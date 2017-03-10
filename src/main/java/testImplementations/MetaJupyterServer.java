@@ -1,27 +1,26 @@
+/** 
+ * Copyright (c) 2017, Mauricio Verano Merino, Centrum Wiskunde & Informatica (CWI) 
+ * All rights reserved. 
+ *  
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met: 
+ *  
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+ *  
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. 
+ *  
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ */ 
 package testImplementations;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import org.rascalmpl.interpreter.Evaluator;
-import org.rascalmpl.repl.BaseRascalREPL;
-import org.rascalmpl.repl.ILanguageProtocol;
-import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.repl.jupyter.RascalJupyterInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.zeromq.ZMQ.Socket;
@@ -38,33 +37,40 @@ import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
 import entities.util.MessageType;
 import entities.util.Status;
-import jline.Terminal;
 import server.JupyterServer;
 
 public class MetaJupyterServer extends JupyterServer{
 
+    // -----------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------
+	
 	private int executionNumber;
 
 	private RascalJupyterInterpreterREPL repl;
 
 	private StringWriter stdout;
-	private StringReader stdin;
+	
 	private StringWriter stderr;
 
+    // -----------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------
 
 	public MetaJupyterServer(String connectionFilePath) throws Exception {
 		super(connectionFilePath);
 		executionNumber = 0;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-
 		repl = makeInterpreter();
 		repl.initialize(stdout, stderr);
-		
 		startServer();
-		System.out.println("WORKS!!!!!!");
 	}
 
+    // -----------------------------------------------------------------
+    // Methods
+    // -----------------------------------------------------------------
+	
 	@Override
 	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest) {
 		if(!contentExecuteRequest.isSilent())
@@ -80,9 +86,17 @@ public class MetaJupyterServer extends JupyterServer{
 					System.out.println("__----------------");
 					Map<String, String> data = new HashMap<>();
 			        data.put("text/plain", "kernel answer");
-			        data.put("text/plain", stdout.toString());
-			        stdout.getBuffer().setLength(0);
-			        stdout.flush();
+//			        data.put("text/html", "<svg viewBox=\"0 0 500 100\" class=\"chart\"><polyline fill=\"none\" stroke=\"#0074d9\" stroke-width=\"2\" points=\" 00,120 20,60 40,80 60,20 80,80 100,80\"/></svg>");
+			        if(!stdout.toString().trim().equals("")){
+			        	data.put("text/html", "<p style=\"color:blue;\">" +stdout.toString()+ "</p>");
+			        	stdout.getBuffer().setLength(0);
+			        	stdout.flush();
+			        }
+			        else{
+			        	data.put("text/html", "<p style=\"color:red;\">" + stderr.toString() + "</p>");
+			        	stderr.getBuffer().setLength(0);
+				        stderr.flush();
+			        }
 			        ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, new HashMap<String, String>());
 //					sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new JsonObject(), content);
 			        sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
@@ -91,7 +105,7 @@ public class MetaJupyterServer extends JupyterServer{
 				}
 			}
 			else{
-				// TODO evaluate user code
+				// TODO evaluate user code 
 			}
 			executionNumber ++;
 		}
@@ -129,7 +143,7 @@ public class MetaJupyterServer extends JupyterServer{
 	}
 
 	/**
-	 * This method is executed when the kernel receives a is_complete_request
+	 * This method is executed when the kernel receives a is_complete_request message.
 	 */
 	@Override
 	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request) {
@@ -163,47 +177,35 @@ public class MetaJupyterServer extends JupyterServer{
 	}
 
 	private static RascalJupyterInterpreterREPL makeInterpreter() throws IOException, URISyntaxException {
-		return new RascalJupyterInterpreterREPL(false, false, null) {
+		return new RascalJupyterInterpreterREPL() {
 			@Override
 			protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
-				System.out.println("ENTRAAAAAAA");
 				return ShellEvaluatorFactory.getDefaultEvaluator(new PrintWriter(stdout), new PrintWriter(stderr));
 			}
 		};
 	}
 
-	public static void main(String[] args) {
-
-//		StringWriter tmp = new StringWriter();
-		try {
-			MetaJupyterServer mv =  new MetaJupyterServer(args[0]);
-			//			InputStream stdin= new ByteArrayInputStream("hola".getBytes(StandardCharsets.UTF_8));
-			//			RascalJupyterInterpreterREPL repl = new RascalJupyterInterpreterREPL(false, false, null) {
-			//				@Override
-			//				protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
-			//					System.out.println("ENTRAAAAAAA");
-			//					return ShellEvaluatorFactory.getDefaultEvaluator(new PrintWriter(stdout), new PrintWriter(stderr));
-			//				}
-			//			};
-			//
-			//			repl.initialize(tmp, tmp);
-			//			System.out.println("funcionarasca?: "+ repl.isStatementComplete("ASD"));
-			//			repl.handleInput("hola;");
-			//			System.out.println("L: "+ tmp.toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	@Override
 	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request) {
 		System.out.println("Entered to complete");
-		System.out.println("@@@@@@@@@@@@@: ");
+		System.out.println("@@@@@@@@@@@@@: "+request.getCode() + "%%"+ request.getCursorPosition() );
 		System.out.println(request.getCode());
 		System.out.println(request.getCursorPosition());
 		System.out.println(repl.completeFragment(request.getCode(), request.getCursorPosition()));
 		System.out.println("@@@@@@@@@@@@@");
-		System.out.println("writer: "+stdout.toString());
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new JsonObject(), new ContentCompleteReply(new ArrayList<String>(), 0, 2, null, Status.OK));
+		System.out.println("writer: "+stdout.toString() + "}}}}}");
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new JsonObject(), new ContentCompleteReply(new ArrayList<String>(), 0, 0, null, Status.OK));
+	}
+	
+    // -----------------------------------------------------------------
+    // Execution
+    // -----------------------------------------------------------------
+	
+	public static void main(String[] args) {
+		try {
+			MetaJupyterServer mv =  new MetaJupyterServer(args[0]);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

@@ -22,6 +22,9 @@ import server.JupyterServer;
 public class TestCaseServer extends JupyterServer {
 
 
+    // -----------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------
     private int executionNumber;
 
     // -----------------------------------------------------------------
@@ -115,7 +118,6 @@ public class TestCaseServer extends JupyterServer {
 	@Override
 	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request) {
 		// TODO 
-		
 	}
     
     // -----------------------------------------------------------------
