@@ -21,7 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.rascalmpl.interpreter.Evaluator;
-import org.rascalmpl.repl.jupyter.RascalJupyterInterpreterREPL;
+import org.rascalmpl.repl.ILanguageProtocol;
+import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.zeromq.ZMQ.Socket;
 import com.google.gson.JsonObject;
@@ -47,7 +48,7 @@ public class MetaJupyterServer extends JupyterServer{
 	
 	private int executionNumber;
 
-	private RascalJupyterInterpreterREPL repl;
+	private ILanguageProtocol language;
 
 	private StringWriter stdout;
 	
@@ -62,8 +63,8 @@ public class MetaJupyterServer extends JupyterServer{
 		executionNumber = 0;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-		repl = makeInterpreter();
-		repl.initialize(stdout, stderr);
+		this.language = makeInterpreter();
+		this.language.initialize(stdout, stderr);
 		startServer();
 	}
 
@@ -81,7 +82,7 @@ public class MetaJupyterServer extends JupyterServer{
 					// TODO How can we manage the user history?
 					// TODO evaluate user code
 					// TODO publish result 
-					repl.handleInput(contentExecuteRequest.getCode());
+					this.language.handleInput(contentExecuteRequest.getCode());
 					System.out.println("ANSWE: "+ stdout.toString());
 					System.out.println("__----------------");
 					Map<String, String> data = new HashMap<>();
@@ -131,7 +132,7 @@ public class MetaJupyterServer extends JupyterServer{
 			// TODO: how can I tell rascal to restart?
 		}
 		else{
-			repl.stop();
+			this.language.stop();
 			getCommunication().getRequests().close();
 			getCommunication().getPublish().close();
 			getCommunication().getControl().close();
@@ -149,7 +150,7 @@ public class MetaJupyterServer extends JupyterServer{
 	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request) {
 		//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
 		String status, indent="";
-		if(repl.isStatementComplete(request.getCode())){
+		if(this.language.isStatementComplete(request.getCode())){
 			System.out.println("COMPLETO");
 			status = Status.COMPLETE;
 		}
@@ -176,8 +177,8 @@ public class MetaJupyterServer extends JupyterServer{
 
 	}
 
-	private static RascalJupyterInterpreterREPL makeInterpreter() throws IOException, URISyntaxException {
-		return new RascalJupyterInterpreterREPL() {
+	private static RascalInterpreterREPL makeInterpreter() throws IOException, URISyntaxException {
+		return new RascalInterpreterREPL() {
 			@Override
 			protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
 				return ShellEvaluatorFactory.getDefaultEvaluator(new PrintWriter(stdout), new PrintWriter(stderr));
@@ -191,7 +192,7 @@ public class MetaJupyterServer extends JupyterServer{
 		System.out.println("@@@@@@@@@@@@@: "+request.getCode() + "%%"+ request.getCursorPosition() );
 		System.out.println(request.getCode());
 		System.out.println(request.getCursorPosition());
-		System.out.println(repl.completeFragment(request.getCode(), request.getCursorPosition()));
+		System.out.println(this.language.completeFragment(request.getCode(), request.getCursorPosition()));
 		System.out.println("@@@@@@@@@@@@@");
 		System.out.println("writer: "+stdout.toString() + "}}}}}");
 		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new JsonObject(), new ContentCompleteReply(new ArrayList<String>(), 0, 0, null, Status.OK));
