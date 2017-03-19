@@ -10,11 +10,11 @@ public class LanguageInfo {
     // Constants
     // -----------------------------------------------------------------
 
-    public static final String LANGUAGE_NAME = "Java";
+    public static final String LANGUAGE_NAME = "java";
 
-    public static final String LANGUAGE_VERSION = "8.0";
+    public static final String LANGUAGE_VERSION = "1.8.0_77";
 
-    public static final String LANGUAGE_MIMETYPE = "application/java";
+    public static final String LANGUAGE_MIMETYPE = "text/x-java";
 
     public static final String LANGUAGE_EXTENSION = ".java";
 

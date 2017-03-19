@@ -30,7 +30,7 @@ public class ContentKernelInfoReply extends Content {
 
     private String implementationVersion;
 
-    private LanguageInfo languageInformation;
+    private LanguageInfo languageInfo;
 
     private String banner;
 
@@ -42,7 +42,7 @@ public class ContentKernelInfoReply extends Content {
         this.protocolVersion = protocolVersion;
         this.implementation = implementation;
         this.implementationVersion = implementationVersion;
-        this.languageInformation = languageInformation;
+        this.languageInfo = languageInformation;
         this.banner = banner;
     }
 
@@ -50,7 +50,7 @@ public class ContentKernelInfoReply extends Content {
         this.protocolVersion = PROTOCOL_VERSION;
         this.implementation = IMPLEMENTATION;
         this.implementationVersion = IMPLEMENTATION_VERSION;
-        this.languageInformation = new LanguageInfo();
+        this.languageInfo = new LanguageInfo();
         this.banner = BANNER;
     }
 }
