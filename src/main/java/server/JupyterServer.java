@@ -37,222 +37,246 @@ import java.util.UUID;
  */
 public abstract class JupyterServer {
 
-    // -----------------------------------------------------------------
-    // Constants
-    // -----------------------------------------------------------------
+	// -----------------------------------------------------------------
+	// Constants
+	// -----------------------------------------------------------------
 
-    public final static String DELIMITER = "<IDS|MSG>";
+	public final static String DELIMITER = "<IDS|MSG>";
 
-    public final static String HEARTBEAT_MESSAGE = "ping";
+	public final static String HEARTBEAT_MESSAGE = "ping";
 
-    public final static String ENCODE_CHARSET = "UTF-8";
+	public final static String ENCODE_CHARSET = "UTF-8";
 
-    public final static String HASH_ALGORITHM = "HmacSHA256";
+	public final static String HASH_ALGORITHM = "HmacSHA256";
 
-    // -----------------------------------------------------------------
-    // Fields
-    // -----------------------------------------------------------------
+	// -----------------------------------------------------------------
+	// Fields
+	// -----------------------------------------------------------------
 
-    private Connection connection;
+	private Connection connection;
 
-    private Gson parser;
+	private Gson parser;
 
-    private Communication communication;
+	private Communication communication;
 
-    // -----------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------
+	private ZMQ.Poller poller;
+	// -----------------------------------------------------------------
+	// Constructor
+	// -----------------------------------------------------------------
 
-    public JupyterServer(String connectionFilePath) throws Exception {
-        parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-        connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
-        communication = new Communication(this);
-    }
+	public JupyterServer(String connectionFilePath) throws Exception {
+		parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+		connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
+		communication = new Communication(this);
+		poller = new ZMQ.Poller(4);
+		poller.register(communication.getRequests(), ZMQ.Poller.POLLIN);
+		poller.register(communication.getControl(), ZMQ.Poller.POLLIN);
+		poller.register(communication.getPublish(), ZMQ.Poller.POLLIN);
+		poller.register(communication.getHeartbeat(), ZMQ.Poller.POLLIN);
+	}
 
 
-    // -----------------------------------------------------------------
-    // Methods
-    // -----------------------------------------------------------------
+	// -----------------------------------------------------------------
+	// Methods
+	// -----------------------------------------------------------------
 
-    public void startServer(){
-    	while (!Thread.currentThread().isInterrupted()) {
-            listenShellSocket();
-            listenControlSocket();
-            listenHeartbeatSocket();
-        }
-    }
-    public void listenShellSocket() {
-        String zmqIdentity;
-        while ((zmqIdentity = communication.getRequests().recvStr(ZMQ.DONTWAIT)) != null) {
-            String delimeter = communication.getRequests().recvStr(); // Delimeter
-            String hmacSignature = communication.getRequests().recvStr();
-            Header header = parser.fromJson(communication.getRequests().recvStr(), Header.class);
-            Header parentHeader = parser.fromJson(communication.getRequests().recvStr(), Header.class);
-            String metadata = communication.getRequests().recvStr();
-            String content = communication.getRequests().recvStr();
+	public void startServer(){
+		while (!Thread.currentThread().isInterrupted()) {
 
-            statusUpdate(header, Status.BUSY);
-            processShellMessageType(header, content);
-            statusUpdate(header, Status.IDLE);
-        }
-    }
+			poller.poll();
+			if(poller.pollin(0))
+				listenShellSocket();
+			if(poller.pollin(1))
+				listenControlSocket();
+			if(poller.pollin(2))
+				listenPublishSocket();
+			if(poller.pollin(3))
+				listenHeartbeatSocket();
+		}
+	}
 
-    public void processShellMessageType(Header header, String content) {
-        switch (header.getMsgType()) {
-            case MessageType.KERNEL_INFO_REQUEST:
-                System.out.println("KERNEL INFO REQUEST: ");
-                processKernelInfoRequest(header);
-                break;
-            case MessageType.SHUTDOWN_REQUEST:
-                System.out.println("SHUTDOWN REQUEST");
-                processShutdownRequest(communication.getRequests(), header, parser.fromJson(content, ContentShutdownRequest.class));
-                break;
-            case MessageType.IS_COMPLETE_REQUEST:
-                System.out.println("IS_COMPLETE_REQUEST: ");
-                processIsCompleteRequest(header, parser.fromJson(content, ContentIsCompleteRequest.class));
-                break;
-            case MessageType.EXECUTE_REQUEST:
-                System.out.println("EXECUTE_REQUEST: ");
-                processExecuteRequest(header, parser.fromJson(content, ContentExecuteRequest.class));
-                break;
-            case MessageType.HISTORY_REQUEST:
-                System.out.println("HISTORY: ");
-                processHistoryRequest(header);
-                break;
-            case MessageType.COMPLETE_REQUEST:
-                System.out.println("COMPLETE_REQUEST: ");
-                processCompleteRequest(header, parser.fromJson(content, ContentCompleteRequest.class));
-                break;
-            case MessageType.INSPECT_REQUEST:
-                System.out.println("INSPECT_REQUEST: ");
-                break;
-            default:
-                System.out.println("NEW_MESSAGE_TYPE_REQUEST: " + header.getMsgType());
-                break;
-        }
-    }
+
+	private void listenPublishSocket() {
+		System.out.println("Publish socket");
+		String zmqIdentity=communication.getPublish().recvStr(ZMQ.DONTWAIT);
+		String delimeter = communication.getPublish().recvStr(); // Delimeter
+		String hmacSignature = communication.getPublish().recvStr();
+		Header header = parser.fromJson(communication.getPublish().recvStr(), Header.class);
+		Header parentHeader = parser.fromJson(communication.getPublish().recvStr(), Header.class);
+		String metadata = communication.getPublish().recvStr();
+		String content = communication.getPublish().recvStr();
+	}
+
+
+	public void listenShellSocket() {
+		String zmqIdentity=communication.getRequests().recvStr(ZMQ.DONTWAIT);
+		String delimeter = communication.getRequests().recvStr(); // Delimeter
+		String hmacSignature = communication.getRequests().recvStr();
+		Header header = parser.fromJson(communication.getRequests().recvStr(), Header.class);
+		Header parentHeader = parser.fromJson(communication.getRequests().recvStr(), Header.class);
+		String metadata = communication.getRequests().recvStr();
+		String content = communication.getRequests().recvStr();
+
+		statusUpdate(header, Status.BUSY);
+		processShellMessageType(header, content);
+		statusUpdate(header, Status.IDLE);
+	}
+
+	public void processShellMessageType(Header header, String content) {
+		switch (header.getMsgType()) {
+		case MessageType.KERNEL_INFO_REQUEST:
+			System.out.println("KERNEL INFO REQUEST: ");
+			processKernelInfoRequest(header);
+			break;
+		case MessageType.SHUTDOWN_REQUEST:
+			System.out.println("SHUTDOWN REQUEST");
+			processShutdownRequest(communication.getRequests(), header, parser.fromJson(content, ContentShutdownRequest.class));
+			break;
+		case MessageType.IS_COMPLETE_REQUEST:
+			System.out.println("IS_COMPLETE_REQUEST: ");
+			processIsCompleteRequest(header, parser.fromJson(content, ContentIsCompleteRequest.class));
+			break;
+		case MessageType.EXECUTE_REQUEST:
+			System.out.println("EXECUTE_REQUEST: ");
+			processExecuteRequest(header, parser.fromJson(content, ContentExecuteRequest.class));
+			break;
+		case MessageType.HISTORY_REQUEST:
+			System.out.println("HISTORY: ");
+			processHistoryRequest(header);
+			break;
+		case MessageType.COMPLETE_REQUEST:
+			System.out.println("COMPLETE_REQUEST: ");
+			processCompleteRequest(header, parser.fromJson(content, ContentCompleteRequest.class));
+			break;
+		case MessageType.INSPECT_REQUEST:
+			System.out.println("INSPECT_REQUEST: ");
+			break;
+		default:
+			System.out.println("NEW_MESSAGE_TYPE_REQUEST: " + header.getMsgType());
+			System.out.println("CONTENT: "+ content);
+			break;
+		}
+	}
 
 	public void listenHeartbeatSocket() {
-        String ping;
-        while ((ping = communication.getHeartbeat().recvStr(ZMQ.DONTWAIT)) != null) {
-            heartbeatChannel();
-        }
-    }
+		String ping;
+		while ((ping = communication.getHeartbeat().recvStr(ZMQ.DONTWAIT)) != null) {
+			heartbeatChannel();
+		}
+	}
 
-    public void listenControlSocket() {
-        String ctrlInput;
-        while ((ctrlInput = communication.getControl().recvStr(ZMQ.DONTWAIT)) != null) {
-            System.out.println("CONTROL MESSAGE RECEIVED: " + ctrlInput);
-            String delimeter = communication.getRequests().recvStr(); // Delimeter
-            String hmacSignature = communication.getRequests().recvStr();
-            Header header = parser.fromJson(communication.getRequests().recvStr(), Header.class);
-            Header parentHeader = parser.fromJson(communication.getRequests().recvStr(), Header.class);
-            String metadata = communication.getRequests().recvStr();
-            String content = communication.getRequests().recvStr();
-            if (header.getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
-                processShutdownRequest(communication.getControl(), header, parser.fromJson(content, ContentShutdownRequest.class));
-            }
-        }
-    }
+	public void listenControlSocket() {
+		String ctrlInput = communication.getControl().recvStr(ZMQ.DONTWAIT);
+		System.out.println("CONTROL MESSAGE RECEIVED: " + ctrlInput);
+		String delimeter = communication.getRequests().recvStr(); // Delimeter
+		String hmacSignature = communication.getRequests().recvStr();
+		Header header = parser.fromJson(communication.getRequests().recvStr(), Header.class);
+		Header parentHeader = parser.fromJson(communication.getRequests().recvStr(), Header.class);
+		String metadata = communication.getRequests().recvStr();
+		String content = communication.getRequests().recvStr();
+		if (header.getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
+			processShutdownRequest(communication.getControl(), header, parser.fromJson(content, ContentShutdownRequest.class));
+		}
+	}
 
-    /**
-     * This method processes the execute_request message and replies with a execute_reply message.
-     */
-    public abstract void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest);
+	/**
+	 * This method processes the execute_request message and replies with a execute_reply message.
+	 */
+	public abstract void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest);
 
-    /**
-     * This method processes the complete_request message and replies with a complete_reply message.
-     */
-    public abstract void processCompleteRequest(Header parentHeader, ContentCompleteRequest request);
-    
-    /**
-     * This method processes the history_request message and replies with a history_reply message.
-     */
-    public abstract void processHistoryRequest(Header parentHeader);
+	/**
+	 * This method processes the complete_request message and replies with a complete_reply message.
+	 */
+	public abstract void processCompleteRequest(Header parentHeader, ContentCompleteRequest request);
 
-    /**
-     * This method updates the kernel status with the value received as a parameter.
-     */
-    public void statusUpdate(Header parentHeader, String status) {
-        sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.STATUS), parentHeader, new JsonObject(), new ContentStatus(status));
-    }
+	/**
+	 * This method processes the history_request message and replies with a history_reply message.
+	 */
+	public abstract void processHistoryRequest(Header parentHeader);
 
-    /**
-     * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
-     */
-    public void processKernelInfoRequest(Header parentHeader){
-    	sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
-    }
+	/**
+	 * This method updates the kernel status with the value received as a parameter.
+	 */
+	public void statusUpdate(Header parentHeader, String status) {
+		sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.STATUS), parentHeader, new JsonObject(), new ContentStatus(status));
+	}
 
-    /**
-     * This method processes the shutdown_request message and replies with a shutdown_reply message.
-     */
-    public abstract void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown);
+	/**
+	 * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
+	 */
+	public void processKernelInfoRequest(Header parentHeader){
+		sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
+	}
 
-    /**
-     * This method processes the is_complete_request message and replies with a is_complete_reply message.
-     * @param header
-     * @param content
-     */
-    public abstract void processIsCompleteRequest(Header header, ContentIsCompleteRequest content);
+	/**
+	 * This method processes the shutdown_request message and replies with a shutdown_reply message.
+	 */
+	public abstract void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown);
 
-    public abstract void processExecuteResult(Header parentHeader, String code, int executionNumber);
+	/**
+	 * This method processes the is_complete_request message and replies with a is_complete_reply message.
+	 * @param header
+	 * @param content
+	 */
+	public abstract void processIsCompleteRequest(Header header, ContentIsCompleteRequest content);
 
-    /**
-     * This method sends a message according to the Wire Protocol through the socket received as parameter.
-     */
-    public void sendMessage(ZMQ.Socket socket, Header header, Header parent, JsonObject metadata, Content content) {
-        socket.sendMore(header.getSession().getBytes());
-        socket.sendMore(DELIMITER.getBytes());
-        socket.sendMore(signMessage(parser.toJson(header), parser.toJson(parent), String.valueOf(metadata), parser.toJson(content)).getBytes());
-        socket.sendMore(parser.toJson(header).getBytes());
-        socket.sendMore(parser.toJson(parent));
-        socket.sendMore(String.valueOf(metadata).getBytes());
-        socket.send(parser.toJson(content), 0);
-    }
+	public abstract void processExecuteResult(Header parentHeader, String code, int executionNumber);
 
-    public void heartbeatChannel() {
-        communication.getHeartbeat().send(HEARTBEAT_MESSAGE, 0);
-    }
+	/**
+	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
+	 */
+	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, JsonObject metadata, Content content) {
+		socket.sendMore(header.getSession().getBytes());
+		socket.sendMore(DELIMITER.getBytes());
+		socket.sendMore(signMessage(parser.toJson(header), parser.toJson(parent), String.valueOf(metadata), parser.toJson(content)).getBytes());
+		socket.sendMore(parser.toJson(header).getBytes());
+		socket.sendMore(parser.toJson(parent));
+		socket.sendMore(String.valueOf(metadata).getBytes());
+		socket.send(parser.toJson(content), 0);
+	}
 
-    public Header createHeader(String pSession, String pMessageType) {
-        String timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
-        String msgid = String.valueOf(UUID.randomUUID());
-        return new Header(pSession, pMessageType, Header.VERSION, Header.USERNAME, timestamp, msgid);
-    }
+	public void heartbeatChannel() {
+		communication.getHeartbeat().send(HEARTBEAT_MESSAGE, 0);
+	}
 
-    public String encode(String data) {
-        try {
-            Mac sha256 = Mac.getInstance(HASH_ALGORITHM);
-            SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
-            sha256.init(secretKey);
-            return new String(Hex.encodeHex(sha256.doFinal(data.getBytes())));
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+	public Header createHeader(String pSession, String pMessageType) {
+		String timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+		String msgid = String.valueOf(UUID.randomUUID());
+		return new Header(pSession, pMessageType, Header.VERSION, Header.USERNAME, timestamp, msgid);
+	}
 
-    public String signMessage(String header, String parentHeader, String metadata, String content) {
-        String message = header + parentHeader + metadata + content;
-        return encode(message);
-    }
+	public String encode(String data) {
+		try {
+			Mac sha256 = Mac.getInstance(HASH_ALGORITHM);
+			SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
+			sha256.init(secretKey);
+			return new String(Hex.encodeHex(sha256.doFinal(data.getBytes())));
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
-    public Connection getConnection() {
-        return connection;
-    }
+	public String signMessage(String header, String parentHeader, String metadata, String content) {
+		String message = header + parentHeader + metadata + content;
+		return encode(message);
+	}
 
-    public Communication getCommunication() {
-        return communication;
-    }
+	public Connection getConnection() {
+		return connection;
+	}
 
-    public Gson getParser() {
-        return parser;
-    }
+	public Communication getCommunication() {
+		return communication;
+	}
+
+	public Gson getParser() {
+		return parser;
+	}
 
 
 }

@@ -49,6 +49,8 @@ public class MessageType {
     // Common constants
     // -----------------------------------------------------------------
     public final static String STATUS = "status";
+    
+    public final static String EXECUTE_INPUT = "execute_input";
 
 
 }

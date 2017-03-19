@@ -27,7 +27,9 @@ import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.zeromq.ZMQ.Socket;
 import com.google.gson.JsonObject;
 import communication.Header;
+import entities.ContentExecuteInput;
 import entities.reply.ContentCompleteReply;
+import entities.reply.ContentExecuteReplyError;
 import entities.reply.ContentExecuteReplyOk;
 import entities.reply.ContentExecuteResult;
 import entities.reply.ContentIsCompleteReply;
@@ -60,7 +62,7 @@ public class MetaJupyterServer extends JupyterServer{
 
 	public MetaJupyterServer(String connectionFilePath) throws Exception {
 		super(connectionFilePath);
-		executionNumber = 0;
+		executionNumber = 1;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
 		this.language = makeInterpreter();
@@ -78,22 +80,24 @@ public class MetaJupyterServer extends JupyterServer{
 		{
 			if(contentExecuteRequest.isStoreHistory())
 			{
+				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, new JsonObject(), new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 				try {
 					// TODO How can we manage the user history?
 					// TODO evaluate user code
 					// TODO publish result 
 					this.language.handleInput(contentExecuteRequest.getCode());
-					System.out.println("ANSWE: "+ stdout.toString());
-					System.out.println("__----------------");
 					Map<String, String> data = new HashMap<>();
 			        data.put("text/plain", "kernel answer");
 //			        data.put("text/html", "<svg viewBox=\"0 0 500 100\" class=\"chart\"><polyline fill=\"none\" stroke=\"#0074d9\" stroke-width=\"2\" points=\" 00,120 20,60 40,80 60,20 80,80 100,80\"/></svg>");
 			        if(!stdout.toString().trim().equals("")){
-			        	data.put("text/html", "<p style=\"color:blue;\">" +stdout.toString()+ "</p>");
+			        	sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber, null, null));
+//			        	data.put("text/html", "<p style=\"color:blue;\">" +stdout.toString()+ "</p>");
+			        	data.put("text/plain", stdout.toString());
 			        	stdout.getBuffer().setLength(0);
 			        	stdout.flush();
 			        }
 			        else{
+			        	sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyError(stderr.toString(), stderr.toString(), null));
 			        	data.put("text/html", "<p style=\"color:red;\">" + stderr.toString() + "</p>");
 			        	stderr.getBuffer().setLength(0);
 				        stderr.flush();
