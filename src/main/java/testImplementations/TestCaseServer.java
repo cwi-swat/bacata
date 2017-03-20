@@ -87,7 +87,7 @@ public class TestCaseServer extends JupyterServer {
         // TODO evaluate user Expressions
 
         processExecuteResult(parentHeader, contentExecuteRequest.getCode(), executionNumber);
-        sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber, null, null));
+        sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
     }
     
     /**

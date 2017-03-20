@@ -27,6 +27,7 @@ import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.zeromq.ZMQ.Socket;
 import com.google.gson.JsonObject;
 import communication.Header;
+import entities.ContentDisplayData;
 import entities.ContentExecuteInput;
 import entities.reply.ContentCompleteReply;
 import entities.reply.ContentExecuteReplyError;
@@ -38,27 +39,28 @@ import entities.request.ContentCompleteRequest;
 import entities.request.ContentExecuteRequest;
 import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
+import entities.util.Content;
 import entities.util.MessageType;
 import entities.util.Status;
 import server.JupyterServer;
 
 public class MetaJupyterServer extends JupyterServer{
 
-    // -----------------------------------------------------------------
-    // Fields
-    // -----------------------------------------------------------------
-	
+	// -----------------------------------------------------------------
+	// Fields
+	// -----------------------------------------------------------------
+
 	private int executionNumber;
 
 	private ILanguageProtocol language;
 
 	private StringWriter stdout;
-	
+
 	private StringWriter stderr;
 
-    // -----------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------
+	// -----------------------------------------------------------------
+	// Constructor
+	// -----------------------------------------------------------------
 
 	public MetaJupyterServer(String connectionFilePath) throws Exception {
 		super(connectionFilePath);
@@ -70,10 +72,10 @@ public class MetaJupyterServer extends JupyterServer{
 		startServer();
 	}
 
-    // -----------------------------------------------------------------
-    // Methods
-    // -----------------------------------------------------------------
-	
+	// -----------------------------------------------------------------
+	// Methods
+	// -----------------------------------------------------------------
+
 	@Override
 	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest) {
 		if(!contentExecuteRequest.isSilent())
@@ -81,30 +83,49 @@ public class MetaJupyterServer extends JupyterServer{
 			if(contentExecuteRequest.isStoreHistory())
 			{
 				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, new JsonObject(), new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				boolean richContent = false;
+				boolean stream=false;
+				// TODO how to differentiate between display data and execute_result?
+				if(!contentExecuteRequest.getCode().contains("println("))
+				{
+					richContent = true;
+					stream = true;
+				}
 				try {
-					// TODO How can we manage the user history?
-					// TODO evaluate user code
 					// TODO publish result 
+//					this.language.handleInput("import IO;");
+//					stdout.getBuffer().setLength(0);
+//					stdout.flush();
+					
 					this.language.handleInput(contentExecuteRequest.getCode());
 					Map<String, String> data = new HashMap<>();
-			        data.put("text/plain", "kernel answer");
-//			        data.put("text/html", "<svg viewBox=\"0 0 500 100\" class=\"chart\"><polyline fill=\"none\" stroke=\"#0074d9\" stroke-width=\"2\" points=\" 00,120 20,60 40,80 60,20 80,80 100,80\"/></svg>");
-			        if(!stdout.toString().trim().equals("")){
-			        	sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber, null, null));
-//			        	data.put("text/html", "<p style=\"color:blue;\">" +stdout.toString()+ "</p>");
-			        	data.put("text/plain", stdout.toString());
-			        	stdout.getBuffer().setLength(0);
-			        	stdout.flush();
-			        }
-			        else{
-			        	sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyError(stderr.toString(), stderr.toString(), null));
-			        	data.put("text/html", "<p style=\"color:red;\">" + stderr.toString() + "</p>");
-			        	stderr.getBuffer().setLength(0);
-				        stderr.flush();
-			        }
-			        ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, new HashMap<String, String>());
-//					sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new JsonObject(), content);
-			        sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
+					//			        data.put("text/html", "<svg viewBox=\"0 0 500 100\" class=\"chart\"><polyline fill=\"none\" stroke=\"#0074d9\" stroke-width=\"2\" points=\" 00,120 20,60 40,80 60,20 80,80 100,80\"/></svg>");
+					if(!stdout.toString().trim().equals("")){
+						sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
+						if(richContent)
+							data.put("text/html", "<p style=\"color:blue;\">" +stdout.toString()+ "</p>");
+						else
+							data.put("text/plain", stdout.toString());
+						
+						stdout.getBuffer().setLength(0);
+						stdout.flush();
+					}
+					if(!stderr.toString().trim().equals("")){
+						sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyError(stderr.toString(), stderr.toString(), null));
+						data.put("text/plain", stderr.toString());
+						stderr.getBuffer().setLength(0);
+						stderr.flush();
+					}
+					
+					if(richContent){
+						ContentDisplayData contentDisplay =  new ContentDisplayData(data, new HashMap<String, String>(), new HashMap<String, String>());
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new JsonObject(), contentDisplay);
+					}
+					else{
+						ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, new HashMap<String, String>());
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
+					}
+
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -117,9 +138,8 @@ public class MetaJupyterServer extends JupyterServer{
 		else{
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
-			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber, null, null));
+			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
 		}
-
 	}
 
 	@Override
@@ -201,11 +221,11 @@ public class MetaJupyterServer extends JupyterServer{
 		System.out.println("writer: "+stdout.toString() + "}}}}}");
 		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new JsonObject(), new ContentCompleteReply(new ArrayList<String>(), 0, 0, null, Status.OK));
 	}
-	
-    // -----------------------------------------------------------------
-    // Execution
-    // -----------------------------------------------------------------
-	
+
+	// -----------------------------------------------------------------
+	// Execution
+	// -----------------------------------------------------------------
+
 	public static void main(String[] args) {
 		try {
 			MetaJupyterServer mv =  new MetaJupyterServer(args[0]);

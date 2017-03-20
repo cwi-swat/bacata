@@ -2,6 +2,8 @@ package entities.reply;
 
 import entities.util.Content;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,11 +37,11 @@ public class ContentExecuteReplyOk extends Content {
     // Constructor
     // -----------------------------------------------------------------
 
-    public ContentExecuteReplyOk(int executionCount, List<Map<String, String>> payload, Map<String, String> userExpressions) {
+    public ContentExecuteReplyOk(int executionCount) {
         this.status = "ok";
         this.executionCount = executionCount;
-        this.payload = payload;
-        this.userExpressions = userExpressions;
+        this.payload = new ArrayList<Map<String, String>>();
+        this.userExpressions = new HashMap<String, String>();
     }
 
     // -----------------------------------------------------------------

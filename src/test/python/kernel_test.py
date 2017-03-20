@@ -13,7 +13,7 @@ class MyKernelTests(jupyter_kernel_test.KernelTests):
     # Optional --------------------------------------
 
     # Code in the kernel's language to write "hello, world" to stdout
-    code_hello_world = "1+1;"
+    code_hello_world = 'println("hello");'
 
     # Pager: code that should display something (anything) in the pager
     # code_page_something = "1+1;"
@@ -21,13 +21,13 @@ class MyKernelTests(jupyter_kernel_test.KernelTests):
     # Samples of code which generate a result value (ie, some text
     # displayed as Out[n])
     code_execute_result = [
-        {'code': '6*7;', 'result': 'int: 42'}
+        {'code': 'println("hello");', 'result': "hello\nok\n"}
     ]
 
     # Samples of code which should generate a rich display output, and
     # the expected MIME type
     code_display_data = [
-        {'code': '1+1;', 'mime': 'text/plain'}
+        {'code': '1+1;', 'mime': 'text/html'}
     ]
 
     # You can also write extra tests. We recommend putting your kernel name
