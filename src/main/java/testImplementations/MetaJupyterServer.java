@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.rascalmpl.interpreter.Evaluator;
+import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
@@ -212,14 +213,18 @@ public class MetaJupyterServer extends JupyterServer{
 
 	@Override
 	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request) {
-		System.out.println("Entered to complete");
-		System.out.println("@@@@@@@@@@@@@: "+request.getCode() + "%%"+ request.getCursorPosition() );
-		System.out.println(request.getCode());
-		System.out.println(request.getCursorPosition());
-		System.out.println(this.language.completeFragment(request.getCode(), request.getCursorPosition()));
-		System.out.println("@@@@@@@@@@@@@");
-		System.out.println("writer: "+stdout.toString() + "}}}}}");
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new JsonObject(), new ContentCompleteReply(new ArrayList<String>(), 0, 0, null, Status.OK));
+		int cursorStart =0;
+		ArrayList<String> sugestions;
+		if(request.getCode().startsWith("import ")){
+			cursorStart=7;
+		}
+		CompletionResult result =this.language.completeFragment(request.getCode(), request.getCursorPosition());
+		if(result != null)
+			sugestions = (ArrayList<String>)result.getSuggestions();
+		else 
+			sugestions = null;
+		ContentCompleteReply content = new ContentCompleteReply(sugestions, cursorStart, request.getCode().length(), new HashMap<String, String>(), Status.OK);
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new JsonObject(), content);
 	}
 
 	// -----------------------------------------------------------------
