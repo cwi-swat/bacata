@@ -85,12 +85,10 @@ public class MetaJupyterServer extends JupyterServer{
 			{
 				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, new JsonObject(), new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 				boolean richContent = false;
-				boolean stream=false;
 				// TODO how to differentiate between display data and execute_result?
-				if(!contentExecuteRequest.getCode().contains("println("))
+				if(contentExecuteRequest.getCode().startsWith("println("))
 				{
 					richContent = true;
-					stream = true;
 				}
 				try {
 					// TODO publish result 
@@ -104,7 +102,7 @@ public class MetaJupyterServer extends JupyterServer{
 					if(!stdout.toString().trim().equals("")){
 						sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
 						if(richContent)
-							data.put("text/html", "<p style=\"color:blue;\">" +stdout.toString()+ "</p>");
+							data.put("text/html", "<p style=\"color:gray; \"> Console: " +stdout.toString()+ "</p>");
 						else
 							data.put("text/plain", stdout.toString());
 						
