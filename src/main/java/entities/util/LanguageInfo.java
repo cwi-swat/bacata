@@ -10,7 +10,7 @@ public class LanguageInfo {
     // Constants
     // -----------------------------------------------------------------
 
-    public static final String LANGUAGE_NAME = "java";
+    public static final String LANGUAGE_NAME = "Java";
 
     public static final String LANGUAGE_VERSION = "1.8.0_77";
 
@@ -32,7 +32,7 @@ public class LanguageInfo {
 
     private String pygmentsLexer;
 
-    private String codemirroMode;
+    private String codemirrorMode;
 
     private String nbconvertExporter;
 
@@ -46,7 +46,7 @@ public class LanguageInfo {
         this.mimetype = LANGUAGE_MIMETYPE;
         this.file_extension = LANGUAGE_EXTENSION;
         this.pygmentsLexer = null;
-        this.codemirroMode = null;
+        this.codemirrorMode = "clike";
         this.nbconvertExporter = null;
     }
 
@@ -56,7 +56,7 @@ public class LanguageInfo {
         this.mimetype = mimetype;
         this.file_extension = file_extension;
         this.pygmentsLexer = null;
-        this.codemirroMode = null;
+        this.codemirrorMode = null;
         this.nbconvertExporter = null;
     }
 
@@ -84,8 +84,8 @@ public class LanguageInfo {
         return pygmentsLexer;
     }
 
-    public String getCodemirroMode() {
-        return codemirroMode;
+    public String getCodemirrorMode() {
+        return codemirrorMode;
     }
 
     public String getNbconvertExporter() {
@@ -96,8 +96,8 @@ public class LanguageInfo {
         this.pygmentsLexer = pygmentsLexer;
     }
 
-    public void setCodemirroMode(String codemirroMode) {
-        this.codemirroMode = codemirroMode;
+    public void setCodemirrorMode(String codemirroMode) {
+        this.codemirrorMode = codemirroMode;
     }
 
     public void setNbconvertExporter(String nbconvertExporter) {
