@@ -1,6 +1,12 @@
 package entities.reply;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import entities.util.Content;
+import entities.util.HelpLinks;
 import entities.util.LanguageInfo;
 
 /**
@@ -33,6 +39,8 @@ public class ContentKernelInfoReply extends Content {
     private LanguageInfo languageInfo;
 
     private String banner;
+    
+    private List<HelpLinks> helpLinks;
 
     // -----------------------------------------------------------------
     // Constructor
@@ -44,6 +52,11 @@ public class ContentKernelInfoReply extends Content {
         this.implementationVersion = implementationVersion;
         this.languageInfo = languageInformation;
         this.banner = banner;
+        this.helpLinks = new ArrayList<HelpLinks>();
+        this.helpLinks.add(new HelpLinks("Rascal", "http://rascal-mpl.org/help/"));
+        this.helpLinks.add(new HelpLinks("Rascal documentation", "http://tutor.rascal-mpl.org/Rascal/Rascal.html"));
+        this.helpLinks.add(new HelpLinks("Rascal recipes", "http://tutor.rascal-mpl.org/Rascal/Recipes.html"));
+        this.helpLinks.add(new HelpLinks("Rascal StackOverflow", "http://stackoverflow.com/questions/tagged/rascal"));
     }
 
     public ContentKernelInfoReply() {
@@ -52,5 +65,10 @@ public class ContentKernelInfoReply extends Content {
         this.implementationVersion = IMPLEMENTATION_VERSION;
         this.languageInfo = new LanguageInfo();
         this.banner = BANNER;
+        this.helpLinks = new ArrayList<HelpLinks>();
+        this.helpLinks.add(new HelpLinks("Rascal", "http://rascal-mpl.org/help/"));
+        this.helpLinks.add(new HelpLinks("Rascal documentation", "http://tutor.rascal-mpl.org/Rascal/Rascal.html"));
+        this.helpLinks.add(new HelpLinks("Rascal recipes", "http://tutor.rascal-mpl.org/Rascal/Recipes.html"));
+        this.helpLinks.add(new HelpLinks("Rascal StackOverflow", "http://stackoverflow.com/questions/tagged/rascal"));
     }
 }
