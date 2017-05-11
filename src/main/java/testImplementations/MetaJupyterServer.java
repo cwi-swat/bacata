@@ -30,6 +30,7 @@ import com.google.gson.JsonObject;
 import communication.Header;
 import entities.ContentDisplayData;
 import entities.ContentExecuteInput;
+import entities.ContentStream;
 import entities.reply.ContentCompleteReply;
 import entities.reply.ContentExecuteReplyError;
 import entities.reply.ContentExecuteReplyOk;
@@ -84,46 +85,29 @@ public class MetaJupyterServer extends JupyterServer{
 			if(contentExecuteRequest.isStoreHistory())
 			{
 				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, new JsonObject(), new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
-				boolean richContent = false;
-				// TODO how to differentiate between display data and execute_result?
-				if(contentExecuteRequest.getCode().startsWith("println("))
-				{
-					richContent = true;
-				}
+
 				try {
-					// TODO publish result 
-//					this.language.handleInput("import IO;");
-//					stdout.getBuffer().setLength(0);
-//					stdout.flush();
-					
-					this.language.handleInput(contentExecuteRequest.getCode());
 					Map<String, String> data = new HashMap<>();
-					//			        data.put("text/html", "<svg viewBox=\"0 0 500 100\" class=\"chart\"><polyline fill=\"none\" stroke=\"#0074d9\" stroke-width=\"2\" points=\" 00,120 20,60 40,80 60,20 80,80 100,80\"/></svg>");
+					Map<String, String> metadata = new HashMap<>();
+					
+					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
+					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
+
 					if(!stdout.toString().trim().equals("")){
-						sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
-						if(richContent)
-							data.put("text/html", "<p style=\"color:gray; \"> Console: " +stdout.toString()+ "</p>");
-						else
-							data.put("text/plain", stdout.toString());
-						
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, new JsonObject(), new ContentStream("stdout", stdout.toString()));
 						stdout.getBuffer().setLength(0);
 						stdout.flush();
 					}
+
 					if(!stderr.toString().trim().equals("")){
-						sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyError(stderr.toString(), stderr.toString(), null));
-						data.put("text/plain", stderr.toString());
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, new JsonObject(), new ContentStream("stderr", stderr.toString()));
 						stderr.getBuffer().setLength(0);
 						stderr.flush();
 					}
-					
-					if(richContent){
-						ContentDisplayData contentDisplay =  new ContentDisplayData(data, new HashMap<String, String>(), new HashMap<String, String>());
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new JsonObject(), contentDisplay);
-					}
-					else{
-						ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, new HashMap<String, String>());
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
-					}
+
+					// sends the result
+					ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, metadata);
+					sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
 
 				} catch (InterruptedException e) {
 					e.printStackTrace();

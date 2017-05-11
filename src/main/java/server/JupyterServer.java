@@ -82,7 +82,6 @@ public abstract class JupyterServer {
 
 	public void startServer(){
 		while (!Thread.currentThread().isInterrupted()) {
-
 			poller.poll();
 			if(poller.pollin(0))
 				listenShellSocket();
@@ -95,7 +94,6 @@ public abstract class JupyterServer {
 		}
 	}
 
-
 	private void listenPublishSocket() {
 		System.out.println("Publish socket");
 		String zmqIdentity=communication.getPublish().recvStr(ZMQ.DONTWAIT);
@@ -106,7 +104,6 @@ public abstract class JupyterServer {
 		String metadata = communication.getPublish().recvStr();
 		String content = communication.getPublish().recvStr();
 	}
-
 
 	public void listenShellSocket() {
 		String zmqIdentity=communication.getRequests().recvStr(ZMQ.DONTWAIT);

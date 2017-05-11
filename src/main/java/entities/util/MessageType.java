@@ -22,7 +22,7 @@ public class MessageType {
     public final static String COMPLETE_REQUEST = "complete_request";
 
     public final static String INSPECT_REQUEST = "inspect_request";
-
+    
     // -----------------------------------------------------------------
     // Reply constants
     // -----------------------------------------------------------------
@@ -51,6 +51,8 @@ public class MessageType {
     public final static String STATUS = "status";
     
     public final static String EXECUTE_INPUT = "execute_input";
+    
+    public final static String STREAM = "stream";
 
 
 }

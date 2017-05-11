@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "java",
+    "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000",
+    "-jar",
+      "/Users/mveranom/Documents/Rascal/JupyterKernel/target/JupyterJavaKernel-1.0-SNAPSHOT-jar-with-dependencies.jar",
+    "{connection_file}"
+  ],
+  "display_name": "Rascal Kernel",
+  "language": "java"
+}
