@@ -1,2 +1,2 @@
-# rascal-codemirror
-Simple codemirror for [Rascal](http://rascal-mpl.org/) Metaprogramming language 
+# Rascal CodeMirror
+Simple CodeMirror for [Rascal](http://rascal-mpl.org/) Metaprogramming language 
