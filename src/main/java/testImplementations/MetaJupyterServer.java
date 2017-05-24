@@ -36,6 +36,7 @@ import entities.reply.ContentExecuteReplyError;
 import entities.reply.ContentExecuteReplyOk;
 import entities.reply.ContentExecuteResult;
 import entities.reply.ContentIsCompleteReply;
+import entities.reply.ContentKernelInfoReply;
 import entities.reply.ContentShutdownReply;
 import entities.request.ContentCompleteRequest;
 import entities.request.ContentExecuteRequest;
@@ -106,8 +107,11 @@ public class MetaJupyterServer extends JupyterServer{
 					}
 
 					// sends the result
-					ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, metadata);
-					sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
+					if(!data.isEmpty())
+					{
+						ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, metadata);
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
+					}
 
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -128,6 +132,10 @@ public class MetaJupyterServer extends JupyterServer{
 	@Override
 	public void processHistoryRequest(Header parentHeader) {
 		// TODO This is only for clients to explicitly request history from a kernel
+	}
+	@Override
+	public void processKernelInfoRequest(Header parentHeader){
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply("rascal"));
 	}
 
 	@Override
@@ -166,22 +174,6 @@ public class MetaJupyterServer extends JupyterServer{
 			indent = "??????";
 		}
 		sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new JsonObject(), new ContentIsCompleteReply(status, indent));
-	}
-
-	/**
-	 * Publish result
-	 */
-	@Override
-	public void processExecuteResult(Header parentHeader, String code, int executionNumber) {
-		// TODO In rascal this is done by the handleInput method
-		//		System.out.println("EXECUTE_RESULT");
-		//        Map<String, String> data = new HashMap<>();
-		//        data.put("text/plain", "kernel answer");
-		//        data.put("text/plain", code);
-		//        ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, new HashMap<String, String>());
-		//        sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new JsonObject(), content);
-		//        sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
-
 	}
 
 	private static RascalInterpreterREPL makeInterpreter() throws IOException, URISyntaxException {

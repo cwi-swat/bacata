@@ -75,6 +75,10 @@ public class TestCaseServer extends JupyterServer {
             status = Status.UNKNOWN;
         sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new JsonObject(), new ContentIsCompleteReply(status, indent));
     }
+    @Override
+    public void processKernelInfoRequest(Header parentHeader){
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply("rascal"));
+	}
 
     /**
      * This method processes the execute_request message and replies with a execute_reply message.
@@ -93,7 +97,6 @@ public class TestCaseServer extends JupyterServer {
     /**
      * 
      */
-	@Override
 	public void processExecuteResult(Header parentHeader, String code, int executionNumber) {
 		System.out.println("EXECUTE_RESULT");
         Map<String, String> data = new HashMap<>();

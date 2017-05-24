@@ -59,11 +59,11 @@ public class ContentKernelInfoReply extends Content {
         this.helpLinks.add(new HelpLinks("Rascal StackOverflow", "http://stackoverflow.com/questions/tagged/rascal"));
     }
 
-    public ContentKernelInfoReply() {
+    public ContentKernelInfoReply(String codemirror) {
         this.protocolVersion = PROTOCOL_VERSION;
         this.implementation = IMPLEMENTATION;
         this.implementationVersion = IMPLEMENTATION_VERSION;
-        this.languageInfo = new LanguageInfo();
+        this.languageInfo = new LanguageInfo(codemirror);
         this.banner = BANNER;
         this.helpLinks = new ArrayList<HelpLinks>();
         this.helpLinks.add(new HelpLinks("Rascal", "http://rascal-mpl.org/help/"));

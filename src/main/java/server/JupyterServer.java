@@ -201,9 +201,7 @@ public abstract class JupyterServer {
 	/**
 	 * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
 	 */
-	public void processKernelInfoRequest(Header parentHeader){
-		sendMessage(communication.getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
-	}
+	public abstract void processKernelInfoRequest(Header parentHeader);
 
 	/**
 	 * This method processes the shutdown_request message and replies with a shutdown_reply message.
@@ -216,8 +214,6 @@ public abstract class JupyterServer {
 	 * @param content
 	 */
 	public abstract void processIsCompleteRequest(Header header, ContentIsCompleteRequest content);
-
-	public abstract void processExecuteResult(Header parentHeader, String code, int executionNumber);
 
 	/**
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.

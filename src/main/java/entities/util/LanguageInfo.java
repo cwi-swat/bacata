@@ -10,13 +10,13 @@ public class LanguageInfo {
     // Constants
     // -----------------------------------------------------------------
 
-    public static final String LANGUAGE_NAME = "java";
+    public static final String LANGUAGE_NAME = "Rascal";
 
     public static final String LANGUAGE_VERSION = "1.8.0_77";
 
-    public static final String LANGUAGE_MIMETYPE = "text/x-java";
+    public static final String LANGUAGE_MIMETYPE = "text/x-rascal";
 
-    public static final String LANGUAGE_EXTENSION = ".java";
+    public static final String LANGUAGE_EXTENSION = ".rsc";
 
     // -----------------------------------------------------------------
     // Fields
@@ -32,7 +32,7 @@ public class LanguageInfo {
 
     private String pygmentsLexer;
 
-    private String codemirrorMode;
+    private CodeMirrorMode codemirrorMode;
 
     private String nbconvertExporter;
 
@@ -40,13 +40,13 @@ public class LanguageInfo {
     // Constructor
     // -----------------------------------------------------------------
 
-    public LanguageInfo() {
+    public LanguageInfo(String codemirrorName) {
         this.name = LANGUAGE_NAME;
         this.version = LANGUAGE_VERSION;
         this.mimetype = LANGUAGE_MIMETYPE;
         this.file_extension = LANGUAGE_EXTENSION;
         this.pygmentsLexer = null;
-        this.codemirrorMode = "clike";
+        this.codemirrorMode = new CodeMirrorMode(codemirrorName);
         this.nbconvertExporter = null;
     }
 
@@ -84,20 +84,12 @@ public class LanguageInfo {
         return pygmentsLexer;
     }
 
-    public String getCodemirrorMode() {
-        return codemirrorMode;
-    }
-
     public String getNbconvertExporter() {
         return nbconvertExporter;
     }
 
     public void setPygmentsLexer(String pygmentsLexer) {
         this.pygmentsLexer = pygmentsLexer;
-    }
-
-    public void setCodemirrorMode(String codemirroMode) {
-        this.codemirrorMode = codemirroMode;
     }
 
     public void setNbconvertExporter(String nbconvertExporter) {
