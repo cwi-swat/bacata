@@ -46,18 +46,14 @@
         indent: true
       },
       {
-        regex: /\/(?:[^\\]|\\.)*?\//,
-        token: 'variable-3',
+        regex: /^\|.*\|$/,
+        token: 'string',
       },
       // A next property will cause the mode to move to a different state
       {
         regex: /\/\*/,
         token: 'comment',
         next: 'comment',
-      },
-      {
-        regex: /[-+\/*=<>!]+/,
-        token: 'operator',
       },
       // indent and dedent properties guide autoindentation
       {
@@ -67,6 +63,10 @@
       {
         regex: /[\}\]\)]/,
         dedent: true,
+      },
+      {
+        regex: /[-+*=<>!]+/,
+        token: 'operator',
       },
       {
         regex: /[a-z$][\w$]*/,
