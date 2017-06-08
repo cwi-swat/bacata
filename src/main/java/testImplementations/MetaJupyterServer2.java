@@ -20,20 +20,12 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.rascalmpl.debug.IRascalFrame;
 import org.rascalmpl.interpreter.Evaluator;
-import org.rascalmpl.interpreter.env.GlobalEnvironment;
-import org.rascalmpl.interpreter.env.ModuleEnvironment;
-import org.rascalmpl.interpreter.load.StandardLibraryContributor;
-import org.rascalmpl.interpreter.result.ICallableValue;
 import org.rascalmpl.library.util.TermREPL;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
-import org.rascalmpl.uri.URIUtil;
-import org.rascalmpl.values.ValueFactoryFactory;
 import org.zeromq.ZMQ.Socket;
 import com.google.gson.JsonObject;
 import communication.Header;
@@ -54,11 +46,9 @@ import entities.request.ContentShutdownRequest;
 import entities.util.Content;
 import entities.util.MessageType;
 import entities.util.Status;
-import io.usethesource.vallang.IConstructor;
-import io.usethesource.vallang.IValueFactory;
 import server.JupyterServer;
 
-public class MetaJupyterServer extends JupyterServer{
+public class MetaJupyterServer2 extends JupyterServer{
 
 	// -----------------------------------------------------------------
 	// Fields
@@ -76,13 +66,14 @@ public class MetaJupyterServer extends JupyterServer{
 	// Constructor
 	// -----------------------------------------------------------------
 
-	public MetaJupyterServer(String connectionFilePath) throws Exception {
+	public MetaJupyterServer2(String connectionFilePath) throws Exception {
 		super(connectionFilePath);
 		executionNumber = 1;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-//		this.language = makeInterpreter();
-		this.language = makeAmalgaInterpreter();
+		
+//		this.language = new TermREPL(null);
+		
 		this.language.initialize(stdout, stderr);
 		startServer();
 	}
@@ -196,23 +187,6 @@ public class MetaJupyterServer extends JupyterServer{
 			}
 		};
 	}
-	
-	private static ILanguageProtocol makeAmalgaInterpreter() throws IOException, URISyntaxException {
-		GlobalEnvironment heap = new GlobalEnvironment();
-		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$amalgaRepl$", heap));
-		IValueFactory vf = ValueFactoryFactory.getValueFactory();
-		Evaluator eval = new Evaluator(vf, new PrintWriter(System.err), new PrintWriter(System.out), root, heap);
-		eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
-//		eval.addRascalSearchPath(URIUtil.rootLocation("library"));
-//		eval.doImport(null, "util::amalga::AmalgaREPL");
-//		ModuleEnvironment module = eval.getHeap().getModule("util::amalga::AmalgaREPL");
-//		IConstructor repl = (IConstructor) module.getSimpleVariable("amalgaRepl").getValue();
-		eval.addRascalSearchPath(URIUtil.rootLocation("lang"));
-		eval.doImport(null, "lang::amalga::AmalgaREPL");
-		ModuleEnvironment module = eval.getHeap().getModule("lang::amalga::AmalgaREPL");
-		IConstructor repl = (IConstructor) module.getSimpleVariable("amalgaRepl").getValue();
-		return new TermREPL.TheREPL(vf, repl, eval);
-	}
 
 	@Override
 	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request) {
@@ -236,7 +210,7 @@ public class MetaJupyterServer extends JupyterServer{
 
 	public static void main(String[] args) {
 		try {
-			MetaJupyterServer mv =  new MetaJupyterServer(args[0]);
+			MetaJupyterServer2 mv =  new MetaJupyterServer2(args[0]);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
