@@ -46,24 +46,24 @@ public class ContentKernelInfoReply extends Content {
     // Constructor
     // -----------------------------------------------------------------
 
-    public ContentKernelInfoReply(String protocolVersion, String implementation, String implementationVersion, LanguageInfo languageInformation, String banner) {
+    public ContentKernelInfoReply(String protocolVersion, String implementation, String implementationVersion, LanguageInfo languageInformation, String banner, List<HelpLinks> links) {
         this.protocolVersion = protocolVersion;
         this.implementation = implementation;
         this.implementationVersion = implementationVersion;
         this.languageInfo = languageInformation;
         this.banner = banner;
-        this.helpLinks = new ArrayList<HelpLinks>();
-        this.helpLinks.add(new HelpLinks("Rascal", "http://rascal-mpl.org/help/"));
-        this.helpLinks.add(new HelpLinks("Rascal documentation", "http://tutor.rascal-mpl.org/Rascal/Rascal.html"));
-        this.helpLinks.add(new HelpLinks("Rascal recipes", "http://tutor.rascal-mpl.org/Rascal/Recipes.html"));
-        this.helpLinks.add(new HelpLinks("Rascal StackOverflow", "http://stackoverflow.com/questions/tagged/rascal"));
+        this.helpLinks = links;
     }
 
-    public ContentKernelInfoReply(String codemirror) {
+    /**
+     * Kernel information for the Rascal Language.
+     * @param codemirror
+     */
+    public ContentKernelInfoReply() {
         this.protocolVersion = PROTOCOL_VERSION;
         this.implementation = IMPLEMENTATION;
         this.implementationVersion = IMPLEMENTATION_VERSION;
-        this.languageInfo = new LanguageInfo(codemirror);
+        this.languageInfo = new LanguageInfo("rascal");
         this.banner = BANNER;
         this.helpLinks = new ArrayList<HelpLinks>();
         this.helpLinks.add(new HelpLinks("Rascal", "http://rascal-mpl.org/help/"));
