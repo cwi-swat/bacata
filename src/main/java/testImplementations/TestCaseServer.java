@@ -10,9 +10,12 @@ import entities.request.ContentShutdownRequest;
 import entities.util.MessageType;
 import entities.util.Status;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.rascalmpl.repl.ILanguageProtocol;
 import org.zeromq.ZMQ;
 import server.JupyterServer;
 
@@ -77,7 +80,7 @@ public class TestCaseServer extends JupyterServer {
     }
     @Override
     public void processKernelInfoRequest(Header parentHeader){
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply("rascal"));
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
 	}
 
     /**
@@ -139,4 +142,10 @@ public class TestCaseServer extends JupyterServer {
             e.printStackTrace();
         }
     }
+
+	@Override
+	public ILanguageProtocol makeInterpreter() throws IOException, URISyntaxException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
