@@ -17,12 +17,16 @@ import entities.util.ContentStatus;
 import entities.util.MessageType;
 import entities.util.Status;
 import org.apache.commons.codec.binary.Hex;
+import org.rascalmpl.repl.ILanguageProtocol;
+import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.zeromq.ZMQ;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
@@ -60,6 +64,7 @@ public abstract class JupyterServer {
 	private Communication communication;
 
 	private ZMQ.Poller poller;
+	
 	// -----------------------------------------------------------------
 	// Constructor
 	// -----------------------------------------------------------------
@@ -177,45 +182,6 @@ public abstract class JupyterServer {
 	}
 
 	/**
-	 * This method processes the execute_request message and replies with a execute_reply message.
-	 */
-	public abstract void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest);
-
-	/**
-	 * This method processes the complete_request message and replies with a complete_reply message.
-	 */
-	public abstract void processCompleteRequest(Header parentHeader, ContentCompleteRequest request);
-
-	/**
-	 * This method processes the history_request message and replies with a history_reply message.
-	 */
-	public abstract void processHistoryRequest(Header parentHeader);
-
-	/**
-	 * This method updates the kernel status with the value received as a parameter.
-	 */
-	public void statusUpdate(Header parentHeader, String status) {
-		sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.STATUS), parentHeader, new JsonObject(), new ContentStatus(status));
-	}
-
-	/**
-	 * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
-	 */
-	public abstract void processKernelInfoRequest(Header parentHeader);
-
-	/**
-	 * This method processes the shutdown_request message and replies with a shutdown_reply message.
-	 */
-	public abstract void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown);
-
-	/**
-	 * This method processes the is_complete_request message and replies with a is_complete_reply message.
-	 * @param header
-	 * @param content
-	 */
-	public abstract void processIsCompleteRequest(Header header, ContentIsCompleteRequest content);
-
-	/**
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
 	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, JsonObject metadata, Content content) {
@@ -270,6 +236,55 @@ public abstract class JupyterServer {
 	public Gson getParser() {
 		return parser;
 	}
+	
+	/**
+	 * This method updates the kernel status with the value received as a parameter.
+	 */
+	public void statusUpdate(Header parentHeader, String status) {
+		sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.STATUS), parentHeader, new JsonObject(), new ContentStatus(status));
+	}
 
+	// -----------------------------------------------------------------
+	// Abstract methods
+	// -----------------------------------------------------------------
+	
+	/**
+	 * This method processes the execute_request message and replies with a execute_reply message.
+	 */
+	public abstract void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest);
 
+	/**
+	 * This method processes the complete_request message and replies with a complete_reply message.
+	 */
+	public abstract void processCompleteRequest(Header parentHeader, ContentCompleteRequest request);
+
+	/**
+	 * This method processes the history_request message and replies with a history_reply message.
+	 */
+	public abstract void processHistoryRequest(Header parentHeader);
+
+	/**
+	 * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
+	 */
+	public abstract void processKernelInfoRequest(Header parentHeader);
+
+	/**
+	 * This method processes the shutdown_request message and replies with a shutdown_reply message.
+	 */
+	public abstract void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown);
+
+	/**
+	 * This method processes the is_complete_request message and replies with a is_complete_reply message.
+	 * @param header
+	 * @param content
+	 */
+	public abstract void processIsCompleteRequest(Header header, ContentIsCompleteRequest content);
+
+	/**
+	 * This method creates the interpreter to be used as a REPL
+	 * @return
+	 * @throws IOException
+	 * @throws URISyntaxException
+	 */
+	public abstract ILanguageProtocol makeInterpreter() throws IOException, URISyntaxException;
 }
