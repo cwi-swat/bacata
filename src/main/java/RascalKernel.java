@@ -66,7 +66,7 @@ public class RascalKernel extends JupyterServer{
 		executionNumber = 1;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-		this.language = makeInterpreter();
+		this.language = makeInterpreter(null, null);
 		this.language.initialize(stdout, stderr);
 		startServer();
 	}
@@ -189,7 +189,7 @@ public class RascalKernel extends JupyterServer{
 	}
 
 	@Override
-	public ILanguageProtocol makeInterpreter() throws IOException, URISyntaxException {
+	public ILanguageProtocol makeInterpreter(String moduleName, String variableName) throws IOException, URISyntaxException {
 		return new RascalInterpreterREPL() {
 			@Override
 			protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
