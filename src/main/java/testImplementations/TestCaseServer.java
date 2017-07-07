@@ -144,7 +144,7 @@ public class TestCaseServer extends JupyterServer {
     }
 
 	@Override
-	public ILanguageProtocol makeInterpreter() throws IOException, URISyntaxException {
+	public ILanguageProtocol makeInterpreter(String moduleName, String variableName) throws IOException, URISyntaxException {
 		// TODO Auto-generated method stub
 		return null;
 	}

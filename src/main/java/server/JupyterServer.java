@@ -282,9 +282,11 @@ public abstract class JupyterServer {
 
 	/**
 	 * This method creates the interpreter to be used as a REPL
+	 * @param moduleName
+	 * @param variableName
 	 * @return
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	public abstract ILanguageProtocol makeInterpreter() throws IOException, URISyntaxException;
+	public abstract ILanguageProtocol makeInterpreter(String moduleName, String variableName) throws IOException, URISyntaxException;
 }
