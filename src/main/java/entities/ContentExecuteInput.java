@@ -13,5 +13,4 @@ public class ContentExecuteInput extends Content{
 		this.executionCount = executionCount;
 	}
 	
-	
 }

@@ -22,4 +22,5 @@ public class ContentHistoryReply extends Content {
     public ContentHistoryReply() {
         this.history = new ArrayList<String>();
     }
+    
 }

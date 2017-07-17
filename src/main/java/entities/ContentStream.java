@@ -14,6 +14,7 @@ public class ContentStream extends Content{
 	// -----------------------------------------------------------------
 	// Constructor
 	// -----------------------------------------------------------------
+	
 	public ContentStream(String name, String text) {
 		super();
 		this.name = name;

@@ -16,6 +16,8 @@ import entities.util.Content;
 import entities.util.ContentStatus;
 import entities.util.MessageType;
 import entities.util.Status;
+import io.usethesource.vallang.ISourceLocation;
+
 import org.apache.commons.codec.binary.Hex;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.repl.RascalInterpreterREPL;
@@ -282,11 +284,12 @@ public abstract class JupyterServer {
 
 	/**
 	 * This method creates the interpreter to be used as a REPL
+	 * @param source
 	 * @param moduleName
 	 * @param variableName
 	 * @return
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	public abstract ILanguageProtocol makeInterpreter(String moduleName, String variableName) throws IOException, URISyntaxException;
+	public abstract ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName) throws IOException, URISyntaxException;
 }

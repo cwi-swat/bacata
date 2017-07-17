@@ -19,4 +19,5 @@ public class ContentShutdownReply extends Content {
     public ContentShutdownReply(boolean pRestart) {
         this.restart = pRestart;
     }
+    
 }
