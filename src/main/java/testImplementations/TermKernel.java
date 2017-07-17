@@ -10,9 +10,11 @@ import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
+import org.rascalmpl.interpreter.load.URIContributor;
 import org.rascalmpl.library.util.TermREPL;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
+import org.rascalmpl.uri.libraries.ClassResourceInput;
 import org.rascalmpl.values.ValueFactoryFactory;
 import org.zeromq.ZMQ.Socket;
 import com.google.gson.JsonObject;
@@ -32,6 +34,7 @@ import entities.request.ContentShutdownRequest;
 import entities.util.MessageType;
 import entities.util.Status;
 import io.usethesource.vallang.IConstructor;
+import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IValueFactory;
 import server.JupyterServer;
 
@@ -53,12 +56,12 @@ public class TermKernel extends JupyterServer{
 	// Constructor
 	// -----------------------------------------------------------------
 
-	public TermKernel(String connectionFilePath, String moduleName, String variableName) throws Exception {
+	public TermKernel(String connectionFilePath, String source, String moduleName, String variableName) throws Exception {
 		super(connectionFilePath);
 		executionNumber = 1;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-		this.language = makeInterpreter(moduleName, variableName);
+		this.language = makeInterpreter(source, moduleName, variableName);
 		this.language.initialize(stdout, stderr);
 		startServer();
 	}
@@ -181,33 +184,23 @@ public class TermKernel extends JupyterServer{
 	}
 
 	@Override
-	public ILanguageProtocol makeInterpreter(String moduleName, String variableName)  {
+	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName)  {
 		GlobalEnvironment heap = new GlobalEnvironment();
 		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$"+variableName+"$", heap));
 		IValueFactory vf = ValueFactoryFactory.getValueFactory();
 		Evaluator eval = new Evaluator(vf, new PrintWriter(System.err), new PrintWriter(System.out), root, heap);
+		
 		eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
 		
-//		ISourceLocation ggg = vf.sourceLocation(URI.create("project://amalga/src"));
-//		eval.addRascalSearchPath(URIUtil.rootLocation("project://amalga/src/lang/amalga"));
-//		eval.addRascalSearchPath(URIUtil.rootLocation("amalga/src/lang/amalga"));
-//		eval.addRascalSearchPath(URIUtil.rootLocation("file://amalga"));
+		try {
+			eval.addRascalSearchPathContributor(new URIContributor(vf.sourceLocation("file", null, source)));
+		} catch (URISyntaxException e1) {
+			e1.printStackTrace();
+		}
 		
 		eval.doImport(null, moduleName);
 		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
 		IConstructor repl = (IConstructor) module.getSimpleVariable(variableName).getValue();
-		
-//		eval.doImport(null, moduleName);
-//		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
-//		IConstructor repl = (IConstructor) module.getSimpleVariable(variableName).getValue();
-		
-		//---------------
-//		eval.addRascalSearchPathContributor(new URIContributor(URIUtil.rootLocation("project://amalga")));
-//		eval.addRascalSearchPath(URIUtil.rootLocation("amalga"));
-//		eval.doImport(null, "util::amalga::AmalgaREPL");
-//		ModuleEnvironment module = eval.getHeap().getModule("util::amalga::AmalgaREPL");
-//		IConstructor repl = (IConstructor) module.getSimpleVariable("amalgaRepl").getValue();
-		
 		try {
 			return new TermREPL.TheREPL(vf, repl, eval);
 		} catch (IOException e) {
@@ -226,7 +219,7 @@ public class TermKernel extends JupyterServer{
 	public static void main(String[] args) {
 		try {
 //			module to import, name of the variable
-			TermKernel kernel =  new TermKernel(args[0], args[1], args[2]);
+			TermKernel kernel =  new TermKernel(args[0], args[1], args[2], args[3]);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
