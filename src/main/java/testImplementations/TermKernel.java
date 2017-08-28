@@ -31,6 +31,7 @@ import entities.request.ContentCompleteRequest;
 import entities.request.ContentExecuteRequest;
 import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
+import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 import io.usethesource.vallang.IConstructor;
@@ -51,13 +52,16 @@ public class TermKernel extends JupyterServer{
 	private StringWriter stdout;
 
 	private StringWriter stderr;
+	
+	private String languageName;
 
 	// -----------------------------------------------------------------
 	// Constructor
 	// -----------------------------------------------------------------
 
-	public TermKernel(String connectionFilePath, String source, String moduleName, String variableName) throws Exception {
+	public TermKernel(String connectionFilePath, String source, String moduleName, String variableName, String pLanguageName) throws Exception {
 		super(connectionFilePath);
+		languageName = pLanguageName;
 		executionNumber = 1;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
@@ -124,9 +128,11 @@ public class TermKernel extends JupyterServer{
 	public void processHistoryRequest(Header parentHeader) {
 		// TODO This is only for clients to explicitly request history from a kernel
 	}
+	
 	@Override
 	public void processKernelInfoRequest(Header parentHeader){
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
+//		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply(new LanguageInfo(languageName)));
 	}
 
 	@Override
@@ -219,7 +225,7 @@ public class TermKernel extends JupyterServer{
 	public static void main(String[] args) {
 		try {
 //			module to import, name of the variable
-			TermKernel kernel =  new TermKernel(args[0], args[1], args[2], args[3]);
+			TermKernel kernel =  new TermKernel(args[0], args[1], args[2], args[3], args[4]);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -71,4 +71,12 @@ public class ContentKernelInfoReply extends Content {
         this.helpLinks.add(new HelpLinks("Rascal recipes", "http://tutor.rascal-mpl.org/Rascal/Recipes.html"));
         this.helpLinks.add(new HelpLinks("Rascal StackOverflow", "http://stackoverflow.com/questions/tagged/rascal"));
     }
+    
+    public ContentKernelInfoReply(LanguageInfo language) {
+        this.protocolVersion = PROTOCOL_VERSION;
+        this.implementation = IMPLEMENTATION;
+        this.implementationVersion = IMPLEMENTATION_VERSION;
+        this.languageInfo = language;
+        this.banner = BANNER;
+    }
 }
