@@ -81,28 +81,27 @@ public class MetaJupyterServer extends JupyterServer{
 	// -----------------------------------------------------------------
 
 	@Override
-	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest) {
+	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest, Map<String, String> metadata) {
 		if(!contentExecuteRequest.isSilent())
 		{
 			if(contentExecuteRequest.isStoreHistory())
 			{
-				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, new JsonObject(), new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, metadata, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 
 				try {
 					Map<String, String> data = new HashMap<>();
-					Map<String, String> metadata = new HashMap<>();
 					
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
-					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
+					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 
 					if(!stdout.toString().trim().equals("")){
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, new JsonObject(), new ContentStream("stdout", stdout.toString()));
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stdout", stdout.toString()));
 						stdout.getBuffer().setLength(0);
 						stdout.flush();
 					}
 
 					if(!stderr.toString().trim().equals("")){
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, new JsonObject(), new ContentStream("stderr", stderr.toString()));
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stderr", stderr.toString()));
 						stderr.getBuffer().setLength(0);
 						stderr.flush();
 					}
@@ -111,7 +110,7 @@ public class MetaJupyterServer extends JupyterServer{
 					if(!data.isEmpty())
 					{
 						ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, metadata);
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, metadata, content);
 					}
 
 				} catch (InterruptedException e) {
@@ -126,21 +125,21 @@ public class MetaJupyterServer extends JupyterServer{
 		else{
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
-			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
+			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 		}
 	}
 
 	@Override
-	public void processHistoryRequest(Header parentHeader) {
+	public void processHistoryRequest(Header parentHeader, Map<String, String> metadata) {
 		// TODO This is only for clients to explicitly request history from a kernel
 	}
 	@Override
-	public void processKernelInfoRequest(Header parentHeader){
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
+	public void processKernelInfoRequest(Header parentHeader, Map<String, String> metadata){
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, metadata, new ContentKernelInfoReply());
 	}
 
 	@Override
-	public void processShutdownRequest(Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown) {
+	public void processShutdownRequest(Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown, Map<String, String> metadata) {
 		boolean restart = false;
 		if(contentShutdown.getRestart())
 		{
@@ -156,14 +155,14 @@ public class MetaJupyterServer extends JupyterServer{
 			getCommunication().getContext().term();
 			System.exit(-1);
 		}
-		sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, new JsonObject(), new ContentShutdownReply(restart));
+		sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, metadata, new ContentShutdownReply(restart));
 	}
 
 	/**
 	 * This method is executed when the kernel receives a is_complete_request message.
 	 */
 	@Override
-	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request) {
+	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request, Map<String, String> metadata) {
 		//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
 		String status, indent="";
 		if(this.language.isStatementComplete(request.getCode())){
@@ -174,11 +173,11 @@ public class MetaJupyterServer extends JupyterServer{
 			status = Status.INCOMPLETE;
 			indent = "??????";
 		}
-		sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new JsonObject(), new ContentIsCompleteReply(status, indent));
+		sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, metadata, new ContentIsCompleteReply(status, indent));
 	}
 
 	@Override
-	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request) {
+	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata) {
 		int cursorStart =0;
 		ArrayList<String> sugestions;
 		if(request.getCode().startsWith("import ")){
@@ -190,7 +189,7 @@ public class MetaJupyterServer extends JupyterServer{
 		else 
 			sugestions = null;
 		ContentCompleteReply content = new ContentCompleteReply(sugestions, cursorStart, request.getCode().length(), new HashMap<String, String>(), Status.OK);
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new JsonObject(), content);
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, metadata, content);
 	}
 
 	@Override

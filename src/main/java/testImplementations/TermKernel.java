@@ -14,10 +14,8 @@ import org.rascalmpl.interpreter.load.URIContributor;
 import org.rascalmpl.library.util.TermREPL;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
-import org.rascalmpl.uri.libraries.ClassResourceInput;
 import org.rascalmpl.values.ValueFactoryFactory;
 import org.zeromq.ZMQ.Socket;
-import com.google.gson.JsonObject;
 import communication.Header;
 import entities.ContentExecuteInput;
 import entities.ContentStream;
@@ -35,7 +33,6 @@ import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 import io.usethesource.vallang.IConstructor;
-import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IValueFactory;
 import server.JupyterServer;
 
@@ -75,28 +72,26 @@ public class TermKernel extends JupyterServer{
 	// -----------------------------------------------------------------
 
 	@Override
-	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest) {
+	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest, Map<String, String> metadata) {
+		Map<String, String> data = new HashMap<>();
 		if(!contentExecuteRequest.isSilent())
 		{
 			if(contentExecuteRequest.isStoreHistory())
 			{
-				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, new JsonObject(), new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, metadata, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 
 				try {
-					Map<String, String> data = new HashMap<>();
-					Map<String, String> metadata = new HashMap<>();
-
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
-					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
+					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 
 					if(!stdout.toString().trim().equals("")){
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, new JsonObject(), new ContentStream("stdout", stdout.toString()));
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stdout", stdout.toString()));
 						stdout.getBuffer().setLength(0);
 						stdout.flush();
 					}
 
 					if(!stderr.toString().trim().equals("")){
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, new JsonObject(), new ContentStream("stderr", stderr.toString()));
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stderr", stderr.toString()));
 						stderr.getBuffer().setLength(0);
 						stderr.flush();
 					}
@@ -105,7 +100,7 @@ public class TermKernel extends JupyterServer{
 					if(!data.isEmpty())
 					{
 						ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, metadata);
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
+						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, metadata, content);
 					}
 
 				} catch (InterruptedException e) {
@@ -120,23 +115,23 @@ public class TermKernel extends JupyterServer{
 		else{
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
-			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
+			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 		}
 	}
 
 	@Override
-	public void processHistoryRequest(Header parentHeader) {
+	public void processHistoryRequest(Header parentHeader, Map<String, String> metadata) {
 		// TODO This is only for clients to explicitly request history from a kernel
 	}
 	
 	@Override
-	public void processKernelInfoRequest(Header parentHeader){
+	public void processKernelInfoRequest(Header parentHeader, Map<String, String> metadata){
 //		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply(new LanguageInfo(languageName)));
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new HashMap<String, String>(), new ContentKernelInfoReply(new LanguageInfo(languageName)));
 	}
 
 	@Override
-	public void processShutdownRequest(Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown) {
+	public void processShutdownRequest(Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown, Map<String, String> metadata) {
 		boolean restart = false;
 		if(contentShutdown.getRestart())
 		{
@@ -152,14 +147,14 @@ public class TermKernel extends JupyterServer{
 			getCommunication().getContext().term();
 			System.exit(-1);
 		}
-		sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, new JsonObject(), new ContentShutdownReply(restart));
+		sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, new HashMap<String, String>(), new ContentShutdownReply(restart));
 	}
 
 	/**
 	 * This method is executed when the kernel receives a is_complete_request message.
 	 */
 	@Override
-	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request) {
+	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request, Map<String, String> metadata) {
 		//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
 		String status, indent="";
 		if(this.language.isStatementComplete(request.getCode())){
@@ -170,11 +165,11 @@ public class TermKernel extends JupyterServer{
 			status = Status.INCOMPLETE;
 			indent = "??????";
 		}
-		sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new JsonObject(), new ContentIsCompleteReply(status, indent));
+		sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new HashMap<String, String>(), new ContentIsCompleteReply(status, indent));
 	}
 
 	@Override
-	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request) {
+	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata) {
 		int cursorStart =0;
 		ArrayList<String> sugestions;
 		if(request.getCode().startsWith("import ")){
@@ -186,7 +181,7 @@ public class TermKernel extends JupyterServer{
 		else 
 			sugestions = null;
 		ContentCompleteReply content = new ContentCompleteReply(sugestions, cursorStart, request.getCode().length(), new HashMap<String, String>(), Status.OK);
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new JsonObject(), content);
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new HashMap<String, String>(), content);
 	}
 
 	@Override
@@ -203,7 +198,6 @@ public class TermKernel extends JupyterServer{
 		} catch (URISyntaxException e1) {
 			e1.printStackTrace();
 		}
-		
 		eval.doImport(null, moduleName);
 		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
 		IConstructor repl = (IConstructor) module.getSimpleVariable(variableName).getValue();
@@ -225,7 +219,7 @@ public class TermKernel extends JupyterServer{
 	public static void main(String[] args) {
 		try {
 //			module to import, name of the variable
-			TermKernel kernel =  new TermKernel(args[0], args[1], args[2], args[3], args[4]);
+			new TermKernel(args[0], args[1], args[2], args[3], args[4]);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

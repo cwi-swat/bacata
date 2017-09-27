@@ -47,9 +47,9 @@ public class TestCaseServer extends JupyterServer {
      * This method processes the shutdown_request message and replies with a shutdown_reply message.
      */
     @Override
-    public void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown) {
+    public void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown, Map<String, String> metadata) {
         //TODO: verify if its a restarting or a final shutdown command
-        sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, new JsonObject(), new ContentShutdownReply(contentShutdown.getRestart()));
+        sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, metadata, new ContentShutdownReply(contentShutdown.getRestart()));
         getCommunication().getRequests().close();
         getCommunication().getPublish().close();
         getCommunication().getControl().close();
@@ -65,7 +65,7 @@ public class TestCaseServer extends JupyterServer {
      * @param content
      */
     @Override
-    public void processIsCompleteRequest(Header header, ContentIsCompleteRequest content) {
+    public void processIsCompleteRequest(Header header, ContentIsCompleteRequest content, Map<String, String> metadata) {
         System.out.println("CODE: " + content.getCode());
         String status, indent = "";
         if (content.getCode().endsWith(";"))
@@ -76,53 +76,53 @@ public class TestCaseServer extends JupyterServer {
         }
         else
             status = Status.UNKNOWN;
-        sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new JsonObject(), new ContentIsCompleteReply(status, indent));
+        sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, metadata, new ContentIsCompleteReply(status, indent));
     }
     @Override
-    public void processKernelInfoRequest(Header parentHeader){
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
+    public void processKernelInfoRequest(Header parentHeader, Map<String, String> metadata){
+		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, metadata, new ContentKernelInfoReply());
 	}
 
     /**
      * This method processes the execute_request message and replies with a execute_reply message.
      */
     @Override
-    public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest) {
+    public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest, Map<String, String> metadata) {
         System.out.println("PROCESS: " + getParser().toJson(contentExecuteRequest));
         if (contentExecuteRequest.isStoreHistory())
             executionNumber++;
         // TODO evaluate user Expressions
 
-        processExecuteResult(parentHeader, contentExecuteRequest.getCode(), executionNumber);
-        sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new JsonObject(), new ContentExecuteReplyOk(executionNumber));
+        processExecuteResult(parentHeader, contentExecuteRequest.getCode(), executionNumber, metadata);
+        sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
     }
     
     /**
      * 
      */
-	public void processExecuteResult(Header parentHeader, String code, int executionNumber) {
+	public void processExecuteResult(Header parentHeader, String code, int executionNumber, Map<String, String> metadata) {
 		System.out.println("EXECUTE_RESULT");
         Map<String, String> data = new HashMap<>();
         data.put("text/plain", "kernel answer");
         data.put("text/plain", code);
         ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, new HashMap<String, String>());
-        sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new JsonObject(), content);
-        sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, new JsonObject(), content);
+        sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, metadata, content);
+        sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, metadata, content);
 	}
 
     /**
      * This method processes the history_request message and replies with a history_reply message.
      */
     @Override
-    public void processHistoryRequest(Header parentHeader) {
-        sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.HISTORY_REPLY), parentHeader, new JsonObject(), new ContentHistoryReply());
+    public void processHistoryRequest(Header parentHeader, Map<String, String> metadata) {
+        sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.HISTORY_REPLY), parentHeader, metadata, new ContentHistoryReply());
     }
     
     /**
      * 
      */
 	@Override
-	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request) {
+	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata) {
 		// TODO 
 	}
     
