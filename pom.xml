@@ -67,4 +67,11 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+	<!-- dependency resolution configuration (usethesource) -->
+	<!-- <repositories>
+		<repository>
+			<id>usethesource</id>
+			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
+		</repository>
+	</repositories> -->
 </project>
