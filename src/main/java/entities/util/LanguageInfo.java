@@ -32,7 +32,8 @@ public class LanguageInfo {
 
     private String pygmentsLexer;
 
-    private CodeMirrorMode codemirrorMode;
+    @SuppressWarnings("unused")
+	private CodeMirrorMode codemirrorMode;
 
     private String nbconvertExporter;
 

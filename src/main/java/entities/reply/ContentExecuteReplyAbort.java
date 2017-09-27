@@ -10,6 +10,14 @@ public class ContentExecuteReplyAbort extends Content {
     private String status;
 
     public ContentExecuteReplyAbort() {
-        this.status = "abort";
+        this.setStatus("abort");
     }
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
 }
