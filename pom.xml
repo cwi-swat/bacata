@@ -26,7 +26,7 @@
 		<dependency>
 			<groupId>org.rascalmpl</groupId>
 			<artifactId>rascal</artifactId>
-			<version>0.8.4-SNAPSHOT</version>
+			<version>0.9.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -68,10 +68,10 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<!-- dependency resolution configuration (usethesource) -->
-	<!-- <repositories>
+	<repositories>
 		<repository>
 			<id>usethesource</id>
 			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
 		</repository>
-	</repositories> -->
+	</repositories>
 </project>
