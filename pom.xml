@@ -75,6 +75,10 @@
 		</repository>
 	</repositories>
 	
+	<scm>
+		<developerConnection>scm:git:ssh://git@github.com/cwi-swat/bacata-core.git</developerConnection>
+	</scm>
+	
 	<!-- deployment configuration (usethesource) -->
 	<distributionManagement>
 		<repository>
