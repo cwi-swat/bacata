@@ -1,10 +1,18 @@
 node {
   stage 'Clone'
   checkout scm
+  
+  
+	stage('Clone'){
+      checkout scm
+    }
 
-  stage 'Build and Test'
-  def mvnHome = tool 'M3'
-  sh "${mvnHome}/bin/mvn -B clean install"
+	stage('Packaging') {
+  		sh "mvn clean package"
+	}
+    
+	stage('Deploy') {
+  		sh "mvn -s ${env.HOME}/usethesource-maven-settings.xml -DskipTests -B deploy"
+	}
 
-  build job: '../rascal-eclipse-libraries/master', wait: false
 }
