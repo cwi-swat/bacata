@@ -67,7 +67,7 @@
 		</repository>
 	</repositories> -->
 
-	<properties>
+<!-- 	<properties>
 		<tycho-version>1.0.0</tycho-version>
 	</properties>
 	<build>
@@ -88,5 +88,5 @@
                 </configuration>
             </plugin>
         </plugins>
-	</build>
+	</build> -->
 </project>
