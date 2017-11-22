@@ -1,6 +1,7 @@
 module bacata::CodeMirror
 
 import IO;
+import List;
 import String;
 import bacata::Mode;
 
@@ -8,6 +9,10 @@ import bacata::Mode;
 void createCodeMirrorModeFile(Mode mode, loc path){
 	str content = parseMode(mode);
 	writeFile(path, content);
+}
+
+str createCodeMirrorModeFile(Mode mode){
+	return parseMode(mode);
 }
 
 str parseMode(Mode mode) =
@@ -27,10 +32,10 @@ str parseMode(Mode mode) =
   ;
 
 str eval(list[State] states) =
-  "<for(state <- states){> <eval(state)> <}>"
+  "<for(state <- states){> <if(!isEmpty(state.rules)){> <eval(state)> <}> <}>"
   ;
   
-str eval(State state)=
+str eval(State state) =
   "<state.name>: [
   '	<eval(state.rules)>
   ']"
