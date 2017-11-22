@@ -2,11 +2,11 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-<!-- 	<parent>
+	<parent>
 		<groupId>io.usethesource</groupId>
 		<artifactId>pom-parent</artifactId>
 		<version>0.2.0-SNAPSHOT</version>
-	</parent> -->
+	</parent>
 
 	<artifactId>bacata-rascal</artifactId>
 	<groupId>org.rascalmpl</groupId>
@@ -24,8 +24,6 @@
 			<artifactId>impulse</artifactId>
 			<version>0.2.0-SNAPSHOT</version>
 		</dependency>
-		<!-- <dependency> <groupId>org.rascalmpl</groupId> <artifactId>Bacata-core</artifactId> 
-			<version>1.0-SNAPSHOT</version> </dependency> -->
 		<dependency>
 			<groupId>org.rascalmpl</groupId>
 			<artifactId>Bacata-core</artifactId>
@@ -35,7 +33,7 @@
 	</dependencies>
 
 	<scm>
-		<developerConnection>scm:git:https://github.com/cwi-swat/bacata-core.git</developerConnection>
+		<developerConnection>scm:git:https://github.com/cwi-swat/bacata-rascal.git</developerConnection>
 	</scm>
 
 	<!-- dependency resolution configuration (usethesource) -->
