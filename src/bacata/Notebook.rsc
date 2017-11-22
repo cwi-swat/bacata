@@ -11,7 +11,7 @@ import bacata::HTML;
 import bacata::CodeMirror;
 
 	
-data NotebookServer = 
+data NotebookServer =
 	notebook(void () serve, void() stop);	
 	
 data KernelInfo
@@ -23,18 +23,8 @@ loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/
 /*
 * This function starts a notebook WITHOUT a custom codemirror mode
 */
-NotebookServer startNotebookServer(KernelInfo kernelInfo){
+NotebookServer createNotebook(KernelInfo kernelInfo){
 	generateKernel(kernelInfo);
-	int pid = -1;
-	return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid); });
-}
-
-/* 
-* This function starts a notebook with a custom codemirror mode generated based on on the defined mode
-*/
-NotebookServer startNotebookServer(KernelInfo kernelInfo, Mode mode){
-	generateKernel(kernelInfo);
-	generateCodeMirror(mode);
 	int pid = -1;
 	return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid); });
 }
@@ -42,9 +32,9 @@ NotebookServer startNotebookServer(KernelInfo kernelInfo, Mode mode){
 /*
 * This function starts a notebook with a custom codemirror mode generated based on the grammar
 */
-NotebookServer startNotebookServer(KernelInfo kernelInfo, type[&T <: Tree] sym){
+NotebookServer createNotebook(KernelInfo kernelInfo, type[&T <: Tree] sym){
 	generateKernel(kernelInfo);
-	generateCodeMirror(grammar2mode(kernelInfo.languageName, sym));
+	generateCodeMirror(kernelInfo.languageName, sym);
 	int pid = -1;
 	return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid); });
 }
@@ -60,7 +50,8 @@ void copyLogoToKernel(loc urlLogo, loc destPath){
 /*
 * This function creates a code mirror mode using the mode received as parameter and re-builds the notebook front-end project.
 */
-void generateCodeMirror(Mode mode){
+void generateCodeMirror(str languageName, type[&T <: Tree] sym){
+	Mode mode = grammar2mode(languageName, sym);
 	// Jupyter front-end path
 	createCodeMirrorModeFile(mode, JUPYTER_FRONTEND_PATH + "<mode.name>/<mode.name>.js");
 	// Re-build notebook front end
