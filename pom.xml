@@ -37,7 +37,7 @@
 	</scm>
 
 	<!-- dependency resolution configuration (usethesource) -->
-<!-- 	<repositories>
+	<repositories>
 		<repository>
 			<id>usethesource</id>
 			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
@@ -65,9 +65,9 @@
 			<layout>p2</layout>
 			<url>http://nexus.usethesource.io/content/repositories/orbit-tools-r20130827064939/</url>
 		</repository>
-	</repositories> -->
+	</repositories>
 
-<!-- 	<properties>
+	<properties>
 		<tycho-version>1.0.0</tycho-version>
 	</properties>
 	<build>
@@ -88,5 +88,5 @@
                 </configuration>
             </plugin>
         </plugins>
-	</build> -->
+	</build>
 </project>
