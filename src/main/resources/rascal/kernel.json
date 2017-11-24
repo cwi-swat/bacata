@@ -2,7 +2,7 @@
 	"argv": [
 		"java",
 		"-jar",
-		"/Users/mveranom/Documents/neclipse/wt/rascal-notebook/target/rascal-notebook-0.0.1-SNAPSHOT-jar-with-dependencies.jar",
+		"/app/rascal-notebook/target/rascal-notebook-0.0.1-SNAPSHOT-jar-with-dependencies.jar",
 		"{connection_file}"
 	],
 	"display_name": "Rascal",
