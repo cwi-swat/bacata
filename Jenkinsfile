@@ -8,7 +8,7 @@ node {
     }
 
 	stage('Packaging') {
-  		sh "mvn clean package"
+  		sh "mvn -DmainClass=testImplementations.TermKernel clean package"
 	}
     
 	stage('Deploy') {
