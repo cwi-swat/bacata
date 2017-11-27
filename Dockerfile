@@ -1,27 +1,21 @@
-FROM openjdk:8 as javaEnv
+FROM openjdk:8 as javaConfiguration
 
 RUN apt-get update \
     && apt-get install git
+
+RUN apt-get install -y maven
+
+FROM javaConfiguration as cloneBuild
 
 WORKDIR /app
 
 ADD . /app
 
-RUN apt-get install -y maven
-
 RUN mvn clean package
 
-# ------------
-
-FROM javaEnv as build
+FROM cloneBuild as jupyterConfiguration
 
 RUN apt-get install -y python3-pip
-
-WORKDIR /app
-
-COPY --from=0 /app/src/main/resources/ /app
-
-COPY --from=0 /app/target/rascal-notebook-0.0.1-SNAPSHOT-jar-with-dependencies.jar /app
 
 ####### NODE
 RUN pip3 install --upgrade pip
@@ -37,6 +31,14 @@ RUN git clone https://github.com/jupyter/notebook
 
 RUN cd notebook \
     && pip3 install -e .
+
+FROM jupyterConfiguration as appExecution
+
+WORKDIR /app
+
+COPY --from=cloneBuild /app/src/main/resources/ /app
+
+COPY --from=cloneBuild /app/target/rascal-notebook-0.0.1-SNAPSHOT-jar-with-dependencies.jar /app
 
 RUN git clone https://github.com/maveme/rascal-codemirror.git
 
