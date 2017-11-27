@@ -5,13 +5,7 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# ADD . /app
-
 RUN git clone https://github.com/maveme/rascal-notebook
-
-RUN ls
-
-RUN ["java", "-version"]
 
 RUN apt-get install -y maven
 
