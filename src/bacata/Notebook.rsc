@@ -5,6 +5,7 @@ import String;
 import Message;
 import ParseTree;
 import util::REPL;
+import util::Resources;
 import util::ShellExec;
 import bacata::Mode;
 import bacata::HTML;
