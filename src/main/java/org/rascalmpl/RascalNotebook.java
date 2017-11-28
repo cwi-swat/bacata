@@ -33,7 +33,7 @@ import server.JupyterServer;
 
 public class RascalNotebook extends JupyterServer{
 	
-	// -----------------------------------------------------------------
+		// -----------------------------------------------------------------
 		// Fields
 		// -----------------------------------------------------------------
 
@@ -127,7 +127,7 @@ public class RascalNotebook extends JupyterServer{
 			if(contentShutdown.getRestart())
 			{
 				restart = true;
-				// TODO: how can I tell rascal to restart?
+				// TODO: how can I restart rascal?
 			}
 			else{
 				this.language.stop();
@@ -149,7 +149,6 @@ public class RascalNotebook extends JupyterServer{
 			//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
 			String status, indent="";
 			if(this.language.isStatementComplete(request.getCode())){
-				System.out.println("COMPLETO");
 				status = Status.COMPLETE;
 			}
 			else{
