@@ -63,8 +63,12 @@ void generateKernel(KernelInfo kernelInfo){
 	writeFile(|tmp:///<kernelInfo.languageName>|+"kernel.json", createKernelFile(kernelInfo));
 	if(kernelInfo.logo != |tmp:///|)
 		copyLogoToKernel(kernelInfo.logo, |tmp:///<kernelInfo.languageName>|);
-	PID kernelInstallation = createProcess(JUPYTER_PATH, args=["kernelspec", "install", resolveLocation(|tmp:///<kernelInfo.languageName>|).path]);
+	installKernel(|tmp:///<kernelInfo.languageName>|);
 	//killProcess(kernelInstallation);
+}
+
+PID installKernel(loc kernelPath){
+	 return createProcess(JUPYTER_PATH, args=["kernelspec", "install", resolveLocation(kernelPath).path]);
 }
 
 /*
@@ -89,10 +93,11 @@ str createKernelFile(KernelInfo kernelInfo) =
 	"{
   	'	\"argv\": [
     '		\"java\",
+    '       \"-Drascal.path=\"\"
     '		\"-jar\",
     '		\"/Users/mveranom/Documents/Rascal/Bacata-core/target/Bacata-core-1.0-SNAPSHOT-jar-with-dependencies.jar\",
     '		\"{connection_file}\",
-    '		\"<resolveLocation(kernelInfo.projectPath).path>\",
+    '		\"<"<kernelInfo.projectPath>"[1..-1]>\",
     '		\"<kernelInfo.moduleName>\",
     '		\"<kernelInfo.variableName>\",
     '		\"<kernelInfo.languageName>\"
