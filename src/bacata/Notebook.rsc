@@ -93,7 +93,6 @@ str createKernelFile(KernelInfo kernelInfo) =
 	"{
   	'	\"argv\": [
     '		\"java\",
-    '       \"-Drascal.path=\"\"
     '		\"-jar\",
     '		\"/Users/mveranom/Documents/Rascal/Bacata-core/target/Bacata-core-1.0-SNAPSHOT-jar-with-dependencies.jar\",
     '		\"{connection_file}\",
