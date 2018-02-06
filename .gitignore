@@ -8,6 +8,5 @@
 /.ipynb_checkpoints/
 /.settings/
 .classpath
-.project
 bin
 target
