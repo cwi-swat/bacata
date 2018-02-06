@@ -26,7 +26,6 @@ import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.zeromq.ZMQ.Socket;
-import com.google.gson.JsonObject;
 import communication.Header;
 import entities.ContentExecuteInput;
 import entities.ContentStream;
