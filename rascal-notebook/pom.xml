@@ -48,6 +48,10 @@
 			</plugin>
 		</plugins>
 	</build>
+	
+	<scm>
+		<developerConnection>scm:git:ssh://git@github.com/cwi-swat/rascal-notebook.git</developerConnection>
+	</scm>
   <repositories>
 		<repository>
 			<id>usethesource</id>
