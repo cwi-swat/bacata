@@ -1,3 +1,7 @@
 .classpath
 bin
 target
+*.ipynb
+/target/
+/.ipynb_checkpoints/
+/generated_code/
