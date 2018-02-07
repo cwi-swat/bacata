@@ -5,11 +5,13 @@ RUN apt-get update \
 
 WORKDIR /app
 
-RUN git clone https://github.com/maveme/rascal-notebook
+RUN git clone https://github.com/cwi-swat/bacata.git
+
+RUN ls
 
 RUN apt-get install -y maven
 
-RUN cd rascal-notebook \
+RUN cd bacata/rascal-notebook \
     && mvn clean package
 
 # ------------
@@ -20,9 +22,9 @@ RUN apt-get install -y python3-pip
 
 WORKDIR /app
 
-COPY --from=0 /app/rascal-notebook/src/main/resources/ /app
+COPY --from=0 /app/bacata/rascal-notebook/src/main/resources/ /app
 
-COPY --from=0 /app/rascal-notebook/target/rascal-notebook-0.0.1-SNAPSHOT-jar-with-dependencies.jar /app
+COPY --from=0 /app/bacata/rascal-notebook/target/rascal-notebook-0.0.1-SNAPSHOT-jar-with-dependencies.jar /app
 
 ####### NODE
 RUN pip3 install --upgrade pip
