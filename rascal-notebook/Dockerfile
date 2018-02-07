@@ -13,11 +13,11 @@ ADD . /app
 
 RUN mvn clean package
 
-FROM cloneBuild as jupyterConfiguration
+FROM cloneBuild as pythonInstallation
 
 RUN apt-get install -y python3-pip
 
-####### NODE
+####### NodeJS installation
 RUN pip3 install --upgrade pip
 
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -  \
@@ -27,12 +27,15 @@ RUN npm install -g bower
 
 RUN pip3 install --upgrade setuptools pip
 
+####### Jupyter installation
+FROM pythonInstallation as jupyterInstallation
+
 RUN git clone https://github.com/jupyter/notebook
 
 RUN cd notebook \
     && pip3 install -e .
 
-FROM jupyterConfiguration as appExecution
+FROM jupyterInstallation as appExecution
 
 WORKDIR /app
 
