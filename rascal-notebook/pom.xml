@@ -20,7 +20,7 @@
         		<configuration>
         			<archive>
 						<manifest>
-							<mainClass>org.rascalmpl.RascalNotebook</mainClass>
+							<mainClass>org.rascalmpl.bacata.RascalNotebook</mainClass>
 						</manifest>
 					</archive>
           			<descriptorRefs>
@@ -52,7 +52,7 @@
 	<scm>
 		<developerConnection>scm:git:ssh://git@github.com/cwi-swat/rascal-notebook.git</developerConnection>
 	</scm>
-  	<repositories>
+  <repositories>
 		<repository>
 			<id>usethesource</id>
 			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
