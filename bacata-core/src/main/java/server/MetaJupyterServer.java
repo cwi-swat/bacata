@@ -193,7 +193,7 @@ public class MetaJupyterServer extends JupyterServer{
 
 	@Override
 	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName) throws IOException, URISyntaxException {
-		return new RascalInterpreterREPL() {
+		return new RascalInterpreterREPL(true) {
 			@Override
 			protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
 				return ShellEvaluatorFactory.getDefaultEvaluator(new PrintWriter(stdout), new PrintWriter(stderr));
