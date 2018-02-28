@@ -25,7 +25,7 @@ str kernelContent(str languageName, loc projectPath, str variableName, str modul
   	'	\"argv\": [
     '		\"java\",
     '		\"-cp\",
-    '		\".:<resolveLocation(|home:///|).path><"<bacataJar>"[9..-1]>:<resolveLocation(|home:///|).path><"<projectPath>"[9..-4]>\",
+    '		\"<resolveLocation(|home:///|).path><"<bacataJar>"[9..-1]>:<resolveLocation(|home:///|).path><"<projectPath>"[9..-4]>\",
     '		\"bacata.TermKernel\",
     '		\"{connection_file}\",
     '		\"<"<projectPath>"[1..-1]>\",
