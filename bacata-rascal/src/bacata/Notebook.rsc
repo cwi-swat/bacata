@@ -24,8 +24,8 @@ loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/
 /*
 * This function starts a notebook WITHOUT a custom codemirror mode
 */
-NotebookServer createNotebook(KernelInfo kernelInfo){
-	generateKernel(kernelInfo);
+NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false ){
+	generateKernel(kernelInfo, debug);
 	int pid = -1;
 	return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid); });
 }
@@ -59,8 +59,8 @@ void generateCodeMirror(str languageName, type[&T <: Tree] sym){
 	createProcess("/usr/local/bin/node", args=["/usr/local/bin/npm", "run", "build"]);
 }
 
-void generateKernel(KernelInfo kernelInfo){
-	writeFile(|tmp:///<kernelInfo.languageName>|+"kernel.json", createKernelFile(kernelInfo));
+void generateKernel(KernelInfo kernelInfo, bool debug){
+	writeFile(|tmp:///<kernelInfo.languageName>|+"kernel.json", createKernelFile(kernelInfo, debug));
 	if(kernelInfo.logo != |tmp:///|)
 		copyLogoToKernel(kernelInfo.logo, |tmp:///<kernelInfo.languageName>|);
 	installKernel(|tmp:///<kernelInfo.languageName>|);
@@ -89,11 +89,12 @@ PID startJupyterServer(){
 * This function produces the content of the kernel.json file using the kernel information received as parameter.
 */
 //    '		\"-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 \",
-str createKernelFile(KernelInfo kernelInfo) = 
+str createKernelFile(KernelInfo kernelInfo, bool debug) = 
 	"{
   	'	\"argv\": [
     '		\"java\",
     '		\"-jar\",
+    ' 		<if(debug){>\"-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 \",<}>
     '		\"/Users/mveranom/Documents/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT-jar-with-dependencies.jar\",
     '		\"{connection_file}\",
     '		\"<"<kernelInfo.projectPath>"[1..-1]>\",
