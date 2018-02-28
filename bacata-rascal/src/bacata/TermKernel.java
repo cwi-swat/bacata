@@ -199,18 +199,20 @@ public class TermKernel extends JupyterServer{
 		eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
 		
 		try {
-			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI(source.toString())));
-			// FIXME : How to define/import the salix path 
+			// FIXME : How to define/import the salix path and the current project path
 			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI("home:///Documents/RascalProjects/salix/src")));
+			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI("home:///Documents/bacata/bacata-rascal/src")));
+//			String s =System.getProperty("user.dir");
+			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI(source.toString())));
 		} catch (URISyntaxException e1) {
 			e1.printStackTrace();
 		}
+		
 		eval.doImport(null, "salix::App");
 		eval.doImport(null, "bacata::salix::Bridge");
 		eval.doImport(null, moduleName);
+		
 		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
-		
-		
 		Result<IValue> var = module.getSimpleVariable(variableName);
 		IConstructor repl = (var != null ? (IConstructor) var.getValue() : (IConstructor) eval.call(variableName, new IValue[]{}));
 		
