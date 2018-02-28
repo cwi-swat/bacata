@@ -6,19 +6,18 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
 import org.rascalmpl.interpreter.load.URIContributor;
+import org.rascalmpl.interpreter.result.Result;
 import org.rascalmpl.library.util.TermREPL;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
 import org.zeromq.ZMQ.Socket;
-
 import communication.Header;
 import entities.ContentExecuteInput;
 import entities.ContentStream;
@@ -36,6 +35,7 @@ import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 import io.usethesource.vallang.IConstructor;
+import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
 import server.JupyterServer;
 
@@ -200,22 +200,26 @@ public class TermKernel extends JupyterServer{
 		
 		try {
 			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI(source.toString())));
+			// FIXME : How to define/import the salix path 
+			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI("home:///Documents/RascalProjects/salix/src")));
 		} catch (URISyntaxException e1) {
 			e1.printStackTrace();
 		}
+		eval.doImport(null, "salix::App");
+		eval.doImport(null, "bacata::salix::Bridge");
 		eval.doImport(null, moduleName);
 		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
-		IConstructor repl = (IConstructor) module.getSimpleVariable(variableName).getValue();
 		
-		// TODO throw the exceptions and deal with it later in the "main"
+		
+		Result<IValue> var = module.getSimpleVariable(variableName);
+		IConstructor repl = (var != null ? (IConstructor) var.getValue() : (IConstructor) eval.call(variableName, new IValue[]{}));
+		
 		try {
 			return new TermREPL.TheREPL(vf, repl, eval);
-		} catch (IOException e) {
+		} catch (IOException| URISyntaxException e) {
 			e.printStackTrace();
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
+			return null;
 		}
-		return null;
 	}
 	
 
