@@ -16,7 +16,7 @@ data NotebookServer =
 	notebook(void () serve, void() stop);	
 	
 data KernelInfo
-	= kernelInfo(str languageName, loc projectPath, str moduleName, str variableName, loc logo = |tmp:///|);
+	= kernelInfo(str languageName, loc projectPath, str moduleName, str variableName, loc salixPath= |tmp:///|, loc logo = |tmp:///|);
 
 str JUPYTER_PATH = "/Library/Frameworks/Python.framework/Versions/3.6/bin/jupyter";
 loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/static/components/codemirror/mode/|;
@@ -101,6 +101,7 @@ str createKernelFile(KernelInfo kernelInfo, bool debug) =
     '		\"<kernelInfo.moduleName>\",
     '		\"<kernelInfo.variableName>\",
     '		\"<kernelInfo.languageName>\"
+    ' 		<if(kernelInfo.salixPath != |tmp:///|){>,\"<"<kernelInfo.salixPath>"[1..-1]> \"<}>
   	'	],
   	'	\"display_name\": \"<firstUpperCase(kernelInfo.languageName)>\",
   	'	\"language\": \"<kernelInfo.languageName>\"
