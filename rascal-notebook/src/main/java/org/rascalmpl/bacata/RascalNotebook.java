@@ -176,7 +176,7 @@ public class RascalNotebook extends JupyterServer{
 		}
 
 		@Override
-		public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName) throws IOException, URISyntaxException {
+		public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, String... salixPath) throws IOException, URISyntaxException {
 			return new RascalInterpreterREPL(true) {
 				@Override
 				protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
@@ -191,7 +191,7 @@ public class RascalNotebook extends JupyterServer{
 
 		public static void main(String[] args) {
 			try {
-				RascalNotebook mv =  new RascalNotebook(args[0]);
+				new RascalNotebook(args[0]);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
