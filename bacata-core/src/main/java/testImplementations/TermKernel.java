@@ -185,7 +185,7 @@ public class TermKernel extends JupyterServer{
 	}
 
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName)  {
+	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, String... salixPath)  {
 		GlobalEnvironment heap = new GlobalEnvironment();
 		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$"+variableName+"$", heap));
 		IValueFactory vf = ValueFactoryFactory.getValueFactory();

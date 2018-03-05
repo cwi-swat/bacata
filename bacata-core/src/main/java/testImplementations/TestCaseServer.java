@@ -1,6 +1,5 @@
 package testImplementations;
 
-import com.google.gson.JsonObject;
 import communication.Header;
 import entities.reply.*;
 import entities.request.ContentCompleteRequest;
@@ -137,14 +136,14 @@ public class TestCaseServer extends JupyterServer {
     public static void main(String[] args) throws Exception {
         try {
             System.out.println("Java Kernel started");
-            TestCaseServer jupyterServer = new TestCaseServer(args[0]);
+            new TestCaseServer(args[0]);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName) throws IOException, URISyntaxException {
+	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, String... salixPath) throws IOException, URISyntaxException {
 		// TODO Auto-generated method stub
 		return null;
 	}

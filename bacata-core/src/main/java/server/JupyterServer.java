@@ -164,6 +164,7 @@ public abstract class JupyterServer {
 	}
 
 	public void listenHeartbeatSocket() {
+		@SuppressWarnings("unused")
 		String ping;
 		while ((ping = communication.getHeartbeat().recvStr(ZMQ.DONTWAIT)) != null) {
 			heartbeatChannel();
@@ -278,5 +279,5 @@ public abstract class JupyterServer {
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	public abstract ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName) throws IOException, URISyntaxException;
+	public abstract ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, String... salixPath) throws IOException, URISyntaxException;
 }
