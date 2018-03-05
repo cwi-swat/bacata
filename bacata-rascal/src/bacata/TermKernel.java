@@ -3,15 +3,18 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
-import org.rascalmpl.interpreter.load.URIContributor;
 import org.rascalmpl.interpreter.result.Result;
+import org.rascalmpl.interpreter.utils.RascalManifest;
 import org.rascalmpl.library.util.TermREPL;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
@@ -35,11 +38,13 @@ import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 import io.usethesource.vallang.IConstructor;
+import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
 import server.JupyterServer;
 
 public class TermKernel extends JupyterServer{
+
 
 	// -----------------------------------------------------------------
 	// Fields
@@ -59,13 +64,13 @@ public class TermKernel extends JupyterServer{
 	// Constructor
 	// -----------------------------------------------------------------
 
-	public TermKernel(String connectionFilePath, String source, String moduleName, String variableName, String pLanguageName) throws Exception {
+	public TermKernel(String connectionFilePath, String source, String moduleName, String variableName, String pLanguageName, String... salixPath) throws Exception {
 		super(connectionFilePath);
 		languageName = pLanguageName;
 		executionNumber = 1;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-		this.language = makeInterpreter(source, moduleName, variableName);
+		this.language = makeInterpreter(source, moduleName, variableName, salixPath);
 		this.language.initialize(stdout, stderr);
 //		generateKernel();
 //		installKernel();
@@ -188,28 +193,50 @@ public class TermKernel extends JupyterServer{
 		ContentCompleteReply content = new ContentCompleteReply(sugestions, cursorStart, request.getCode().length(), new HashMap<String, String>(), Status.OK);
 		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new HashMap<String, String>(), content);
 	}
-
+	
+	private static final String JAR_FILE_PREFIX = "jar:file:";
+	
+	private static ISourceLocation createJarLocation(IValueFactory vf, URL u) throws URISyntaxException {
+		String full = u.toString();
+		if (full.startsWith(JAR_FILE_PREFIX)) {
+			full = full.substring(JAR_FILE_PREFIX.length());
+			return vf.sourceLocation("jar", null, full);
+		}
+		else {
+			return vf.sourceLocation(URIUtil.fromURL(u));
+		}
+			
+	}
+	
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName)  {
+	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, String... salixPath)  {
 		GlobalEnvironment heap = new GlobalEnvironment();
 		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$"+variableName+"$", heap));
 		IValueFactory vf = ValueFactoryFactory.getValueFactory();
 		Evaluator eval = new Evaluator(vf, new PrintWriter(System.err), new PrintWriter(System.out), root, heap);
 		
 		eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
-		
 		try {
-			// FIXME : How to define/import the salix path and the current project path
-			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI("home:///Documents/RascalProjects/salix/src")));
-			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI("home:///Documents/bacata/bacata-rascal/src")));
-//			String s =System.getProperty("user.dir");
-			eval.addRascalSearchPathContributor(new URIContributor(URIUtil.createFromURI(source.toString())));
-		} catch (URISyntaxException e1) {
-			e1.printStackTrace();
-		}
-		
-		eval.doImport(null, "salix::App");
-		eval.doImport(null, "bacata::salix::Bridge");
+			Enumeration<URL> res = ClassLoader.getSystemClassLoader().getResources(RascalManifest.META_INF_RASCAL_MF);
+			RascalManifest mf = new RascalManifest();
+			while (res.hasMoreElements()) {
+				URL next = res.nextElement();
+				List<String> roots = mf.getManifestSourceRoots(next.openStream());
+				if (roots != null) {
+					ISourceLocation currentRoot = createJarLocation(vf, next);
+					currentRoot = URIUtil.getParentLocation(URIUtil.getParentLocation(currentRoot));
+					for (String r: roots) {
+						eval.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, r));
+					}
+					eval.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, RascalManifest.DEFAULT_SRC));
+				}
+			}
+			if(salixPath!=null && salixPath.length!=0)
+				eval.addRascalSearchPath(URIUtil.createFromURI((salixPath[0])));
+			eval.addRascalSearchPath(URIUtil.createFromURI(source));
+		} catch (URISyntaxException | IOException e1) {
+			throw new RuntimeException(e1);
+		} 
 		eval.doImport(null, moduleName);
 		
 		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
@@ -224,16 +251,16 @@ public class TermKernel extends JupyterServer{
 		}
 	}
 	
-
 	// -----------------------------------------------------------------
 	// Execution
 	// -----------------------------------------------------------------
 
 	public static void main(String[] args) {
 		try {
-//			module to import, name of the variable
-//			new TermKernel(args[0], args[1].contains(":/") ? URI.create(args[1]) : new File(args[1]).toURI(), args[2], args[3], args[4]);
-			new TermKernel(args[0], args[1], args[2], args[3], args[4]);
+			if(args.length==5)
+				new TermKernel(args[0], args[1], args[2], args[3], args[4]);
+			else
+				new TermKernel(args[0], args[1], args[2], args[3], args[4], args[5]);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
