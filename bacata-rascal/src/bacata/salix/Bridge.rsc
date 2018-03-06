@@ -25,23 +25,6 @@ alias SalixMultiplexer
   
 SalixMultiplexer noOp() = <(SalixApp[value] x) {}, () {}, |http://localhost|>;
 
-/*
-
-public REPL myRepl = repl(
-
-  , salix = makeSalixMultiplexedr(..., ...));
-
-
-
-In java:
-
-get the salix keyword param,
-call the consumer function with the result of the salix(...) CommandResult
-and the unique key.
-
-*/
-
-
 SalixMultiplexer makeSalixMultiplexer(loc http, loc static) {
   map[str, SalixApp[void]] apps = ();
   
@@ -66,7 +49,7 @@ SalixMultiplexer makeSalixMultiplexer(loc http, loc static) {
     }
   }
   
-  println("Serving: <http>"); 
+  //println("Serving: <http>"); 
   serve(http, _handle);
   
   return <void(SalixApp[void] app, str key) {
