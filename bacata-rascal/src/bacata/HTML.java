@@ -12,22 +12,19 @@
  */ 
 package bacata;
 
-import java.io.IOException;
-
 //import de.neuland.jade4j.Jade4J;
 //import de.neuland.jade4j.exceptions.JadeCompilerException;
 //import de.neuland.jade4j.template.JadeTemplate;
-import io.usethesource.vallang.IString;
-import io.usethesource.vallang.IValueFactory;
+//import io.usethesource.vallang.IValueFactory;
 
 public class HTML {
     
-    private final IValueFactory vf;
+//    private final IValueFactory vf;
     
-    public HTML(IValueFactory vf)
-    {
-        this.vf = vf;
-    }
+//    public HTML(IValueFactory vf)
+//    {
+//        this.vf = vf;
+//    }
     
 //    public IString compile(IString loc){
 //        try {
