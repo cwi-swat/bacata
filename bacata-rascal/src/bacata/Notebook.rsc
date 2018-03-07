@@ -101,7 +101,7 @@ str createKernelFile(KernelInfo kernelInfo, bool debug) =
     '		\"<kernelInfo.moduleName>\",
     '		\"<kernelInfo.variableName>\",
     '		\"<kernelInfo.languageName>\"
-    ' 		<if(kernelInfo.salixPath != |tmp:///|){>,\"<"<kernelInfo.salixPath>"[1..-1]> \"<}>
+    ' 		<if(kernelInfo.salixPath != |tmp:///|){>,\"<"<kernelInfo.salixPath>"[1..-1]>\"<}>
   	'	],
   	'	\"display_name\": \"<firstUpperCase(kernelInfo.languageName)>\",
   	'	\"language\": \"<kernelInfo.languageName>\"
