@@ -10,17 +10,17 @@ import bacata::Notebook;
 // [3] moduleName
 // [4] Bacata path
 void main(list[str] args) {
-  path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]));
+  path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), toLocation(args[5]));
   installKernel(path);
   startJupyterServer();
 }
 
-loc createKernel(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar){
-	writeFile(|tmp:///<languageName>|+"kernel.json", kernelContent(languageName, projectPath, variableName, moduleName, bacataJar));
+loc createKernel(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar, loc salixPath){
+	writeFile(|tmp:///<languageName>|+"kernel.json", kernelContent(languageName, projectPath, variableName, moduleName, bacataJar, salixPath));
 	return |tmp:///<languageName>|;
 }
 
-str kernelContent(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar) = 
+str kernelContent(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar, loc salixPath) = 
 	"{
   	'	\"argv\": [
     '		\"java\",
@@ -32,6 +32,7 @@ str kernelContent(str languageName, loc projectPath, str variableName, str modul
     '		\"<moduleName>\",
     '		\"<variableName>\",
     '		\"<languageName>\"
+    ' 		<if(salixPath != |tmp:///|){>,\"<"<salixPath>"[1..-1]>\"<}>
   	'	],
   	'	\"display_name\": \"<firstUpperCase(languageName)>\",
   	'	\"language\": \"<languageName>\"

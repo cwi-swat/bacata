@@ -68,12 +68,12 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<!-- dependency resolution configuration (usethesource) -->
-	<repositories>
+<!-- 	<repositories>
 		<repository>
 			<id>usethesource</id>
 			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
 		</repository>
-	</repositories>
+	</repositories> -->
 	<scm>
 		<developerConnection>scm:git:ssh://git@github.com/cwi-swat/bacata-core.git</developerConnection>
 	</scm>
