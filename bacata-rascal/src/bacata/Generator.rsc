@@ -1,6 +1,7 @@
 module bacata::Generator
 
 import IO;
+import List;
 import String;
 import bacata::Notebook;
 
@@ -10,13 +11,27 @@ import bacata::Notebook;
 // [3] moduleName
 // [4] Bacata path
 void main(list[str] args) {
-  path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), toLocation(args[5]));
+  path = |tmp:///|;
+  params = size(args);
+  if( params == 5){
+  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]));
+  }
+  else if(params == 6){
+  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), salixPath = toLocation(args[5]));
+  }
+  else if(params == 7){
+  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), salixPath = toLocation(args[5]), langLogo= toLocation(args[6]));
+  }
   installKernel(path);
   startJupyterServer();
 }
 
-loc createKernel(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar, loc salixPath){
+loc createKernel(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar, loc salixPath = |tmp:///|, loc langLogo = |tmp:///|){
 	writeFile(|tmp:///<languageName>|+"kernel.json", kernelContent(languageName, projectPath, variableName, moduleName, bacataJar, salixPath));
+	if(langLogo!= |tmp:///|)
+	{
+		copyLogoToKernel(langLogo, |tmp:///<languageName>|);
+	}
 	return |tmp:///<languageName>|;
 }
 
