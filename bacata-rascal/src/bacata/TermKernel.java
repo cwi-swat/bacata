@@ -25,6 +25,7 @@ import communication.Header;
 import entities.ContentExecuteInput;
 import entities.ContentStream;
 import entities.reply.ContentCompleteReply;
+import entities.reply.ContentDisplayData;
 import entities.reply.ContentExecuteReplyOk;
 import entities.reply.ContentExecuteResult;
 import entities.reply.ContentIsCompleteReply;
@@ -101,9 +102,18 @@ public class TermKernel extends JupyterServer{
 					}
 
 					if(!stderr.toString().trim().equals("")){
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stderr", stderr.toString()));
-						stderr.getBuffer().setLength(0);
-						stderr.flush();
+						// This message is used to Render LOCs in html because STREM channel does not support it
+						String logs = metadata.get("ERROR-LOG");
+						if( logs != null){
+							metadata.remove("ERROR-LOG");
+							metadata.put("text/html", logs);
+							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, metadata, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
+						}
+						else{
+							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stderr", stderr.toString()));
+							stderr.getBuffer().setLength(0);
+							stderr.flush();
+						}
 					}
 
 					// sends the result
