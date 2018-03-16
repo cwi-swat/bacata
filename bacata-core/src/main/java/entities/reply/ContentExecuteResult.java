@@ -13,10 +13,13 @@ public class ContentExecuteResult extends Content {
     // Fields
     // -----------------------------------------------------------------
 
-    private int executionCount;
+    @SuppressWarnings("unused")
+	private int executionCount;
 
+    @SuppressWarnings("unused")
     private Map<String, String> data;
 
+    @SuppressWarnings("unused")
     private Map<String, String> metadata;
 
     // -----------------------------------------------------------------
