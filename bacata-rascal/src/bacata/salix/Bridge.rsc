@@ -49,7 +49,7 @@ SalixMultiplexer makeSalixMultiplexer(loc http, loc static) {
     }
   }
   
-  //println("Serving: <http>"); 
+  println("Serving: <http>"); 
   serve(http, _handle);
   
   return <void(SalixApp[void] app, str key) {
