@@ -13,7 +13,7 @@ module bacata::Proposer
 import IO;
 import String;
 import ParseTree;
-import util::REPL;
+import bacata::salix::Bridge;
 import lang::rascal::format::Grammar;
 
 data Contribution 
