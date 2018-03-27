@@ -72,7 +72,9 @@
         		<configuration>
         			<archive>
 						<manifest>
-							<mainClass>bacata.TermKernel</mainClass>
+							<!-- <mainClass>bacata.TermKernel</mainClass> -->
+							<!-- <mainClass>bacata.rascalNotebook.RascalNotebook</mainClass> -->
+							<mainClass>${mainClass}</mainClass>
 						</manifest>
 					</archive>
           			<descriptorRefs>
