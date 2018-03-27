@@ -17,8 +17,10 @@ data REPL(SalixMultiplexer visualization = noOp())
          )
   ;
 
+alias VisOutput = str;
+
 alias SalixConsumer
-  = void(SalixApp[value] app, str scope);
+  = VisOutput(SalixApp[value] app, str scope);
 
 alias SalixMultiplexer
   = tuple[SalixConsumer consumer, void() stop, loc http];
@@ -49,11 +51,12 @@ SalixMultiplexer makeSalixMultiplexer(loc http, loc static) {
     }
   }
   
-  println("Serving: <http>"); 
+  println("Salix Serving: <http>"); 
   serve(http, _handle);
   
-  return <void(SalixApp[void] app, str key) {
+  return <VisOutput(SalixApp[void] app, str key) {
     apps[key] = app;
+    return key;
   }, () {
     shutdown(http);
   }, http>;
