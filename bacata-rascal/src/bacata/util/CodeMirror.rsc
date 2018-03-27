@@ -1,9 +1,9 @@
-module bacata::CodeMirror
+module bacata::util::CodeMirror
 
 import IO;
 import List;
 import String;
-import bacata::Mode;
+import bacata::util::Mode;
 
 
 void createCodeMirrorModeFile(Mode mode, loc path){

@@ -7,7 +7,7 @@
 }
 @contributor{Tijs van der Storm - storm@cwi.nl - CWI}
 
-module bacata::Mode
+module bacata::util::Mode
 
 import IO;
 import Set;

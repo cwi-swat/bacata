@@ -7,9 +7,9 @@ import ParseTree;
 import util::REPL;
 import util::Resources;
 import util::ShellExec;
-import bacata::Mode;
-import bacata::HTML;
-import bacata::CodeMirror;
+import bacata::util::Mode;
+//import bacata::HTML;
+import bacata::util::CodeMirror;
 
 	
 data NotebookServer =

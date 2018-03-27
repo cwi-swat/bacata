@@ -8,7 +8,7 @@
 @contributor{Jurgen J. Vinju - Jurgen.Vinju@cwi.nl - CWI}
 @contributor{Davy Landman - Davy.Landman@cwi.nl - CWI}
 
-module bacata::Proposer
+module bacata::util::Proposer
 
 import IO;
 import String;
