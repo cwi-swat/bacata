@@ -1,0 +1,12 @@
+{
+	"argv": [
+		"java",
+		"-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000",
+		"-jar",
+		"/Users/mveranom/Documents/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT-jar-with-dependencies.jar",
+		"{connection_file}",
+		"home:///Documents/RascalProjects/salix/src"
+	],
+	"display_name": "Rascal",
+	"language": "Rascal"
+}
