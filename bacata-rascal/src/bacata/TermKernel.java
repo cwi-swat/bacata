@@ -102,7 +102,7 @@ public class TermKernel extends JupyterServer{
 					}
 
 					if(!stderr.toString().trim().equals("")){
-						// This message is used to Render LOCs in html because STREM channel does not support it
+						// This message is used to Render locations in html because STREM channel does not support it
 						String logs = metadata.get("ERROR-LOG");
 						if( logs != null){
 							metadata.remove("ERROR-LOG");
@@ -111,9 +111,9 @@ public class TermKernel extends JupyterServer{
 						}
 						else{
 							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stderr", stderr.toString()));
-							stderr.getBuffer().setLength(0);
-							stderr.flush();
 						}
+						stderr.getBuffer().setLength(0);
+						stderr.flush();
 					}
 
 					// sends the result
