@@ -25,6 +25,7 @@ import communication.Header;
 import entities.ContentExecuteInput;
 import entities.ContentStream;
 import entities.reply.ContentCompleteReply;
+import entities.reply.ContentDisplayData;
 import entities.reply.ContentExecuteReplyOk;
 import entities.reply.ContentExecuteResult;
 import entities.reply.ContentIsCompleteReply;
@@ -83,22 +84,10 @@ public class RascalNotebook extends JupyterServer{
 					try {
 						Map<String, String> data = new HashMap<>();
 						
-						// TODO: Should I add some value to the metadata which describes wheter the result is a visualization or not?
 						this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
 						sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 
-						if(!stdout.toString().trim().equals("")){
-							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stdout", stdout.toString()));
-							stdout.getBuffer().setLength(0);
-							stdout.flush();
-						}
-
-						if(!stderr.toString().trim().equals("")){
-							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stderr", stderr.toString()));
-							stderr.getBuffer().setLength(0);
-							stderr.flush();
-						}
-
+						processStreams(parentHeader, data, metadata);
 						// sends the result
 						if(!data.isEmpty())
 						{
@@ -120,6 +109,46 @@ public class RascalNotebook extends JupyterServer{
 				// Don't have an execute_result.
 				sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 			}
+		}
+		
+		private void processStreams(Header parentHeader, Map<String, String> data, Map<String, String> metadata) {
+			if(!stdout.toString().trim().equals("")){
+				processStreamsReply(ContentStream.STD_OUT, parentHeader, data, metadata);
+			}
+			if(!stderr.toString().trim().equals("")){
+				processStreamsReply(ContentStream.STD_ERR, parentHeader, data, metadata);
+			}
+		}
+
+		private final static String STD_ERR_DIV = "output_stderr";
+		private final static String STD_OUT_DIV = "output_stdout";
+		public final static String MIME_TYPE_HTML = "text/html";
+		
+		public void processStreamsReply(String stream, Header parentHeader,Map<String, String> data, Map<String, String> metadata){
+			String logs = stream.equals(ContentStream.STD_OUT) ? stdout.toString() : stderr.toString();
+			if(logs.contains("http://")){
+//				metadata.put(MIME_TYPE_HTML, stream.equals(ContentStream.STD_OUT) ? STD_OUT_DIV : STD_ERR_DIV + replaceLocs2html(logs) + CLOSE_DIV);
+				metadata.put(MIME_TYPE_HTML, stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs)) : createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
+				sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, metadata, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
+			}
+			else{
+				sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream(stream, logs));
+			}
+			if(data.get(MIME_TYPE_HTML).equals("ok\n")){
+				data.remove(MIME_TYPE_HTML);
+			}	
+			flushStreams();
+		}
+		
+		public String createDiv(String clazz, String body){
+			return "<div class = \""+ clazz +"\">"+ (body.equals("")||body==null ? "</div>" : body+"</div>");
+		}
+		
+		public void flushStreams(){
+			stdout.getBuffer().setLength(0);
+			stdout.flush();
+			stderr.getBuffer().setLength(0);
+			stderr.flush();
 		}
 
 		@Override
@@ -231,6 +260,18 @@ public class RascalNotebook extends JupyterServer{
 					return e;
 				}
 			};
+		}
+		
+		public String replaceLocs2html(String logs){
+			String pattern = "(?s)(.*)(\\|)(.+)(\\|)(.*$)";
+			if(logs.matches(pattern)){
+				logs = logs.replaceAll("\n", "<br>");
+				String prefix = logs.replaceAll(pattern,"$1");
+				String url = logs.replaceAll(pattern,"$3");
+				String suffix = logs.replaceAll(pattern,"$5");
+				return prefix + "<a href=\""+ url +"\" target=\"_blank\">"+url+"</a>" + suffix;
+			}
+			return logs;
 		}
 		
 		// -----------------------------------------------------------------
