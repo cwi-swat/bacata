@@ -32,7 +32,7 @@
         token: 'atom',
       },
       {
-        regex: /0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i,
+        regex: /0x[a-f\d]+|(?:\.\d+|\d+\.?\d*)(?:e\d+)?/i,
         token: 'number',
       },
       {
@@ -45,8 +45,9 @@
         next: 'annotation',
         indent: true
       },
+      // Capture the locations
       {
-        regex: /^\|.*\|$/,
+        regex: /\|.*\|/,
         token: 'string',
       },
       // A next property will cause the mode to move to a different state
@@ -65,7 +66,7 @@
         dedent: true,
       },
       {
-        regex: /[-+*=<>!]+/,
+        regex: /[-+*=<>!\/\|]+/,
         token: 'operator',
       },
       {
