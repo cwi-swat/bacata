@@ -51,7 +51,7 @@ SalixMultiplexer makeSalixMultiplexer(loc http, loc static) {
     }
   }
   
-  println("Salix Serving: <http>"); 
+  println("Visualization server running: <http>"); 
   serve(http, _handle);
   
   return <VisOutput(SalixApp[void] app, str key) {
