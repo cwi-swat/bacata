@@ -94,6 +94,8 @@ public class RascalNotebook extends JupyterServer{
 					Map<String, String> data = new HashMap<>();
 
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
+					if(data.get(MIME_TYPE_HTML).equals("ok\n"))
+						data.remove(MIME_TYPE_HTML);
 					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 
 					processStreams(parentHeader, data, metadata);
