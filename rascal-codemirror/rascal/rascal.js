@@ -28,7 +28,7 @@
         token: 'keyword',
       },
       {
-        regex: /\b(true|false|value|loc|node|num|type|bag|int|rat|rel|lrel|real|tuple|str|bool|void|datetime|set|map|list)\b/,
+        regex: /\b(true|false|value|loc|node|num|type|bag|int|rat|rel|lrel|real|tuple|str|bool|void|datetime|set|map|list|M3)\b/,
         token: 'atom',
       },
       {
