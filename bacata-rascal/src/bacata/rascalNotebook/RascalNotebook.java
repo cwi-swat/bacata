@@ -94,8 +94,8 @@ public class RascalNotebook extends JupyterServer{
 					Map<String, String> data = new HashMap<>();
 
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
-					if(data.get(MIME_TYPE_HTML).equals("ok\n"))
-						data.remove(MIME_TYPE_HTML);
+					removeUnnecessaryData(data);
+					
 					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 
 					processStreams(parentHeader, data, metadata);
@@ -140,10 +140,13 @@ public class RascalNotebook extends JupyterServer{
 		else{
 			sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream(stream, logs));
 		}
-		if(data.get(MIME_TYPE_HTML).equals("ok\n")){
-			data.remove(MIME_TYPE_HTML);
-		}	
+		removeUnnecessaryData(data);	
 		flushStreams();
+	}
+	
+	public void removeUnnecessaryData (Map<String, String> data){
+		if(data.get(MIME_TYPE_HTML) != null && data.get(MIME_TYPE_HTML).equals("ok\n"))
+			data.remove(MIME_TYPE_HTML);
 	}
 
 	public String createDiv(String clazz, String body){
