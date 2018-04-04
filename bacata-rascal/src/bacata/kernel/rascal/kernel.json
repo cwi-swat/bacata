@@ -2,8 +2,9 @@
 	"argv": [
 		"java",
 		"-jar",
-		"/app/rascal-notebook-0.0.1-SNAPSHOT-jar-with-dependencies.jar",
-		"{connection_file}"
+		"/app/bacata-rascal-0.1.0-SNAPSHOT-jar-with-dependencies.jar",
+		"{connection_file}",
+		"cwd:///salix/src"
 	],
 	"display_name": "Rascal",
 	"language": "Rascal"
