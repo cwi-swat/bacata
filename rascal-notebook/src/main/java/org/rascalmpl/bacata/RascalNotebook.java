@@ -13,6 +13,7 @@ import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
+import org.rascalmpl.uri.URIUtil;
 import org.zeromq.ZMQ.Socket;
 import communication.Header;
 import entities.ContentExecuteInput;
@@ -49,12 +50,12 @@ public class RascalNotebook extends JupyterServer{
 		// Constructor
 		// -----------------------------------------------------------------
 
-		public RascalNotebook(String connectionFilePath) throws Exception {
+		public RascalNotebook(String connectionFilePath, String... salixPath ) throws Exception {
 			super(connectionFilePath);
 			executionNumber = 1;
 			stdout = new StringWriter();
 			stderr = new StringWriter();
-			this.language = makeInterpreter(null, null, null);
+			this.language = makeInterpreter(null, null, null, salixPath);
 			this.language.initialize(stdout, stderr);
 			startServer();
 		}
@@ -180,7 +181,14 @@ public class RascalNotebook extends JupyterServer{
 			return new RascalInterpreterREPL(true) {
 				@Override
 				protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
-					return ShellEvaluatorFactory.getDefaultEvaluator(new PrintWriter(stdout), new PrintWriter(stderr));
+					Evaluator e = ShellEvaluatorFactory.getDefaultEvaluator(new PrintWriter(stdout), new PrintWriter(stderr));
+					try {
+						eval.addRascalSearchPath(URIUtil.createFromURI((salixPath[0])));
+					} catch (URISyntaxException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					return e;
 				}
 			};
 		}
@@ -191,7 +199,7 @@ public class RascalNotebook extends JupyterServer{
 
 		public static void main(String[] args) {
 			try {
-				new RascalNotebook(args[0]);
+				new RascalNotebook(args[0], args[1]);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
