@@ -8,7 +8,8 @@ public class ContentStatus extends Content {
     // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------
-    private String executionState;
+    @SuppressWarnings("unused")
+	private String executionState;
 
     // -----------------------------------------------------------------
     // Constructor

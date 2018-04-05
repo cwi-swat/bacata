@@ -14,7 +14,8 @@ public class ContentHistoryReply extends Content {
     // Fields
     // -----------------------------------------------------------------
 
-    private List<String> history;
+    @SuppressWarnings("unused")
+	private List<String> history;
 
     // -----------------------------------------------------------------
     // Constructor

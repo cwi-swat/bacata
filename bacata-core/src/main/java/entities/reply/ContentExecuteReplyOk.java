@@ -27,12 +27,14 @@ public class ContentExecuteReplyOk extends Content {
      * This field represents a way to trigger frontend actions from the kernel.
      * (Payloads are considered deprecated, though their replacement is not yet implemented.)
      */
-    private List<Map<String, String>> payload;
+    @SuppressWarnings("unused")
+	private List<Map<String, String>> payload;
 
     /**
      * This field represents the results for the user_expressions
      */
-    private Map<String, String> userExpressions;
+    @SuppressWarnings("unused")
+	private Map<String, String> userExpressions;
 
     // -----------------------------------------------------------------
     // Constructor

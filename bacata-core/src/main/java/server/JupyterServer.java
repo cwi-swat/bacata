@@ -116,6 +116,7 @@ public abstract class JupyterServer {
 		Header header = parser.fromJson(communication.getRequests().recvStr(), Header.class); // Header
 		parser.fromJson(communication.getRequests().recvStr(), Header.class); // Parent Header
 		Map<String,String> map = new HashMap<String,String>();
+		@SuppressWarnings("unchecked")
 		Map<String, String> metadata = parser.fromJson(socket.recvStr(), map.getClass());
 		String content = socket.recvStr(); // Content
 		

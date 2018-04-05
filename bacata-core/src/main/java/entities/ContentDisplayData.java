@@ -24,7 +24,8 @@ public class ContentDisplayData extends Content {
     /**
      * Metadata that describes the data
      */
-    private Map<String, String> metadata;
+    @SuppressWarnings("unused")
+	private Map<String, String> metadata;
     
     /**
      * Information not to be persisted to a notebook or other documents. Intended to live only during a live kernel session.

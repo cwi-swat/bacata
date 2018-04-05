@@ -10,7 +10,8 @@ public class ContentShutdownReply extends Content {
     // -----------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------
-    private boolean restart;
+    @SuppressWarnings("unused")
+	private boolean restart;
 
     // -----------------------------------------------------------------
     // Constructor

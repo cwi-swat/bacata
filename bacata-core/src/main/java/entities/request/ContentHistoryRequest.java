@@ -11,23 +11,32 @@ public class ContentHistoryRequest extends Content {
     // Fields
     // -----------------------------------------------------------------
 
-    private boolean output;
+    @SuppressWarnings("unused")
+	private boolean output;
 
-    private boolean raw;
+    @SuppressWarnings("unused")
+	private boolean raw;
 
-    private String histAccessType;
+    @SuppressWarnings("unused")
+	private String histAccessType;
 
-    private int session;
+    @SuppressWarnings("unused")
+	private int session;
 
-    private int start;
+    @SuppressWarnings("unused")
+	private int start;
 
-    private int stop;
+    @SuppressWarnings("unused")
+	private int stop;
 
-    private int n;
+    @SuppressWarnings("unused")
+	private int n;
 
-    private String pattern;
+    @SuppressWarnings("unused")
+	private String pattern;
 
-    private boolean unique;
+    @SuppressWarnings("unused")
+	private boolean unique;
 
     // -----------------------------------------------------------------
     // Constructor

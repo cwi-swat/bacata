@@ -9,22 +9,26 @@ import java.util.List;
  */
 public class ContentExecuteReplyError extends Content {
 
-    private String status;
+    @SuppressWarnings("unused")
+	private String status;
 
     /**
      * This field represents the exception name as a String
      */
-    private String ename;
+    @SuppressWarnings("unused")
+	private String ename;
 
     /**
      * This field represents the exception value, as a String
      */
-    private String evalue;
+    @SuppressWarnings("unused")
+	private String evalue;
 
     /**
      * This field represents the traceback frames as Strings
      */
-    private List<String> traceback;
+    @SuppressWarnings("unused")
+	private List<String> traceback;
 
     public ContentExecuteReplyError(String ename, String evalue, List<String> traceback) {
         this.status = "error";

@@ -1,10 +1,7 @@
 package entities.reply;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import entities.util.Content;
 import entities.util.HelpLinks;
 import entities.util.LanguageInfo;
@@ -30,15 +27,20 @@ public class ContentKernelInfoReply extends Content {
     // Fields
     // -----------------------------------------------------------------
 
-    private String protocolVersion;
+    @SuppressWarnings("unused")
+	private String protocolVersion;
 
-    private String implementation;
+    @SuppressWarnings("unused")
+	private String implementation;
 
-    private String implementationVersion;
+    @SuppressWarnings("unused")
+	private String implementationVersion;
 
-    private LanguageInfo languageInfo;
+    @SuppressWarnings("unused")
+	private LanguageInfo languageInfo;
 
-    private String banner;
+    @SuppressWarnings("unused")
+	private String banner;
     
     private List<HelpLinks> helpLinks;
 
