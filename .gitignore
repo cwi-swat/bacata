@@ -13,3 +13,4 @@ target
 rascal-notebook/src/main/examples/.ipynb_checkpoints
 Tem.java
 *.jar
+bacata-rascal/src/bacata/examples/halide/generated_code
