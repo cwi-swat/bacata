@@ -21,6 +21,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
@@ -69,6 +70,13 @@ public abstract class JupyterServer {
 
 	private ZMQ.Poller poller;
 	
+	protected ILanguageProtocol language;
+	
+	protected StringWriter stdout;
+
+	protected StringWriter stderr;
+	
+	protected int executionNumber;
 	// -----------------------------------------------------------------
 	// Constructor
 	// -----------------------------------------------------------------
@@ -82,6 +90,7 @@ public abstract class JupyterServer {
 		poller.register(communication.getControl(), ZMQ.Poller.POLLIN);
 		poller.register(communication.getPublish(), ZMQ.Poller.POLLIN);
 		poller.register(communication.getHeartbeat(), ZMQ.Poller.POLLIN);
+		executionNumber = 1;
 	}
 
 

@@ -51,14 +51,6 @@ public class TermKernel extends JupyterServer{
 	// Fields
 	// -----------------------------------------------------------------
 
-	private int executionNumber;
-
-	private ILanguageProtocol language;
-
-	private StringWriter stdout;
-
-	private StringWriter stderr;
-	
 	private String languageName;
 
 	// -----------------------------------------------------------------
@@ -68,7 +60,6 @@ public class TermKernel extends JupyterServer{
 	public TermKernel(String connectionFilePath, String source, String moduleName, String variableName, String pLanguageName, String... salixPath) throws Exception {
 		super(connectionFilePath);
 		languageName = pLanguageName;
-		executionNumber = 1;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
 		this.language = makeInterpreter(source, moduleName, variableName, salixPath);

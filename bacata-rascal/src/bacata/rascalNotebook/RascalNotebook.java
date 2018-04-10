@@ -53,24 +53,11 @@ public class RascalNotebook extends JupyterServer{
 	public final static String MIME_TYPE_HTML = "text/html";
 
 	// -----------------------------------------------------------------
-	// Fields
-	// -----------------------------------------------------------------
-
-	private int executionNumber;
-
-	private ILanguageProtocol language;
-
-	private StringWriter stdout;
-
-	private StringWriter stderr;
-
-	// -----------------------------------------------------------------
 	// Constructor
 	// -----------------------------------------------------------------
 
 	public RascalNotebook(String connectionFilePath, String... salixPath ) throws Exception {
 		super(connectionFilePath);
-		executionNumber = 1;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
 		this.language = makeInterpreter(null, null, null, salixPath);
