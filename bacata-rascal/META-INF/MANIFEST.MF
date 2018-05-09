@@ -4,5 +4,5 @@ Bundle-Name: bacata
 Bundle-SymbolicName: bacata-rascal;singleton:=true
 Bundle-Version: 0.1.0.qualifier
 Require-Bundle: rascal_eclipse;bundle-version="0.9.1",
- impulse;bundle-version="0.2.0"
+ impulse;bundle-version="0.3.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
