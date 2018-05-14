@@ -56,7 +56,8 @@ void generateCodeMirror(str languageName, type[&T <: Tree] sym){
 	// Jupyter front-end path
 	createCodeMirrorModeFile(mode, JUPYTER_FRONTEND_PATH + "<mode.name>/<mode.name>.js");
 	// Re-build notebook front end
-	createProcess("/usr/local/bin/node", args=["/usr/local/bin/npm", "run", "build"]);
+	pid=createProcess("/usr/local/bin/node", args=["/usr/local/bin/npm", "run", "build"]);
+	printErrTrace(pid);
 }
 
 void generateKernel(KernelInfo kernelInfo, bool debug){
@@ -69,8 +70,12 @@ void generateKernel(KernelInfo kernelInfo, bool debug){
 
 void installKernel(loc kernelPath){
 	 pid= createProcess(JUPYTER_PATH, args=["kernelspec", "install", resolveLocation(kernelPath).path]);
-	 for (line := readLineFromErr(pid), line != "") {
-			println("<line>");
+	 printErrTrace(pid);
+}
+
+void printErrTrace(PID pid){
+	for (line := readLineFromErr(pid), line != "") {
+		println("<line>");
     }
 }
 
