@@ -16,7 +16,7 @@ data NotebookServer =
 	notebook(void () serve, void() stop);	
 	
 data KernelInfo
-	= kernelInfo(str languageName, loc projectPath, str moduleName, str variableName, loc salixPath= |tmp:///|, loc logo = |tmp:///|);
+	= kernelInfo(str languageName, loc projectPath, str moduleName, str variableName, loc salixPath= |tmp:///|, loc logo = |tmp:///|, bool docker=false);
 
 str JUPYTER_PATH = "/Library/Frameworks/Python.framework/Versions/3.6/bin/jupyter";
 loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/static/components/codemirror/mode/|;
@@ -60,15 +60,18 @@ void generateCodeMirror(str languageName, type[&T <: Tree] sym){
 }
 
 void generateKernel(KernelInfo kernelInfo, bool debug){
-	writeFile(|tmp:///<kernelInfo.languageName>|+"kernel.json", createKernelFile(kernelInfo, debug));
+	kernelPath = kernelInfo.projectPath.parent + "kernel2/<kernelInfo.languageName>/";
+	writeFile(kernelPath + "kernel.json", kernelFileContent(kernelInfo, debug));
 	if(kernelInfo.logo != |tmp:///|)
-		copyLogoToKernel(kernelInfo.logo, |tmp:///<kernelInfo.languageName>|);
-	installKernel(|tmp:///<kernelInfo.languageName>|);
-	//killProcess(kernelInstallation);
+		copyLogoToKernel(kernelInfo.logo, kernelPath);
+	installKernel(kernelPath);
 }
 
-PID installKernel(loc kernelPath){
-	 return createProcess(JUPYTER_PATH, args=["kernelspec", "install", resolveLocation(kernelPath).path]);
+void installKernel(loc kernelPath){
+	 pid= createProcess(JUPYTER_PATH, args=["kernelspec", "install", resolveLocation(kernelPath).path]);
+	 for (line := readLineFromErr(pid), line != "") {
+			println("<line>");
+    }
 }
 
 /*
@@ -77,7 +80,7 @@ PID installKernel(loc kernelPath){
 PID startJupyterServer(){
 	PID jupyterExecution = createProcess(JUPYTER_PATH, args =["notebook", "--no-browser"]);
 	bool guard = false;
-	for (_ <- [1..15], line := readLineFromErr(jupyterExecution), line != "") {
+	for (_ <- [1..20], line := readLineFromErr(jupyterExecution), line != "") {
 		if(contains(line,"http://localhost:"))
 		{
 			println("The notebook is running at: <|http://localhost:<split("localhost:", line)[1]>|>");
@@ -89,7 +92,7 @@ PID startJupyterServer(){
 * This function produces the content of the kernel.json file using the kernel information received as parameter.
 */
 //    '		\"-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 \",
-str createKernelFile(KernelInfo kernelInfo, bool debug) = 
+str kernelFileContent(KernelInfo kernelInfo, bool debug) = 
 	"{
   	'	\"argv\": [
     '		\"java\",
