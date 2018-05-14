@@ -1,12 +1,14 @@
 module bacata::Notebook
 
 import IO;
+import List;
 import String;
 import Message;
 import ParseTree;
 import util::REPL;
 import util::Resources;
 import util::ShellExec;
+import bacata::Deploy;
 import bacata::util::Mode;
 //import bacata::HTML;
 import bacata::util::CodeMirror;
@@ -16,7 +18,7 @@ data NotebookServer =
 	notebook(void () serve, void() stop);	
 	
 data KernelInfo
-	= kernelInfo(str languageName, loc projectPath, str moduleName, str variableName, loc salixPath= |tmp:///|, loc logo = |tmp:///|, bool docker=false);
+	= kernelInfo(str languageName, loc projectPath, str moduleName, str variableName, loc salixPath= |tmp:///|, loc logo = |tmp:///|);
 
 str JUPYTER_PATH = "/Library/Frameworks/Python.framework/Versions/3.6/bin/jupyter";
 loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/static/components/codemirror/mode/|;
@@ -24,8 +26,8 @@ loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/
 /*
 * This function starts a notebook WITHOUT a custom codemirror mode
 */
-NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false ){
-	generateKernel(kernelInfo, debug);
+NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false,bool docker=false){
+	generateKernel(kernelInfo, debug, docker);
 	int pid = -1;
 	return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid); });
 }
@@ -34,8 +36,8 @@ NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false ){
 * This function starts a notebook with a custom codemirror mode generated based on the grammar
 */
 //TODO: This method and the previous one should be merged. (Which is the empty way of type[&T <: Tree]?)
-NotebookServer createNotebook(KernelInfo kernelInfo, type[&T <: Tree] sym, bool debug = false){
-	generateKernel(kernelInfo, debug);
+NotebookServer createNotebook(KernelInfo kernelInfo, type[&T <: Tree] sym, bool debug = false, bool docker=false){
+	generateKernel(kernelInfo, debug, docker);
 	generateCodeMirror(kernelInfo, sym);
 	int pid = -1;
 	return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid); });
@@ -63,12 +65,21 @@ void generateCodeMirror(KernelInfo kernelInfo, type[&T <: Tree] sym){
 	//printErrTrace(pid);
 }
 
-void generateKernel(KernelInfo kernelInfo, bool debug){
+void generateKernel(KernelInfo kernelInfo, bool debug, bool docker){
 	kernelPath = kernelInfo.projectPath.parent + "kernel2/<kernelInfo.languageName>/";
-	writeFile(kernelPath + "kernel.json", kernelFileContent(kernelInfo, debug));
 	if(kernelInfo.logo != |tmp:///|)
 		copyLogoToKernel(kernelInfo.logo, kernelPath);
-	installKernel(kernelPath);
+	if(docker){
+		kernelContent = dockerLanguageKernelContent(kernelInfo);
+		writeFile(kernelPath + "kernel.json", kernelContent);
+		content = dockerFileContent(last(split("/", kernelInfo.projectPath.parent.path)), kernelInfo.languageName);
+		writeFile(kernelInfo.projectPath.parent + "Dockerfile2", content);
+	}
+	else{
+		kernelContent = kernelFileContent(kernelInfo, debug);
+		writeFile(kernelPath + "kernel.json", kernelContent);
+		installKernel(kernelPath);
+	}
 }
 
 void installKernel(loc kernelPath){
