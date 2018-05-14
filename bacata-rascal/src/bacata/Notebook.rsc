@@ -33,9 +33,10 @@ NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false ){
 /*
 * This function starts a notebook with a custom codemirror mode generated based on the grammar
 */
-NotebookServer createNotebook(KernelInfo kernelInfo, type[&T <: Tree] sym){
-	generateKernel(kernelInfo);
-	generateCodeMirror(kernelInfo.languageName, sym);
+//TODO: This method and the previous one should be merged. (Which is the empty way of type[&T <: Tree]?)
+NotebookServer createNotebook(KernelInfo kernelInfo, type[&T <: Tree] sym, bool debug = false){
+	generateKernel(kernelInfo, debug);
+	generateCodeMirror(kernelInfo, sym);
 	int pid = -1;
 	return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid); });
 }
@@ -51,13 +52,15 @@ void copyLogoToKernel(loc urlLogo, loc destPath){
 /*
 * This function creates a code mirror mode using the mode received as parameter and re-builds the notebook front-end project.
 */
-void generateCodeMirror(str languageName, type[&T <: Tree] sym){
-	Mode mode = grammar2mode(languageName, sym);
+void generateCodeMirror(KernelInfo kernelInfo, type[&T <: Tree] sym){
+	Mode mode = grammar2mode(kernelInfo.languageName, sym);
 	// Jupyter front-end path
 	createCodeMirrorModeFile(mode, JUPYTER_FRONTEND_PATH + "<mode.name>/<mode.name>.js");
+	createCodeMirrorModeFile(mode, kernelInfo.projectPath.parent + "kernel2/codemirror/<mode.name>/<mode.name>.js");
+	
 	// Re-build notebook front end
-	pid=createProcess("/usr/local/bin/node", args=["/usr/local/bin/npm", "run", "build"]);
-	printErrTrace(pid);
+	//pid=createProcess("/usr/local/bin/node", args=["/usr/local/bin/npm", "run", "build"]);
+	//printErrTrace(pid);
 }
 
 void generateKernel(KernelInfo kernelInfo, bool debug){
