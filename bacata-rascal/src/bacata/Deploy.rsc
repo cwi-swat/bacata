@@ -1,6 +1,8 @@
 module bacata::Deploy
 
 import IO;
+import List;
+import String;
 import bacata::Notebook;
 
 void deployNotebook(loc projectPath){
@@ -37,7 +39,7 @@ return "{
 	'		\"-jar\",
 	'		\"/root/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT-jar-with-dependencies.jar\",
 	'		\"{connection_file}\",
-	'		\"<"<kernel.projectPath>"[1..-1]>\",
+	'		\"home:///<last(split("/", kernel.projectPath.parent.path))>/src\",
 	'		\"<kernel.moduleName>\",
 	'		\"<kernel.variableName>\",
 	'		\"<kernel.languageName>\",
