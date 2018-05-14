@@ -3,7 +3,6 @@ FROM maven:3.5.3-jdk-8 as cloneBuild
 
 RUN apt-get update
 
-
 #------------
 FROM cloneBuild as pythonInstallation
 
@@ -30,24 +29,29 @@ RUN cd notebook \
 #--------------
 FROM jupyterInstallation as bacataImage
 # Clone Rascal
-RUN git clone https://github.com/usethesource/rascal.git
+RUN cd root \
+    && git clone https://github.com/usethesource/rascal.git
 
-RUN cd rascal \
+RUN cd root/rascal \
     && git checkout jupyter \
     && mvn install -DskipTests
 
 # Clone Bacatá 
-RUN git clone https://github.com/cwi-swat/bacata.git
+RUN cd root \
+    && git clone https://github.com/cwi-swat/bacata.git
 
 # Compiles bacatá
-RUN cd bacata \
+RUN cd root/bacata \
 	&& mvn -DmainClass=bacata.TermKernel clean package
+#   && mvn -DmainClass=bacata.rascalNotebook.RascalNotebook clean package
 
 # If salix is selected, these two lines are needed 
-RUN git clone https://github.com/cwi-swat/salix.git
+RUN cd root \
+    && git clone https://github.com/cwi-swat/salix.git
 
-RUN cd salix \
+RUN cd root/salix \
     && git checkout scoped-salix
 
 EXPOSE 8888
+
 CMD ["jupyter", "notebook", "--ip","0.0.0.0", "--allow-root"]
