@@ -3,27 +3,41 @@ module bacata::Generator
 import IO;
 import List;
 import String;
+import bacata::Deploy;
 import bacata::Notebook;
-
+//
 // [0] Language name
 // [1] rascal project path
 // [2] variableName
 // [3] moduleName
 // [4] Bacata path
 void main(list[str] args) {
-  path = |tmp:///|;
-  params = size(args);
-  if( params == 5){
-  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]));
-  }
-  else if(params == 6){
-  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), salixPath = toLocation(args[5]));
-  }
-  else if(params == 7){
-  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), salixPath = toLocation(args[5]), langLogo= toLocation(args[6]));
-  }
-  installKernel(path);
-  startJupyterServer();
+	params = size(args);
+	if(args[0] =="docker"){
+		if(params==5)
+			kernel = kernelInfo(args[1], toLocation(args[2]), args[3], args[4]);
+		else
+			kernel = kernelInfo(args[1], toLocation(args[2]), args[3], args[4], logo = toLocation(args[5]));
+		
+		generateKernel(kernel, false, true);
+		// TODO: I don't know how to create a type[&T <: Tree] from an arg
+		//generateCodeMirror(kernel, #Command, true);
+	}
+	else{
+	  path = |tmp:///|;
+	  //params = size(args);
+	  if( params == 6){
+	  	path = createKernel(args[1], toLocation(args[2]), args[3], args[4], toLocation(args[5]));
+	  }
+	  else if(params == 7){
+	  	path = createKernel(args[1], toLocation(args[2]), args[3], args[4], toLocation(args[5]), salixPath = toLocation(args[6]));
+	  }
+	  else if(params == 8){
+	  	path = createKernel(args[1], toLocation(args[2]), args[3], args[4], toLocation(args[5]), salixPath = toLocation(args[6]), langLogo= toLocation(args[7]));
+	  }
+	  installKernel(path);
+	  startJupyterServer();
+	}
 }
 
 loc createKernel(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar, loc salixPath = |tmp:///|, loc langLogo = |tmp:///|){
