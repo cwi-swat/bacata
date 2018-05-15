@@ -25,7 +25,7 @@ str parseMode(Mode mode) =
   '		mod(CodeMirror);
   '})(function(CodeMirror) {
   '	\'use strict\';
-  '	CodeMirror.defineSimpleMode(\'<toLowerCase(mode.name)>\', {
+  '	CodeMirror.defineSimpleMode(\'<mode.name>\', {
   '		<eval(mode.states)>
   '	});
   '});"
