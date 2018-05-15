@@ -181,6 +181,7 @@ public class TermKernel extends JupyterServer{
 
 	@Override
 	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata) {
+		// TODO: Check this preconditions? should they be in the language part?
 		int cursorStart =0;
 		ArrayList<String> sugestions;
 		if(request.getCode().startsWith("import ")){
