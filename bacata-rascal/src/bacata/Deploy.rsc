@@ -5,11 +5,6 @@ import List;
 import String;
 import bacata::Notebook;
 
-void deployNotebook(loc projectPath){
-
-}
-
-
 void generateDockerFile(loc path, str projectName, str languageName){
 	writeFile(path, dockerFileContent);
 }
