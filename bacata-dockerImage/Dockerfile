@@ -54,4 +54,6 @@ RUN cd root/salix \
 
 EXPOSE 8888
 
+EXPOSE 3434
+
 CMD ["jupyter", "notebook", "--ip","0.0.0.0", "--allow-root"]
