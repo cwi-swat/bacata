@@ -38,7 +38,7 @@ NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false,bool doc
 //TODO: This method and the previous one should be merged. (Which is the empty way of type[&T <: Tree]?)
 NotebookServer createNotebook(KernelInfo kernelInfo, type[&T <: Tree] sym, bool debug = false, bool docker=false){
 	generateKernel(kernelInfo, debug, docker);
-	generateCodeMirror(kernelInfo, sym);
+	generateCodeMirror(kernelInfo, sym, docker);
 	int pid = -1;
 	return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid); });
 }
@@ -54,11 +54,13 @@ void copyLogoToKernel(loc urlLogo, loc destPath){
 /*
 * This function creates a code mirror mode using the mode received as parameter and re-builds the notebook front-end project.
 */
-void generateCodeMirror(KernelInfo kernelInfo, type[&T <: Tree] sym){
+void generateCodeMirror(KernelInfo kernelInfo, type[&T <: Tree] sym, bool docker=false){
 	Mode mode = grammar2mode(kernelInfo.languageName, sym);
 	// Jupyter front-end path
-	createCodeMirrorModeFile(mode, JUPYTER_FRONTEND_PATH + "<mode.name>/<mode.name>.js");
-	createCodeMirrorModeFile(mode, kernelInfo.projectPath.parent + "kernel2/codemirror/<mode.name>/<mode.name>.js");
+	if(!docker)
+		createCodeMirrorModeFile(mode, JUPYTER_FRONTEND_PATH + "<mode.name>/<mode.name>.js");
+	else
+		createCodeMirrorModeFile(mode, kernelInfo.projectPath.parent + "kernel2/codemirror/<mode.name>/<mode.name>.js");
 	
 	// Re-build notebook front end
 	//pid=createProcess("/usr/local/bin/node", args=["/usr/local/bin/npm", "run", "build"]);
@@ -99,7 +101,7 @@ void printErrTrace(PID pid){
 PID startJupyterServer(){
 	PID jupyterExecution = createProcess(JUPYTER_PATH, args =["notebook", "--no-browser"]);
 	bool guard = false;
-	for (_ <- [1..20], line := readLineFromErr(jupyterExecution), line != "") {
+	for (_ <- [1..19], line := readLineFromErr(jupyterExecution), line != "") {
 		if(contains(line,"http://localhost:"))
 		{
 			println("The notebook is running at: <|http://localhost:<split("localhost:", line)[1]>|>");
