@@ -79,7 +79,7 @@
 						<configuration>
 		        			<archive>
 								<manifest>
-									<mainClass>bacata.TermKernel</mainClass>
+									<mainClass>bacata.dslNotebook.DSLNotebook</mainClass>
 								</manifest>
 							</archive>
 		          			<descriptorRefs>
