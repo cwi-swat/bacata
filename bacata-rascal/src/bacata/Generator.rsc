@@ -26,14 +26,14 @@ void main(list[str] args) {
 	else{
 	  path = |tmp:///|;
 	  //params = size(args);
-	  if( params == 6){
-	  	path = createKernel(args[1], toLocation(args[2]), args[3], args[4], toLocation(args[5]));
+	  if( params == 5){
+	  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]));
+	  }
+	  else if(params == 6){
+	  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), salixPath = toLocation(args[5]));
 	  }
 	  else if(params == 7){
-	  	path = createKernel(args[1], toLocation(args[2]), args[3], args[4], toLocation(args[5]), salixPath = toLocation(args[6]));
-	  }
-	  else if(params == 8){
-	  	path = createKernel(args[1], toLocation(args[2]), args[3], args[4], toLocation(args[5]), salixPath = toLocation(args[6]), langLogo= toLocation(args[7]));
+	  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), salixPath = toLocation(args[5]), langLogo= toLocation(args[6]));
 	  }
 	  installKernel(path);
 	  startJupyterServer();
@@ -55,7 +55,7 @@ str kernelContent(str languageName, loc projectPath, str variableName, str modul
     '		\"java\",
     '		\"-cp\",
     '		\"<resolveLocation(|home:///|).path><"<bacataJar>"[9..-1]>:<resolveLocation(|home:///|).path><"<projectPath>"[9..-4]>\",
-    '		\"bacata.TermKernel\",
+    '		\"bacata.dslNotebook.DSLNotebook\",
     '		\"{connection_file}\",
     '		\"<"<projectPath>"[1..-1]>\",
     '		\"<moduleName>\",
