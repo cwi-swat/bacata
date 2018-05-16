@@ -69,27 +69,44 @@
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
         		<version>3.1.0</version>
-        		<configuration>
-        			<archive>
-						<manifest>
-							<!-- <mainClass>bacata.TermKernel</mainClass> -->
-							<!-- <mainClass>bacata.rascalNotebook.RascalNotebook</mainClass> -->
-							<mainClass>${mainClass}</mainClass>
-						</manifest>
-					</archive>
-          			<descriptorRefs>
-            			<descriptorRef>jar-with-dependencies</descriptorRef>
-          			</descriptorRefs>
-          			<finalName>Bacata-${type}</finalName>
-          			<appendAssemblyId>false</appendAssemblyId>
-        		</configuration>
 				<executions>
 					<execution>
-						<id>make-assembly</id>
+						<id>DSL</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
 						</goals>
+						<configuration>
+		        			<archive>
+								<manifest>
+									<mainClass>bacata.TermKernel</mainClass>
+								</manifest>
+							</archive>
+		          			<descriptorRefs>
+		            			<descriptorRef>jar-with-dependencies</descriptorRef>
+		          			</descriptorRefs>
+		          			<finalName>bacata-dsl</finalName>
+		          			<appendAssemblyId>false</appendAssemblyId>
+        				</configuration>
+					</execution>
+					<execution>
+						<id>Rascal</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+		        			<archive>
+								<manifest>
+									<mainClass>bacata.rascalNotebook.RascalNotebook</mainClass>
+								</manifest>
+							</archive>
+		          			<descriptorRefs>
+		            			<descriptorRef>jar-with-dependencies</descriptorRef>
+		          			</descriptorRefs>
+		          			<finalName>bacata-rascal</finalName>
+		          			<appendAssemblyId>false</appendAssemblyId>
+        				</configuration>
 					</execution>
 				</executions>
 			</plugin>
