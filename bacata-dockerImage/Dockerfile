@@ -42,7 +42,7 @@ RUN cd root \
 
 # Compiles bacatá
 RUN cd root/bacata \
-	&& mvn -DmainClass=bacata.TermKernel clean package
+	&& mvn clean package
 #   && mvn -DmainClass=bacata.rascalNotebook.RascalNotebook clean package
 
 # If salix is selected, these two lines are needed 
