@@ -32,7 +32,7 @@ return "{
 	'	\"argv\": [
 	'		\"java\",
 	'		\"-jar\",
-	'		\"/root/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT-jar-with-dependencies.jar\",
+	'		\"/root/bacata/bacata-rascal/target/bacata-dsl.jar\",
 	'		\"{connection_file}\",
 	'		\"home:///<last(split("/", kernel.projectPath.parent.path))>/src\",
 	'		\"<kernel.moduleName>\",
