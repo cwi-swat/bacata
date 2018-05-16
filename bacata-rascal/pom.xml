@@ -80,6 +80,8 @@
           			<descriptorRefs>
             			<descriptorRef>jar-with-dependencies</descriptorRef>
           			</descriptorRefs>
+          			<finalName>Bacata-${type}</finalName>
+          			<appendAssemblyId>false</appendAssemblyId>
         		</configuration>
 				<executions>
 					<execution>
