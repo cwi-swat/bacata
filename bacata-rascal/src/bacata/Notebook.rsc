@@ -119,7 +119,7 @@ str kernelFileContent(KernelInfo kernelInfo, bool debug) =
     '		\"java\",
     '		\"-jar\",
     ' 		<if(debug){>\"-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 \",<}>
-    '		\"/Users/mveranom/Documents/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT-jar-with-dependencies.jar\",
+    '		\"/Users/mveranom/Documents/bacata/bacata-rascal/target/bacata-dsl.jar\",
     '		\"{connection_file}\",
     '		\"<"<kernelInfo.projectPath>"[1..-1]>\",
     '		\"<kernelInfo.moduleName>\",
