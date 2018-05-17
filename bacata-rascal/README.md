@@ -19,10 +19,13 @@
 
 
 ### Execution from command line
-java -Drascal.path="pathBacataRascal.jar" -jar rascal.jar bacata::Generator languageName rascalDSLProjectPath REPLFunctionName REPLModule home:///pathBacataRascal.jar salixProjectPath
+java -Drascal.path="\<pathBacataRascal.jar>" -jar \<rascal.jar> bacata::Generator \<languageName> \<rascalDSLProjectPath> \<REPLFunctionName> \<REPLModule> \<home:///pathBacataRascal.jar > \<salixProjectPath>
 
-### Example
-java -Drascal.path="/Users/mveranom/Documents/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT.jar" -jar /Users/mveranom/Documents/Rascal/rascal/target/rascal-0.11.0-SNAPSHOT.jar bacata::Generator TwoStones home:///Documents/TwoStones/src twoStonedREPL TwoStonesREPL home:///Documents/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT-jar-with-dependencies.jar home:///Documents/RascalProjects/salix/src
+### Examples
+java -Drascal.path="/Users/mveranom/Documents/bacata/bacata-rascal/target/bacata-dsl.jar" -jar /Users/mveranom/Documents/Rascal/rascal/target/rascal-0.11.0-SNAPSHOT.jar bacata::Generator TwoStones home:///Documents/TwoStones/src twoStonedREPL TwoStonesREPL home:///Documents/bacata/bacata-rascal/target/bacata-dsl.jar home:///Documents/RascalProjects/salix/src
 
-##### tmp
+##### tmp [outdated]
 java -Drascal.path="/Users/mveranom/Documents/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT.jar" -jar /Users/mveranom/Documents/Rascal/rascal/target/rascal-0.11.0-SNAPSHOT.jar bacata::Generator salix home:///Documents/neclipse/wt/salixIntegration/src tmpREPL TmpREPL home:///Documents/bacata/bacata-rascal/target/bacata-rascal-0.1.0-SNAPSHOT-jar-with-dependencies.jar home:///Documents/RascalProjects/salix/src home:///geometric.jpg
+
+#### Halide example (May 2018) [Working]
+java -Drascal.path="/Users/mveranom/Documents/bacata/bacata-rascal/target/bacata-dsl.jar" -jar /Users/mveranom/Documents/Rascal/rascal/target/rascal-0.11.0-SNAPSHOT.jar bacata::Generator salixTEMP home:///Documents/RascalProjects/halide-syntax/src halideREPL lang::halide::HalideREPL home:///Documents/bacata/bacata-rascal/target/bacata-dsl.jar home:///Documents/RascalProjects/salix/src home:///geometric.jpg
