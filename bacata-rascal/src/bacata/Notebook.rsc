@@ -72,7 +72,7 @@ void verifyBacataInstallation(){
 /*
 * This function starts a notebook WITHOUT a custom codemirror mode
 */
-NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false,bool docker=false){
+NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false, bool docker=false){
 	verifyPreRequisites();
 	try {
 		generateKernel(kernelInfo, debug, docker);
