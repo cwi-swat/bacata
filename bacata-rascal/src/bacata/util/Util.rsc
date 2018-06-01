@@ -1,7 +1,12 @@
 module bacata::util::Util
 
+import List;
 import String;
 import Message;
+import salix::Node;
+import salix::App;
+import salix::HTML;
+import salix::Core;
 import salix::Node;
 
 @doc{This function translate standard Rascal error Messages into a plain text to be displayed in the notebooks.}
