@@ -57,12 +57,12 @@ public class DSLNotebook extends JupyterServer{
 	// Constructor
 	// -----------------------------------------------------------------
 
-	public DSLNotebook(String connectionFilePath, String source, String moduleName, String variableName, String pLanguageName, String... salixPath) throws Exception {
+	public DSLNotebook(String connectionFilePath, String source, String replQualifiedName, String pLanguageName, String... salixPath) throws Exception {
 		super(connectionFilePath);
 		languageName = pLanguageName;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-		this.language = makeInterpreter(source, moduleName, variableName, salixPath);
+		this.language = makeInterpreter(source, replQualifiedName, salixPath);
 		this.language.initialize(stdout, stderr);
 //		generateKernel();
 //		installKernel();
@@ -209,11 +209,14 @@ public class DSLNotebook extends JupyterServer{
 		}
 			
 	}
-	
+		
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, String... salixPath)  {
+	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, String... salixPath)  {
+		String[] tmp = replQualifiedName.split("::");
+		String variableName = tmp[tmp.length-1];
+		String moduleName = replQualifiedName.replaceFirst("::"+variableName, "");
 		GlobalEnvironment heap = new GlobalEnvironment();
-		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$"+variableName+"$", heap));
+		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$"+moduleName+"$", heap));
 		IValueFactory vf = ValueFactoryFactory.getValueFactory();
 		Evaluator eval = new Evaluator(vf, new PrintWriter(System.err), new PrintWriter(System.out), root, heap);
 		

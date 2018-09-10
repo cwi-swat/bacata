@@ -185,29 +185,29 @@ public class TermKernel extends JupyterServer{
 	}
 
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, String... salixPath)  {
-		GlobalEnvironment heap = new GlobalEnvironment();
-		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$"+variableName+"$", heap));
-		IValueFactory vf = ValueFactoryFactory.getValueFactory();
-		Evaluator eval = new Evaluator(vf, new PrintWriter(System.err), new PrintWriter(System.out), root, heap);
-		
-		eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
-		
-		try {
-			eval.addRascalSearchPathContributor(new URIContributor(vf.sourceLocation("file", null, source)));
-		} catch (URISyntaxException e1) {
-			e1.printStackTrace();
-		}
-		eval.doImport(null, moduleName);
-		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
-		IConstructor repl = (IConstructor) module.getSimpleVariable(variableName).getValue();
-		try {
-			return new TermREPL.TheREPL(vf, repl, eval);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
+	public ILanguageProtocol makeInterpreter(String source, String qualifiedName, String... salixPath)  {
+//		GlobalEnvironment heap = new GlobalEnvironment();
+//		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$"+variableName+"$", heap));
+//		IValueFactory vf = ValueFactoryFactory.getValueFactory();
+//		Evaluator eval = new Evaluator(vf, new PrintWriter(System.err), new PrintWriter(System.out), root, heap);
+//		
+//		eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
+//		
+//		try {
+//			eval.addRascalSearchPathContributor(new URIContributor(vf.sourceLocation("file", null, source)));
+//		} catch (URISyntaxException e1) {
+//			e1.printStackTrace();
+//		}
+//		eval.doImport(null, moduleName);
+//		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
+//		IConstructor repl = (IConstructor) module.getSimpleVariable(variableName).getValue();
+//		try {
+//			return new TermREPL.TheREPL(vf, repl, eval);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		} catch (URISyntaxException e) {
+//			e.printStackTrace();
+//		}
 		return null;
 	}
 	

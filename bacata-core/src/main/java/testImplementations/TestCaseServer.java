@@ -143,7 +143,7 @@ public class TestCaseServer extends JupyterServer {
     }
 
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, String... salixPath) throws IOException, URISyntaxException {
+	public ILanguageProtocol makeInterpreter(String source, String moduleName, String... salixPath) throws IOException, URISyntaxException {
 		// TODO Auto-generated method stub
 		return null;
 	}

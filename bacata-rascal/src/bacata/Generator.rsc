@@ -27,21 +27,21 @@ void main(list[str] args) {
 	  path = |tmp:///|;
 	  //params = size(args);
 	  if( params == 5){
-	  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]));
+	  	path = createKernel(args[0], toLocation(args[1]), args[2], toLocation(args[3]));
 	  }
 	  else if(params == 6){
-	  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), salixPath = toLocation(args[5]));
+	  	path = createKernel(args[0], toLocation(args[1]), args[2], toLocation(args[3]), salixPath = toLocation(args[4]));
 	  }
 	  else if(params == 7){
-	  	path = createKernel(args[0], toLocation(args[1]), args[2], args[3], toLocation(args[4]), salixPath = toLocation(args[5]), langLogo= toLocation(args[6]));
+	  	path = createKernel(args[0], toLocation(args[1]), args[2], toLocation(args[3]), salixPath = toLocation(args[4]), langLogo= toLocation(args[5]));
 	  }
 	  installKernel(path);
 	  startJupyterServer();
 	}
 }
 
-loc createKernel(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar, loc salixPath = |tmp:///|, loc langLogo = |tmp:///|){
-	writeFile(|tmp:///<languageName>|+"kernel.json", kernelContent(languageName, projectPath, variableName, moduleName, bacataJar, salixPath));
+loc createKernel(str languageName, loc projectPath, str replQualifiedName, loc bacataJar, loc salixPath = |tmp:///|, loc langLogo = |tmp:///|){
+	writeFile(|tmp:///<languageName>|+"kernel.json", kernelContent(languageName, projectPath, replQualifiedName, bacataJar, salixPath));
 	if(langLogo!= |tmp:///|)
 	{
 		copyLogoToKernel(langLogo, |tmp:///<languageName>|);
@@ -49,7 +49,7 @@ loc createKernel(str languageName, loc projectPath, str variableName, str module
 	return |tmp:///<languageName>|;
 }
 
-str kernelContent(str languageName, loc projectPath, str variableName, str moduleName, loc bacataJar, loc salixPath) = 
+str kernelContent(str languageName, loc projectPath, str replQualifiedName, loc bacataJar, loc salixPath) = 
 	"{
   	'	\"argv\": [
     '		\"java\",
@@ -58,8 +58,7 @@ str kernelContent(str languageName, loc projectPath, str variableName, str modul
     '		\"bacata.dslNotebook.DSLNotebook\",
     '		\"{connection_file}\",
     '		\"<"<projectPath>"[1..-1]>\",
-    '		\"<moduleName>\",
-    '		\"<variableName>\",
+    '		\"<replQualifiedName>\",
     '		\"<languageName>\"
     ' 		<if(salixPath != |tmp:///|){>,\"<"<salixPath>"[1..-1]>\"<}>
   	'	],

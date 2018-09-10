@@ -60,7 +60,7 @@ public class RascalNotebook extends JupyterServer{
 		super(connectionFilePath);
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-		this.language = makeInterpreter(null, null, null, salixPath);
+		this.language = makeInterpreter(null, null, salixPath);
 		this.language.initialize(stdout, stderr);
 		startServer();
 	}
@@ -223,7 +223,7 @@ public class RascalNotebook extends JupyterServer{
 	private static final String JAR_FILE_PREFIX = "jar:file:";
 
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String moduleName, String variableName, final String... salixPath) throws IOException, URISyntaxException {
+	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, final String... salixPath) throws IOException, URISyntaxException {
 		return new RascalInterpreterREPL(true) {
 			@Override
 			protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {

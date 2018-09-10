@@ -35,8 +35,7 @@ return "{
 	'		\"/root/bacata/bacata-rascal/target/bacata-dsl.jar\",
 	'		\"{connection_file}\",
 	'		\"home:///<last(split("/", kernel.projectPath.parent.path))>/src\",
-	'		\"<kernel.moduleName>\",
-	'		\"<kernel.variableName>\",
+	'		\"<kernel.replQualifiedName>\",
 	'		\"<kernel.languageName>\",
 	'		\"home:///salix/src\"
 	'	],

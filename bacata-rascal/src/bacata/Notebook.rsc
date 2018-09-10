@@ -20,7 +20,7 @@ data NotebookServer
 	|notebook();
 	
 data Kernel
-	= kernel(str languageName, loc projectPath, str moduleName, str variableName, loc salixPath= |tmp:///|, loc logo = |tmp:///|);
+	= kernel(str languageName, loc projectPath, str replQualifiedName, loc salixPath= |tmp:///|, loc logo = |tmp:///|);
 
 //str JUPYTER_PATH = "/Library/Frameworks/Python.framework/Versions/3.6/bin/jupyter";
 //loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/static/components/codemirror/mode/|;
@@ -136,7 +136,7 @@ void generateCodeMirror(Kernel kernelInfo, type[&T <: Tree] sym, bool docker=fal
 	if(!docker)
 		createCodeMirrorModeFile(mode, JUPYTER_FRONTEND_PATH + "<mode.name>/<mode.name>.js");
 	else
-		createCodeMirrorModeFile(mode, kernelInfo.projectPath.parent + "kernel2/codemirror/<mode.name>/<mode.name>.js");
+		createCodeMirrorModeFile(mode, kernelInfo.projectPath.parent + "kernel/codemirror/<mode.name>/<mode.name>.js");
 	
 	// Re-build notebook front end
 	//pid=createProcess("/usr/local/bin/node", args=["/usr/local/bin/npm", "run", "build"]);
@@ -144,7 +144,7 @@ void generateCodeMirror(Kernel kernelInfo, type[&T <: Tree] sym, bool docker=fal
 }
 
 void generateKernel(Kernel kernelInfo, bool debug, bool docker){
-	kernelPath = kernelInfo.projectPath.parent + "kernel2/<kernelInfo.languageName>/";
+	kernelPath = kernelInfo.projectPath.parent + "kernel/<kernelInfo.languageName>/";
 	if(kernelInfo.logo != |tmp:///|)
 		copyLogoToKernel(kernelInfo.logo, kernelPath);
 	if(docker){
@@ -218,8 +218,7 @@ str kernelFileContent(Kernel kernelInfo, bool debug) =
     '		\"<BACATA_HOME>\",
     '		\"{connection_file}\",
     '		\"<"<kernelInfo.projectPath>"[1..-1]>\",
-    '		\"<kernelInfo.moduleName>\",
-    '		\"<kernelInfo.variableName>\",
+    '		\"<kernelInfo.replQualifiedName>\",
     '		\"<kernelInfo.languageName>\"
     ' 		<if(kernelInfo.salixPath != |tmp:///|){>,\"<"<kernelInfo.salixPath>"[1..-1]>\"<}>
   	'	],
