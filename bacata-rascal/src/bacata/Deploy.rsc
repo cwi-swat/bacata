@@ -27,7 +27,7 @@ return
 	";
 }
 
-str dockerLanguageKernelContent(KernelInfo kernel){
+str dockerLanguageKernelContent(Kernel kernel){
 return "{
 	'	\"argv\": [
 	'		\"java\",

@@ -15,9 +15,9 @@ void main(list[str] args) {
 	params = size(args);
 	if(args[0] =="docker"){
 		if(params==5)
-			kernel = kernelInfo(args[1], toLocation(args[2]), args[3], args[4]);
+			kernel = kernel(args[1], toLocation(args[2]), args[3], args[4]);
 		else
-			kernel = kernelInfo(args[1], toLocation(args[2]), args[3], args[4], logo = toLocation(args[5]));
+			kernel = kernel(args[1], toLocation(args[2]), args[3], args[4], logo = toLocation(args[5]));
 		
 		generateKernel(kernel, false, true);
 		// TODO: I don't know how to create a type[&T <: Tree] from an arg

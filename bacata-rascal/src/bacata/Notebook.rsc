@@ -14,13 +14,13 @@ import bacata::util::Mode;
 import bacata::util::CodeMirror;
 
 	
-data NotebookServer =
-	notebook(void () serve, void() stop)
+data NotebookServer 
+	=notebook(void () serve, void() stop)
 	|notebook(void () serve, void() stop, void() logs)
 	|notebook();
 	
-data KernelInfo
-	= kernelInfo(str languageName, loc projectPath, str moduleName, str variableName, loc salixPath= |tmp:///|, loc logo = |tmp:///|);
+data Kernel
+	= kernel(str languageName, loc projectPath, str moduleName, str variableName, loc salixPath= |tmp:///|, loc logo = |tmp:///|);
 
 //str JUPYTER_PATH = "/Library/Frameworks/Python.framework/Versions/3.6/bin/jupyter";
 //loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/static/components/codemirror/mode/|;
@@ -72,10 +72,20 @@ void verifyBacataInstallation(){
 /*
 * This function starts a notebook WITHOUT a custom codemirror mode
 */
-NotebookServer createNotebook(KernelInfo kernelInfo, bool debug = false, bool docker=false){
+NotebookServer createNotebook(Kernel kernelInfo, bool debug = false, bool docker=false){
 	verifyPreRequisites();
 	try {
 		generateKernel(kernelInfo, debug, docker);
+		int pid = -1;
+		return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid);}, void (){ readLogs(pid);});
+	}
+	catch Exc:
+		throw "ERROR: Something went wrong while creating the notebook. \n <Exc>";
+}
+
+NotebookServer createNotebook(){
+	verifyPreRequisites();
+	try {
 		int pid = -1;
 		return notebook( void () { pid = startJupyterServer(); }, void () { killProcess(pid);}, void (){ readLogs(pid);});
 	}
@@ -100,7 +110,7 @@ void readLogs(PID pid){
 * This function starts a notebook with a custom codemirror mode generated based on the grammar
 */
 //TODO: This method and the previous one should be merged. (Which is the empty way of type[&T <: Tree]?)
-NotebookServer createNotebook(KernelInfo kernelInfo, type[&T <: Tree] sym, bool debug = false, bool docker=false){
+NotebookServer createNotebook(Kernel kernelInfo, type[&T <: Tree] sym, bool debug = false, bool docker=false){
 	verifyPreRequisites();
 	generateKernel(kernelInfo, debug, docker);
 	generateCodeMirror(kernelInfo, sym, docker=docker);
@@ -119,7 +129,7 @@ void copyLogoToKernel(loc urlLogo, loc destPath){
 /*
 * This function creates a code mirror mode using the mode received as parameter and re-builds the notebook front-end project.
 */
-void generateCodeMirror(KernelInfo kernelInfo, type[&T <: Tree] sym, bool docker=false){
+void generateCodeMirror(Kernel kernelInfo, type[&T <: Tree] sym, bool docker=false){
 	verifyJupyterFrontendPath();
 	Mode mode = grammar2mode(kernelInfo.languageName, sym);
 	// Jupyter front-end path
@@ -133,7 +143,7 @@ void generateCodeMirror(KernelInfo kernelInfo, type[&T <: Tree] sym, bool docker
 	//printErrTrace(pid);
 }
 
-void generateKernel(KernelInfo kernelInfo, bool debug, bool docker){
+void generateKernel(Kernel kernelInfo, bool debug, bool docker){
 	kernelPath = kernelInfo.projectPath.parent + "kernel2/<kernelInfo.languageName>/";
 	if(kernelInfo.logo != |tmp:///|)
 		copyLogoToKernel(kernelInfo.logo, kernelPath);
@@ -199,7 +209,7 @@ PID startJupyterServer(){
 * This function produces the content of the kernel.json file using the kernel information received as parameter.
 */
 //    '		\"-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 \",
-str kernelFileContent(KernelInfo kernelInfo, bool debug) = 
+str kernelFileContent(Kernel kernelInfo, bool debug) = 
 	"{
   	'	\"argv\": [
     '		\"java\",
