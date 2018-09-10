@@ -63,7 +63,7 @@ ProposalFunction proposer(type[&N <: Tree] g) {
   CompletionProposal toProposal(Production p) = sourceProposal("<for(s <- p.symbols){><sym(s)><}>", replaceAll(prod2rascal(p[attributes={}]),"\n"," "));
   
   return list[CompletionProposal] (str prefix, int offset) {
-    return toList({toProposal(p) | <x,p> <- prefixrules, startsWith(x, last(split(" ",x))) || startsWith(x, last(split(".",x)))});
+    return toList({toProposal(p) | <x,p> <- prefixrules, startsWith(x, last(split(" ",prefix))) || startsWith(x, last(split(".",prefix)))});
   };
 }
 
