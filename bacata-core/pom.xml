@@ -23,6 +23,7 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.10</version>
 		</dependency>
+		<!-- The rascal dependency is here only due to the presence of the ILanguageProtocol interface -->
 		<dependency>
 			<groupId>org.rascalmpl</groupId>
 			<artifactId>rascal</artifactId>
