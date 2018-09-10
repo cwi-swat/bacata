@@ -16,7 +16,7 @@ public class ContentCompleteRequest extends Content{
 	/**
 	 * The cursor position within 'code' (in unicode characters) where completion is requested.
 	 */
-	private int cursorPosition;
+	private int cursorPos;
 
     // -----------------------------------------------------------------
     // Methods
@@ -35,7 +35,7 @@ public class ContentCompleteRequest extends Content{
 	 * @return
 	 */
 	public int getCursorPosition() {
-		return cursorPosition;
+		return cursorPos;
 	}
 	
 }

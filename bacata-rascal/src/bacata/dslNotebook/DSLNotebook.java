@@ -182,17 +182,17 @@ public class DSLNotebook extends JupyterServer{
 	@Override
 	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata) {
 		// TODO: Check this preconditions? should they be in the language part?
-		int cursorStart =0;
+		int cursorPosition = request.getCursorPosition();
 		ArrayList<String> sugestions;
 		if(request.getCode().startsWith("import ")){
-			cursorStart=7;
+			cursorPosition=7;
 		}
-		CompletionResult result =this.language.completeFragment(request.getCode(), request.getCursorPosition());
+		CompletionResult result =this.language.completeFragment(request.getCode(), cursorPosition);
 		if(result != null)
 			sugestions = (ArrayList<String>)result.getSuggestions();
 		else 
 			sugestions = null;
-		ContentCompleteReply content = new ContentCompleteReply(sugestions, cursorStart, request.getCode().length(), new HashMap<String, String>(), Status.OK);
+		ContentCompleteReply content = new ContentCompleteReply(sugestions, result.getOffset(), request.getCode().length(), new HashMap<String, String>(), Status.OK);
 		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new HashMap<String, String>(), content);
 	}
 	
