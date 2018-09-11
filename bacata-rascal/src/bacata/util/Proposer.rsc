@@ -7,6 +7,7 @@
 }
 @contributor{Jurgen J. Vinju - Jurgen.Vinju@cwi.nl - CWI}
 @contributor{Davy Landman - Davy.Landman@cwi.nl - CWI}
+@contributor{Mauricio Verano Merino - m.verano.merino@tue.nl - TUe}
 
 module bacata::util::Proposer
 
@@ -43,17 +44,13 @@ data CompletionProposal
   );
 }
 
-alias ProposalFunction = list[CompletionProposal] (str prefix, int requestOffset);
+alias ProposalFunction = list[str] (str prefix);
 
 alias CompletionFunction = Completion (str prefix, int requestOffset);
 
 ProposalFunction proposer(type[&N <: Tree] g) {
-	a = g.definitions;
   rules = {p | /p:prod(_,_,_) := g.definitions};
-  //println(rules);
   prefixrules = { <x,p> | p:prod(_,[lit(x),*_],_) <- rules};
-  
-  //println(prefixrules);
   
   str sym(lit(z)) = z;
   str sym(c:\char-class(_)) = class2str(c);
@@ -62,17 +59,32 @@ ProposalFunction proposer(type[&N <: Tree] g) {
   
   CompletionProposal toProposal(Production p) = sourceProposal("<for(s <- p.symbols){><sym(s)><}>", replaceAll(prod2rascal(p[attributes={}]),"\n"," "));
   
-  return list[CompletionProposal] (str prefix, int offset) {
-    return toList({toProposal(p) | <x,p> <- prefixrules, startsWith(x, last(split(" ",prefix))) || startsWith(x, last(split(".",prefix)))});
+  return list[str] (str prefix) {
+    return [toProposal(p).newText | <x,p> <- prefixrules, startsWith(x, prefix)];
   };
 }
 
 str class2str(type[&T <: Tree] cc) = "<for (\char-class(rs) := cc.symbol, range(b,e) <- rs, ch <- [b..e+1]) {><char(ch)><}>";
 
-public CompletionFunction createCompletor(type[&N <: Tree] g){
-	return Completion (str prefix, int offset) {
-    	proposerFunction = proposer(g);
-   		return <0, ["<prop.newText>"|prop <- proposerFunction(prefix, offset)]>;
-  	};
+Completion completion(type[&N <: Tree] g, str prefix){
+	proposalFunction = proposer(g);
+	// The offset of the result is equivalent to cursor_start in Jupyter.
+	completionParams = extractPrefix(prefix);
+	return <completionParams[1], proposalFunction(completionParams[0])>;
 }
 
+tuple[str,int] extractPrefix(str prefix){
+	prefixes = split(" ", prefix);
+	if(!isEmpty(prefixes)){
+		realPrefix = last(prefixes);
+		if(endsWith(prefix, " ") || endsWith(prefix, "."))
+			realPrefix = "";
+		newOffset = 0;
+		if(size(realPrefix) != size(prefix)){
+			newOffset = size(prefix)-size(realPrefix);
+		}
+		return <realPrefix, newOffset>;
+	}
+	else
+		return <trim(prefix), 0>;
+}
