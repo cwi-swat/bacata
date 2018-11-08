@@ -46,8 +46,8 @@ void verifyPreRequisites(){
 * This function verifies the definition of the JUPYTER_FRONTEND_PATH
 */
 void verifyJupyterFrontendPath(){
-	JUPYTER_FRONTEND_PATH = |home:///| + readEnvVariable("JUPYTER_FRONTEND_PATH");
-	if(JUPYTER_FRONTEND_PATH == "")
+	JUPYTER_FRONTEND_PATH = |home:///| + readEnvVariable("JUPYTER_FRONTEND_PATH")[1..];
+	if(JUPYTER_FRONTEND_PATH == |tmp:///|)
 		throw "JUPYTER_FRONTEND_PATH is not defined as environment variable";
 }
 
