@@ -24,6 +24,16 @@
 
 	</properties>
 
+	<repositories>
+		<repository>
+			<id>usethesource</id>
+			<url>http://nexus.usethesource.io/content/repositories/public/</url>
+		</repository>
+	</repositories>
+	<scm>
+		<developerConnection>scm:git:https://github.com/cwi-swat/bacata.git</developerConnection>			
+	</scm>
+	
 	<!-- deployment configuration (usethesource) -->
 	<distributionManagement>
 		<repository>
@@ -35,15 +45,5 @@
 			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
-
-	<repositories>
-		<repository>
-			<id>usethesource</id>
-			<url>http://nexus.usethesource.io/content/repositories/public/</url>
-		</repository>
-	</repositories>
-	<scm>
-		<developerConnection>scm:git:https://github.com/cwi-swat/bacata.git</developerConnection>			
-	</scm>
 
 </project>
