@@ -19,9 +19,9 @@
 		<module>bacata-rascal</module>
 	</modules>
 
-<!-- 	<properties>
+	<properties>
 		<maven.deploy.skip>true</maven.deploy.skip>
-	</properties> -->
+	</properties>
 
 	<repositories>
 		<repository>
