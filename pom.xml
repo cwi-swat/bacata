@@ -42,5 +42,8 @@
 			<url>http://nexus.usethesource.io/content/repositories/public/</url>
 		</repository>
 	</repositories>
+	<scm>
+		<developerConnection>scm:git:https://github.com/cwi-swat/bacata.git</developerConnection>			
+	</scm>
 
 </project>
