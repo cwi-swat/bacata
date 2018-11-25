@@ -1,5 +1,6 @@
 package bacata.dslNotebook;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
@@ -9,6 +10,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
+
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
@@ -75,7 +78,7 @@ public class DSLNotebook extends JupyterServer{
 
 	@Override
 	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest, Map<String, String> metadata) {
-		Map<String, String> data = new HashMap<>();
+		Map<String, InputStream> data = new HashMap<>();
 		if(!contentExecuteRequest.isSilent())
 		{
 			if(contentExecuteRequest.isStoreHistory())
@@ -110,8 +113,7 @@ public class DSLNotebook extends JupyterServer{
 					// sends the result
 					if(!data.isEmpty())
 					{
-						ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, metadata);
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, metadata, content);
+						replyRequest(parentHeader,data, metadata);
 					}
 
 				} catch (InterruptedException e) {
@@ -129,6 +131,22 @@ public class DSLNotebook extends JupyterServer{
 			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 		}
 	}
+	
+	public void replyRequest(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata) {
+		InputStream input = data.get("text/html");
+		Map<String, String> res= new HashMap<>();
+		res.put("text/html", convertStreamToString(input));
+		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
+		sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, metadata, content);
+		
+	}
+
+	@SuppressWarnings("resource")
+	public String convertStreamToString(java.io.InputStream inputStream) {
+	    Scanner s = new Scanner(inputStream, "UTF-8").useDelimiter("\\A");
+	    return s.hasNext() ? s.next() : "";
+	}
+	
 
 	@Override
 	public void processHistoryRequest(Header parentHeader, Map<String, String> metadata) {

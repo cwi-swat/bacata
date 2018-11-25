@@ -1,6 +1,7 @@
 package bacata.rascalNotebook;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -78,7 +79,7 @@ public class RascalNotebook extends JupyterServer{
 				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, metadata, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 
 				try {
-					Map<String, String> data = new HashMap<>();
+					Map<String, InputStream> data = new HashMap<>();
 
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
 					removeUnnecessaryData(data);
@@ -89,7 +90,8 @@ public class RascalNotebook extends JupyterServer{
 					// sends the result
 					if(!data.isEmpty())
 					{
-						ContentExecuteResult content = new ContentExecuteResult(executionNumber, data, metadata);
+						Map<String, String> dat = new HashMap<>();
+						ContentExecuteResult content = new ContentExecuteResult(executionNumber, dat, metadata);
 						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, metadata, content);
 					}
 
@@ -109,7 +111,7 @@ public class RascalNotebook extends JupyterServer{
 		}
 	}
 
-	private void processStreams(Header parentHeader, Map<String, String> data, Map<String, String> metadata) {
+	private void processStreams(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata) {
 		if(!stdout.toString().trim().equals("")){
 			processStreamsReply(ContentStream.STD_OUT, parentHeader, data, metadata);
 		}
@@ -118,7 +120,7 @@ public class RascalNotebook extends JupyterServer{
 		}
 	}
 
-	public void processStreamsReply(String stream, Header parentHeader,Map<String, String> data, Map<String, String> metadata){
+	public void processStreamsReply(String stream, Header parentHeader,Map<String, InputStream> data, Map<String, String> metadata){
 		String logs = stream.equals(ContentStream.STD_OUT) ? stdout.toString() : stderr.toString();
 		if(logs.contains("http://")){
 			metadata.put(MIME_TYPE_HTML, stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs)) : createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
@@ -131,7 +133,7 @@ public class RascalNotebook extends JupyterServer{
 		flushStreams();
 	}
 	
-	public void removeUnnecessaryData (Map<String, String> data){
+	public void removeUnnecessaryData (Map<String, InputStream> data){
 		if(data.get(MIME_TYPE_HTML) != null && data.get(MIME_TYPE_HTML).equals("ok\n"))
 			data.remove(MIME_TYPE_HTML);
 	}
