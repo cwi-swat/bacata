@@ -226,7 +226,7 @@ public class RascalNotebook extends JupyterServer{
 
 	@Override
 	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, final String... salixPath) throws IOException, URISyntaxException {
-		return new RascalInterpreterREPL(true) {
+		return new RascalInterpreterREPL(null, null, false, false, true, null) {
 			@Override
 			protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
 				Evaluator e = ShellEvaluatorFactory.getDefaultEvaluator(new PrintWriter(stdout), new PrintWriter(stderr));
