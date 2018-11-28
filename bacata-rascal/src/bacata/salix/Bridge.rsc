@@ -1,7 +1,6 @@
 module bacata::salix::Bridge
 
 import salix::App;
-
 extend util::REPL;
 
 
@@ -14,7 +13,7 @@ data REPL(SalixMultiplexer visualization = noOp())
   =  	repl( 
          CommandResult (str line) handler,
          Completion(str line, int cursor) completor
-         )
+        )
   ;
 
 alias VisOutput = str;
@@ -31,7 +30,7 @@ SalixMultiplexer makeSalixMultiplexer(loc http, loc static) {
   map[str, SalixApp[void]] apps = ();
   
   Response respondHttp(SalixResponse r)
-    = response(("commands": r.cmds, "subs": r.subs, "patch": r.patch), ("Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Origin, X-Requested-With, Content-Type, Accept"));
+ 	 = jsonResponse(ok(), ("Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Origin, X-Requested-With, Content-Type, Accept"), ("commands": r.cmds, "subs": r.subs, "patch": r.patch));
 
   Response _handle(Request req) {
   
