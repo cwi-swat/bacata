@@ -1,4 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -66,51 +66,62 @@
 			</resource>
 		</resources>
 		<plugins>
+		<plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>never</phase>
+            <configuration>
+              <finalName>unwanted</finalName>
+              <classifier>unwanted</classifier>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
-        		<version>3.1.0</version>
+				<version>3.1.0</version>
 				<executions>
 					<execution>
-						<id>DSL</id>
+						<id>default-jar</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
 						</goals>
 						<configuration>
-		        			<archive>
-								<manifest>
-									<mainClass>bacata.dslNotebook.DSLNotebook</mainClass>
-								</manifest>
+							<archive>
+								<manifestFile>META-INF/MANIFEST.MF</manifestFile>
 							</archive>
-		          			<descriptorRefs>
-		            			<descriptorRef>jar-with-dependencies</descriptorRef>
-		          			</descriptorRefs>
-		          			<finalName>bacata-dsl</finalName>
-		          			<appendAssemblyId>false</appendAssemblyId>
-        				</configuration>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+							<finalName>bacata-dsl</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration>
 					</execution>
-					<execution>
+					<!-- <execution>
 						<id>Rascal</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
 						</goals>
 						<configuration>
-		        			<archive>
+							<archive>
 								<manifest>
 									<mainClass>bacata.rascalNotebook.RascalNotebook</mainClass>
 								</manifest>
 							</archive>
-		          			<descriptorRefs>
-		            			<descriptorRef>jar-with-dependencies</descriptorRef>
-		          			</descriptorRefs>
-		          			<finalName>bacata-rascal</finalName>
-		          			<appendAssemblyId>false</appendAssemblyId>
-        				</configuration>
-					</execution>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+							<finalName>bacata-rascal</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration>
+					</execution> -->
 				</executions>
 			</plugin>
-            <plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
@@ -119,9 +130,9 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
-        </plugins>
+		</plugins>
 	</build>
-	
+
 	<!-- deployment configuration (usethesource) -->
 	<distributionManagement>
 		<repository>
