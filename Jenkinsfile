@@ -4,18 +4,20 @@ node {
     
 	stage('Clone'){
       checkout scm
-  }
+  	}
 
-  withMaven(maven: 'M3', jdk: 'jdk-oracle-8', options: [artifactsPublisher(disabled: true)] ) {
+  	withMaven(maven: 'M3', jdk: 'jdk-oracle-8', options: [artifactsPublisher(disabled: true)] ) {
   
-  	 stage('Packaging') {
-    		  sh "mvn clean package"
-  	 }
+  		stage('Packaging') {
+    		sh "mvn clean package"
+  	 	}
 
-     stage('Deploy') {
-          sh "mvn -DskipTests deploy"
-          sh "mvn -DskipTests install"
-     }
-
+     	stage('Deploy') {
+        	sh "mvn -DskipTests deploy"
+        	sh "mvn -DskipTests install"
+     	}
    }
+   
+   build job: '../rascal-eclipse-libraries/master', wait: false
+
 }
