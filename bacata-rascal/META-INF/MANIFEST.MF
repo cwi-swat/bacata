@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: bacata-rascal
-Bundle-SymbolicName: bacata-rascal;singleton:=true
+Bundle-SymbolicName: bacata;singleton:=true
 Bundle-Version: 0.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Main-Class: bacata.dslNotebook.DSLNotebook
