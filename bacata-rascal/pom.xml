@@ -68,7 +68,7 @@
 		<plugins>
 		<plugin>
         <artifactId>maven-jar-plugin</artifactId>
-        <executions>
+        <!-- <executions>
           <execution>
             <id>default-jar</id>
             <phase>never</phase>
@@ -77,7 +77,7 @@
               <classifier>unwanted</classifier>
             </configuration>
           </execution>
-        </executions>
+        </executions> -->
       </plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -96,8 +96,8 @@
 							<descriptorRefs>
 								<descriptorRef>jar-with-dependencies</descriptorRef>
 							</descriptorRefs>
-							<finalName>bacata-dsl</finalName>
-							<appendAssemblyId>false</appendAssemblyId>
+							<!-- <finalName>bacata-dsl</finalName> -->
+							<!-- <appendAssemblyId>false</appendAssemblyId> -->
 						</configuration>
 					</execution>
 					<!-- <execution>
