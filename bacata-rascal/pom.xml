@@ -10,7 +10,7 @@
 
 	<artifactId>bacata-rascal</artifactId>
 	<version>0.1.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
+	<packaging>eclipse-plugin</packaging>
 
 	<dependencies>
 		<dependency>
@@ -66,7 +66,57 @@
 		</resources>
 		<plugins>
 		<plugin>
+				<!-- Copy non-Eclipse plugins to target/dependency so that may be referenced 
+					for runtime use. -->
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.9</version>
+				<executions>
+					<execution>
+						<id>copy</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<!-- <artifactItem>
+									<groupId>org.rascalmpl</groupId>
+									<artifactId>rascal</artifactId>
+									<type>jar</type>
+									<overWrite>true</overWrite>
+									<outputDirectory>${basedir}/lib</outputDirectory>
+									<destFileName>rascal.jar</destFileName>
+								</artifactItem> -->
+								<artifactItem>
+                                    <groupId>org.rascalmpl</groupId>
+									<artifactId>bacata-core</artifactId>
+									<version>1.0-SNAPSHOT</version>
+									<classifier>jar-with-dependencies</classifier>
+									<type>jar</type>
+									<overWrite>true</overWrite>
+									<outputDirectory>${basedir}/lib</outputDirectory>
+									<destFileName>bacata-core.jar</destFileName>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+					<execution>
+						<id>classpath</id>
+						<goals>
+							<goal>build-classpath</goal>
+						</goals>
+						<configuration>
+							<fileSeparator>/</fileSeparator>
+							<prefix>lib</prefix>
+							<outputFile>${project.build.directory}/classPath.txt</outputFile>
+							<excludeTransitive>true</excludeTransitive>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		<plugin>
         <artifactId>maven-jar-plugin</artifactId>
+        <version>3.1.0</version>
         <!-- <executions>
           <execution>
             <id>default-jar</id>
@@ -130,6 +180,87 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.apache.maven.plugins
+										</groupId>
+										<artifactId>
+											maven-dependency-plugin
+										</artifactId>
+										<versionRange>
+											[2.9,)
+										</versionRange>
+										<goals>
+											<goal>build-classpath</goal>
+											<goal>copy</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.eclipse.tycho
+										</groupId>
+										<artifactId>
+											tycho-packaging-plugin
+										</artifactId>
+										<versionRange>
+											[0.25.0,)
+										</versionRange>
+										<goals>
+											<goal>validate-id</goal>
+											<goal>build-qualifier</goal>
+											<goal>
+												validate-version
+											</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.eclipse.tycho
+										</groupId>
+										<artifactId>
+											tycho-compiler-plugin
+										</artifactId>
+										<versionRange>
+											[0.25.0,)
+										</versionRange>
+										<goals>
+											<goal>compile</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		
 	</build>
 
 	<!-- deployment configuration (usethesource) -->

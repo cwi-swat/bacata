@@ -5,6 +5,5 @@ Bundle-SymbolicName: bacata-rascal;singleton:=true
 Bundle-Version: 0.1.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Main-Class: bacata.dslNotebook.DSLNotebook
-Require-Bundle: rascal_eclipse;bundle-version="0.10.0",
- org.eclipse.core.runtime;bundle-version="3.12.0",
- org.apache.commons.lang;bundle-version="2.6.0"
+Bundle-ClassPath: .,
+ lib/bacata-core.jar
