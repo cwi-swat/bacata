@@ -7,4 +7,3 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Main-Class: bacata.dslNotebook.DSLNotebook
 Bundle-ClassPath: .,
  lib/bacata-core.jar
-Require-Bundle: rascal_eclipse
