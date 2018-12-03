@@ -148,9 +148,10 @@
 							<!-- <finalName>bacata-dsl</finalName> -->
 							<appendAssemblyId>false</appendAssemblyId>
 							<archive>
-								<manifest>
+							<manifestFile>META-INF/MANIFEST.MF</manifestFile>
+								<!-- <manifest>
 									<mainClass>bacata.dslNotebook.DSLNotebook</mainClass>
-								</manifest>
+								</manifest> -->
 							</archive>
 						</configuration>
 					</execution>
