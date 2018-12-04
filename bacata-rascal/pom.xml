@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>io.usethesource</groupId>
-		<artifactId>pom-parent</artifactId>
-		<version>0.2.0-SNAPSHOT</version>
+		<groupId>org.rascalmpl</groupId>
+		<artifactId>bacata</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
 	<groupId>org.rascalmpl</groupId>
@@ -62,13 +62,14 @@
 				<includes>
 					<include>META-INF/RASCAL.MF</include>
 					<include>src/**</include>
+					<include>plugin.xml</include>
 				</includes>
 			</resource>
 		</resources>
 		<plugins>
-		<plugin>
-				<!-- Copy non-Eclipse plugins to target/dependency so that may be referenced 
-					for runtime use. -->
+		<!-- <plugin>
+				Copy non-Eclipse plugins to target/dependency so that may be referenced 
+					for runtime use.
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>2.9</version>
 				<executions>
@@ -80,14 +81,14 @@
 						</goals>
 						<configuration>
 							<artifactItems>
-								<!-- <artifactItem>
+								<artifactItem>
 									<groupId>org.rascalmpl</groupId>
 									<artifactId>rascal</artifactId>
 									<type>jar</type>
 									<overWrite>true</overWrite>
 									<outputDirectory>${basedir}/lib</outputDirectory>
 									<destFileName>rascal.jar</destFileName>
-								</artifactItem> -->
+								</artifactItem>
 								<artifactItem>
                                     <groupId>org.rascalmpl</groupId>
 									<artifactId>bacata-core</artifactId>
@@ -114,7 +115,7 @@
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin> -->
 		<plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <version>3.1.0</version>
@@ -129,7 +130,7 @@
           </execution>
         </executions> -->
       </plugin>
-			<plugin>
+			<!-- <plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>3.1.0</version>
 				 <executions>
@@ -146,17 +147,17 @@
 							<descriptorRefs>
 								<descriptorRef>jar-with-dependencies</descriptorRef>
 							</descriptorRefs>
-							<!-- <finalName>bacata-dsl</finalName> -->
+							<finalName>bacata-dsl</finalName>
 							<appendAssemblyId>false</appendAssemblyId>
 							<archive>
 							<manifestFile>META-INF/MANIFEST.MF</manifestFile>
-								<!-- <manifest>
+								<manifest>
 									<mainClass>bacata.dslNotebook.DSLNotebook</mainClass>
-								</manifest> -->
+								</manifest>
 							</archive>
 						</configuration>
 					</execution>
-					<!-- <execution>
+					<execution>
 						<id>Rascal</id>
 						<phase>package</phase>
 						<goals>
@@ -174,9 +175,9 @@
 							<finalName>bacata-rascal</finalName>
 							<appendAssemblyId>false</appendAssemblyId>
 						</configuration>
-					</execution> -->
+					</execution>
 				</executions>
-			</plugin>
+			</plugin> -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -188,10 +189,10 @@
 			</plugin>
 		</plugins>
 		
-		<pluginManagement>
+	<!-- 	<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings 
-					only. It has no influence on the Maven build itself. -->
+				This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself.
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
@@ -266,7 +267,7 @@
 					</configuration>
 				</plugin>
 			</plugins>
-		</pluginManagement>
+		</pluginManagement> -->
 		
 	</build>
 

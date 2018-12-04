@@ -2,6 +2,6 @@
 <?eclipse version="3.0"?>
 <plugin>
    <extension
-         id="rascal-ecore-library" point="rascal_eclipse.rascalLibrary">
+         id="bacata-rascal-library" point="rascal_eclipse.rascalLibrary">
    </extension>
 </plugin>
