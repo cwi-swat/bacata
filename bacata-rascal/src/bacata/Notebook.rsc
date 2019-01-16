@@ -9,6 +9,7 @@ import util::REPL;
 import util::Resources;
 import util::ShellExec;
 import bacata::Deploy;
+import bacata::util::Util;
 import bacata::util::Mode;
 //import bacata::HTML;
 import bacata::util::CodeMirror;
@@ -65,8 +66,11 @@ void verifyJupyterInstallation(){
 */
 void verifyBacataInstallation(){
 	BACATA_HOME = readEnvVariable("BACATA_HOME");
-	if(BACATA_HOME == "")
-		throw "BACATA_HOME is not defined as environment variable";
+	if(BACATA_HOME == ""){
+		BACATA_HOME = getBacataPluginLocation();
+		if(BACATA_HOME == "")
+			throw "BACATA_HOME is not defined as environment variable";
+	}	
 }
 
 /*
