@@ -13,4 +13,7 @@ Export-Package: bacata,
  communication,
  entities,
  server
-Import-Package: bacata
+Import-Package: bacata,
+ communication,
+ entities,
+ server
