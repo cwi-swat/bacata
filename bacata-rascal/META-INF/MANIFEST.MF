@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: bacata-rascal
 Bundle-Vendor: TUe-CWI
 Bundle-SymbolicName: bacata-rascal;singleton:=true
-Bundle-Version: 0.0.1.qualifier
+Bundle-Version: 0.2.0.qualifier
 Require-Bundle: rascal_eclipse
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Main-Class: bacata.dslNotebook.DSLNotebook
