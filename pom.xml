@@ -5,7 +5,6 @@
 	<groupId>org.rascalmpl</groupId>
 	<artifactId>bacata</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-
 	<packaging>pom</packaging>
 	
  	<parent>
@@ -19,19 +18,31 @@
 		<module>bacata-rascal</module>
 	</modules>
 
-	<!-- <properties>
-		<maven.deploy.skip>true</maven.deploy.skip>
-	</properties> -->
-	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+
+	<!-- dependency resolution configuration (usethesource) -->
 	<repositories>
 		<repository>
 			<id>usethesource</id>
+			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>usethesource-releases</id>
+			<url>http://nexus.usethesource.io/content/repositories/releases/</url>
+		</repository>
+		<repository>
+			<id>usethesource-public</id>
 			<url>http://nexus.usethesource.io/content/repositories/public/</url>
 		</repository>
 	</repositories>
-	<!-- <scm>
-		<developerConnection>scm:git:https://github.com/cwi-swat/bacata.git</developerConnection>			
-	</scm> -->
+
+	<scm>
+		<developerConnection>scm:git:https://github.com/cwi-swat/bacata.git</developerConnection>
+	</scm>
 	
 	<!-- deployment configuration (usethesource) -->
 	<distributionManagement>
@@ -44,5 +55,4 @@
 			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
-
 </project>
