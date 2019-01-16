@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -8,9 +9,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<groupId>org.rascalmpl</groupId>
 	<artifactId>bacata-rascal</artifactId>
-	<version>0.1.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<dependencies>
@@ -27,259 +26,48 @@
 		</dependency>
 	</dependencies>
 
-	<scm>
-		<developerConnection>scm:git:https://github.com/cwi-swat/bacata.git</developerConnection>
-	</scm>
-
-	<!-- dependency resolution configuration (usethesource) -->
-	<repositories>
-		<repository>
-			<id>usethesource</id>
-			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
-		</repository>
-		<repository>
-			<id>usethesource-releases</id>
-			<url>http://nexus.usethesource.io/content/repositories/releases/</url>
-		</repository>
-		<repository>
-			<id>usethesource-public</id>
-			<url>http://nexus.usethesource.io/content/repositories/public/</url>
-		</repository>
-	</repositories>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
-		<resources>
-			<resource>
-				<directory>src</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-					<exclude>**/*.class</exclude>
-				</excludes>
-			</resource>
+ 		<resources>
 			<resource>
 				<directory>.</directory>
 				<filtering>false</filtering>
 				<includes>
-					<include>META-INF/RASCAL.MF</include>
+					<include>META-INF/**</include>
 					<include>src/**</include>
 					<include>plugin.xml</include>
 				</includes>
 			</resource>
 		</resources>
+		
 		<plugins>
-		<!-- <plugin>
-				Copy non-Eclipse plugins to target/dependency so that may be referenced 
-					for runtime use.
-				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.9</version>
-				<executions>
-					<execution>
-						<id>copy</id>
-						<phase>validate</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>org.rascalmpl</groupId>
-									<artifactId>rascal</artifactId>
-									<type>jar</type>
-									<overWrite>true</overWrite>
-									<outputDirectory>${basedir}/lib</outputDirectory>
-									<destFileName>rascal.jar</destFileName>
-								</artifactItem>
-								<artifactItem>
-                                    <groupId>org.rascalmpl</groupId>
-									<artifactId>bacata-core</artifactId>
-									<version>1.0-SNAPSHOT</version>
-									<classifier>jar-with-dependencies</classifier>
-									<type>jar</type>
-									<overWrite>true</overWrite>
-									<outputDirectory>${basedir}/lib</outputDirectory>
-									<destFileName>bacata-core.jar</destFileName>
-								</artifactItem>
-							</artifactItems>
-						</configuration>
-					</execution>
-					<execution>
-						<id>classpath</id>
-						<goals>
-							<goal>build-classpath</goal>
-						</goals>
-						<configuration>
-							<fileSeparator>/</fileSeparator>
-							<prefix>lib</prefix>
-							<outputFile>${project.build.directory}/classPath.txt</outputFile>
-							<excludeTransitive>true</excludeTransitive>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin> -->
-		<plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.1.0</version>
-        <!-- <executions>
-          <execution>
-            <id>default-jar</id>
-            <phase>never</phase>
-            <configuration>
-              <finalName>unwanted</finalName>
-              <classifier>unwanted</classifier>
-            </configuration>
-          </execution>
-        </executions> -->
-      </plugin>
-			<!-- <plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.1.0</version>
-				 <executions>
-					<execution>
-						<id>default-jar</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<archive>
-								<manifestFile>META-INF/MANIFEST.MF</manifestFile>
-							</archive>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
-							<finalName>bacata-dsl</finalName>
-							<appendAssemblyId>false</appendAssemblyId>
-							<archive>
-							<manifestFile>META-INF/MANIFEST.MF</manifestFile>
-								<manifest>
-									<mainClass>bacata.dslNotebook.DSLNotebook</mainClass>
-								</manifest>
-							</archive>
-						</configuration>
-					</execution>
-					<execution>
-						<id>Rascal</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<archive>
-								<manifest>
-									<mainClass>bacata.rascalNotebook.RascalNotebook</mainClass>
-								</manifest>
-							</archive>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
-							<finalName>bacata-rascal</finalName>
-							<appendAssemblyId>false</appendAssemblyId>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin> -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration> 
+							<!-- <minimizeJar>true</minimizeJar>  -->
+							<transformers>
+								<!-- Add a transformer to exclude any other manifest files (possibly from dependencies). -->
+	                            <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+	                                <resource>MANIFEST.MF</resource>
+	                            </transformer>
+	                            <!-- Add a transformer to include your custom manifest file. -->
+	                            <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+	                                <resource>META-INF/MANIFEST.MF</resource>
+	                                <file>META-INF/MANIFEST.MF</file>
+	                            </transformer>
+	                		</transformers>	
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
-		
-	<!-- 	<pluginManagement>
-			<plugins>
-				This plugin's configuration is used to store Eclipse m2e settings 
-					only. It has no influence on the Maven build itself.
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.apache.maven.plugins
-										</groupId>
-										<artifactId>
-											maven-dependency-plugin
-										</artifactId>
-										<versionRange>
-											[2.9,)
-										</versionRange>
-										<goals>
-											<goal>build-classpath</goal>
-											<goal>copy</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.eclipse.tycho
-										</groupId>
-										<artifactId>
-											tycho-packaging-plugin
-										</artifactId>
-										<versionRange>
-											[0.25.0,)
-										</versionRange>
-										<goals>
-											<goal>validate-id</goal>
-											<goal>build-qualifier</goal>
-											<goal>
-												validate-version
-											</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.eclipse.tycho
-										</groupId>
-										<artifactId>
-											tycho-compiler-plugin
-										</artifactId>
-										<versionRange>
-											[0.25.0,)
-										</versionRange>
-										<goals>
-											<goal>compile</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement> -->
-		
 	</build>
-
-	<!-- deployment configuration (usethesource) -->
- 	<distributionManagement>
-		<repository>
-			<id>usethesource-releases</id>
-			<url>http://nexus.usethesource.io/content/repositories/releases/</url>
-		</repository>
-		<snapshotRepository>
-			<id>usethesource-snapshots</id>
-			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
-		</snapshotRepository>
-	</distributionManagement>
 </project>
