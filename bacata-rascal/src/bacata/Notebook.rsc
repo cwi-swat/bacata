@@ -10,7 +10,6 @@ import util::Resources;
 import util::ShellExec;
 import bacata::Deploy;
 import bacata::util::Mode;
-import bacata::util::Util;
 //import bacata::HTML;
 import bacata::util::CodeMirror;
 
@@ -238,6 +237,24 @@ str firstUpperCase(str input){
 	return replaceFirst(input, first, toUpperCase(first)); 
 }	
 
+
+str getBacataPluginLocation() {
+	pluginsFolder = resolveLocation(|cwd:///|).parent + "Eclipse/plugins/";
+	list[loc] bacataPlugins = [ plugin | plugin <- pluginsFolder.ls, startsWith(plugin.file, "bacata-rascal_")];
+	return isEmpty(bacataPlugins) ? "" : getLatestVersion(bacataPlugins);
+}
+
+str getLatestVersion(list[loc] versions) {
+	latest = |tmp:///|;
+	for( a <- versions){
+		for( b <- versions){
+			if(a > b){
+				latest = a;
+			}
+		}
+	}
+	return resolveLocation(latest).path;
+}
 //@javaClass{org.rascalmpl.library.util.Notebook}
 //@reflect
 //java str startNotebook(REPL repl);
