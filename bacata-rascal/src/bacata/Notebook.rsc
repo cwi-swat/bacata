@@ -248,7 +248,7 @@ str getLatestVersion(list[loc] versions) {
 	latest = |tmp:///|;
 	for( a <- versions){
 		for( b <- versions){
-			if(a > b){
+			if(a >= b){
 				latest = a;
 			}
 		}
