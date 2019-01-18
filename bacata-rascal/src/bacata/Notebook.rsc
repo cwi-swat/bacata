@@ -31,13 +31,13 @@ str BACATA_HOME = "";
 /*
 * This function reads the environment variable received as parameter.
 */
-str readEnvVariable(str key){
+str readEnvVariable(str key) {
 	f= createProcess("printenv", args=[key]);
 	return replaceAll(readEntireStream(f),"\n","");
 }
 
 
-void verifyPreRequisites(){
+void verifyPreRequisites() {
 	verifyJupyterInstallation();
 	verifyBacataInstallation();
 }
@@ -45,7 +45,7 @@ void verifyPreRequisites(){
 /*
 * This function verifies the definition of the JUPYTER_FRONTEND_PATH
 */
-void verifyJupyterFrontendPath(){
+void verifyJupyterFrontendPath() {
 	JUPYTER_FRONTEND_PATH = |home:///| + readEnvVariable("JUPYTER_FRONTEND_PATH")[1..];
 	if(JUPYTER_FRONTEND_PATH == |tmp:///|)
 		throw "JUPYTER_FRONTEND_PATH is not defined as environment variable";
@@ -54,7 +54,7 @@ void verifyJupyterFrontendPath(){
 /*
 * This function verifies the definition of the JUPYTER_HOME
 */
-void verifyJupyterInstallation(){
+void verifyJupyterInstallation() {
 	JUPYTER_HOME = readEnvVariable("JUPYTER_HOME");
 	if(JUPYTER_HOME == "")
 		throw "JUPYTER_HOME is not defined as environment variable";
@@ -63,7 +63,7 @@ void verifyJupyterInstallation(){
 /*
 * This function verifies the definition of the BACATA_HOME
 */
-void verifyBacataInstallation(){
+void verifyBacataInstallation() {
 	BACATA_HOME = readEnvVariable("BACATA_HOME");
 	if(BACATA_HOME == "") {
 		BACATA_HOME = getBacataPluginLocation();
@@ -75,7 +75,7 @@ void verifyBacataInstallation(){
 /*
 * This function starts a notebook WITHOUT a custom codemirror mode
 */
-NotebookServer createNotebook(Kernel kernelInfo, bool debug = false, bool docker=false){
+NotebookServer createNotebook(Kernel kernelInfo, bool debug = false, bool docker=false) {
 	verifyPreRequisites();
 	try {
 		generateKernel(kernelInfo, debug, docker);
@@ -86,7 +86,7 @@ NotebookServer createNotebook(Kernel kernelInfo, bool debug = false, bool docker
 		throw "ERROR: Something went wrong while creating the notebook. \n <Exc>";
 }
 
-NotebookServer createNotebook(){
+NotebookServer createNotebook() {
 	verifyPreRequisites();
 	try {
 		int pid = -1;
@@ -99,7 +99,7 @@ NotebookServer createNotebook(){
 /*
 * This function reads the logs generated as side-effect from running Jupyter Server.
 */
-void readLogs(PID pid){
+void readLogs(PID pid) {
 	try
 		printErrTrace(pid);
 	catch Exc:
@@ -113,7 +113,7 @@ void readLogs(PID pid){
 * This function starts a notebook with a custom codemirror mode generated based on the grammar
 */
 //TODO: This method and the previous one should be merged. (Which is the empty way of type[&T <: Tree]?)
-NotebookServer createNotebook(Kernel kernelInfo, type[&T <: Tree] sym, bool debug = false, bool docker=false){
+NotebookServer createNotebook(Kernel kernelInfo, type[&T <: Tree] sym, bool debug = false, bool docker = false) {
 	verifyPreRequisites();
 	generateKernel(kernelInfo, debug, docker);
 	generateCodeMirror(kernelInfo, sym, docker=docker);
@@ -124,7 +124,7 @@ NotebookServer createNotebook(Kernel kernelInfo, type[&T <: Tree] sym, bool debu
 /*
 * This function takes the url of a logo image (64x64) for the language to be displayed in the browser when the kernel is loaded
 */
-void copyLogoToKernel(loc urlLogo, loc destPath){
+void copyLogoToKernel(loc urlLogo, loc destPath) {
 	list[int] imgBytes= readFileBytes(urlLogo);
 	writeFileBytes(destPath + "logo-64x64.png", imgBytes);
 }
@@ -132,7 +132,7 @@ void copyLogoToKernel(loc urlLogo, loc destPath){
 /*
 * This function creates a code mirror mode using the mode received as parameter and re-builds the notebook front-end project.
 */
-void generateCodeMirror(Kernel kernelInfo, type[&T <: Tree] sym, bool docker=false){
+void generateCodeMirror(Kernel kernelInfo, type[&T <: Tree] sym, bool docker=false) {
 	verifyJupyterFrontendPath();
 	Mode mode = grammar2mode(kernelInfo.languageName, sym);
 	// Jupyter front-end path
@@ -146,7 +146,7 @@ void generateCodeMirror(Kernel kernelInfo, type[&T <: Tree] sym, bool docker=fal
 	//printErrTrace(pid);
 }
 
-void generateKernel(Kernel kernelInfo, bool debug, bool docker){
+void generateKernel(Kernel kernelInfo, bool debug, bool docker) {
 	kernelPath = kernelInfo.projectPath.parent + "kernel/<kernelInfo.languageName>/";
 	if(kernelInfo.logo != |tmp:///|)
 		copyLogoToKernel(kernelInfo.logo, kernelPath);
@@ -163,7 +163,7 @@ void generateKernel(Kernel kernelInfo, bool debug, bool docker){
 	}
 }
 
-void installKernel(loc kernelPath){
+void installKernel(loc kernelPath) {
 	try{
 		 pid= createProcess(JUPYTER_HOME, args=["kernelspec", "install", resolveLocation(kernelPath).path]);
 	 	printErrTrace(pid);
@@ -172,7 +172,7 @@ void installKernel(loc kernelPath){
 	 	throw "Error while installing the kernel <Exc>";
 }
 
-void printErrTrace(PID pid){
+void printErrTrace(PID pid) {
 	//for (_ <- [1..10], line := readLineFromErr(pid), line != "") {
 	//	println("<line>");
  //   }
@@ -183,7 +183,7 @@ void printErrTrace(PID pid){
     }
 }
 
-void printTrace(PID pid){
+void printTrace(PID pid) {
     line = readFrom(pid);
     while(line!= ""){
     	println("<line>");
@@ -194,7 +194,7 @@ void printTrace(PID pid){
 /*
 * This function starts the jupyter server and returns the url in which the webserver is runing.
 */
-PID startJupyterServer(){
+PID startJupyterServer() {
 	PID jupyterExecution = createProcess(JUPYTER_HOME, args =["notebook", "--no-browser"]);
 	bool guard = false;
 	for (_ <- [1..19], line := readLineFromErr(jupyterExecution), line != "") {
@@ -232,7 +232,7 @@ str kernelFileContent(Kernel kernelInfo, bool debug) =
 /*
 * This function replaces the first character of the string for the corresponding character in uppercase
 */
-str firstUpperCase(str input){
+str firstUpperCase(str input) {
 	str first = stringChar(charAt(input, 0));
 	return replaceFirst(input, first, toUpperCase(first)); 
 }	
@@ -255,6 +255,3 @@ str getLatestVersion(list[loc] versions) {
 	}
 	return resolveLocation(latest).path;
 }
-//@javaClass{org.rascalmpl.library.util.Notebook}
-//@reflect
-//java str startNotebook(REPL repl);

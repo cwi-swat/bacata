@@ -5,11 +5,11 @@ import List;
 import String;
 import bacata::Notebook;
 
-void generateDockerFile(loc path, str projectName, str languageName){
+void generateDockerFile(loc path, str projectName, str languageName) {
 	writeFile(path, dockerFileContent);
 }
 
-str dockerFileContent(str projectName, str languageName){
+str dockerFileContent(str projectName, str languageName) {
 return
 	"FROM maveme/bacata:beta as bacataDSL
 	'
@@ -27,7 +27,7 @@ return
 	";
 }
 
-str dockerLanguageKernelContent(Kernel kernel){
+str dockerLanguageKernelContent(Kernel kernel) {
 return "{
 	'	\"argv\": [
 	'		\"java\",

@@ -5,8 +5,7 @@ extend util::REPL;
 
 
 data CommandResult(list[Message] messages = [])
-  = string(str result)
-  | salix(SalixApp[&T] salixApp)
+  = salix(SalixApp[&T] salixApp)
   ; 
   
 data REPL(SalixMultiplexer visualization = noOp())

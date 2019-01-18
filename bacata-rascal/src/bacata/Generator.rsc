@@ -13,7 +13,7 @@ import bacata::Notebook;
 // [4] Bacata path
 void main(list[str] args) {
 	params = size(args);
-	if(args[0] =="docker"){
+	if(args[0] =="docker") {
 		if(params==5)
 			kernel = kernel(args[1], toLocation(args[2]), args[3], args[4]);
 		else
@@ -23,16 +23,16 @@ void main(list[str] args) {
 		// TODO: I don't know how to create a type[&T <: Tree] from an arg
 		//generateCodeMirror(kernel, #Command, true);
 	}
-	else{
+	else {
 	  path = |tmp:///|;
 	  //params = size(args);
-	  if( params == 5){
+	  if( params == 5) {
 	  	path = createKernel(args[0], toLocation(args[1]), args[2], toLocation(args[3]));
 	  }
-	  else if(params == 6){
+	  else if(params == 6) {
 	  	path = createKernel(args[0], toLocation(args[1]), args[2], toLocation(args[3]), salixPath = toLocation(args[4]));
 	  }
-	  else if(params == 7){
+	  else if(params == 7) {
 	  	path = createKernel(args[0], toLocation(args[1]), args[2], toLocation(args[3]), salixPath = toLocation(args[4]), langLogo= toLocation(args[5]));
 	  }
 	  installKernel(path);
@@ -40,10 +40,9 @@ void main(list[str] args) {
 	}
 }
 
-loc createKernel(str languageName, loc projectPath, str replQualifiedName, loc bacataJar, loc salixPath = |tmp:///|, loc langLogo = |tmp:///|){
+loc createKernel(str languageName, loc projectPath, str replQualifiedName, loc bacataJar, loc salixPath = |tmp:///|, loc langLogo = |tmp:///|) {
 	writeFile(|tmp:///<languageName>|+"kernel.json", kernelContent(languageName, projectPath, replQualifiedName, bacataJar, salixPath));
-	if(langLogo!= |tmp:///|)
-	{
+	if(langLogo!= |tmp:///|) {
 		copyLogoToKernel(langLogo, |tmp:///<languageName>|);
 	}
 	return |tmp:///<languageName>|;
