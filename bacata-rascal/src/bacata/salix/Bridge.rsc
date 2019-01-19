@@ -1,6 +1,9 @@
 module bacata::salix::Bridge
 
+import IO;
+import String;
 import salix::App;
+import util::Webserver;
 extend util::REPL;
 
 
