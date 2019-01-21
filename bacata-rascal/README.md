@@ -1,4 +1,37 @@
 # Bacata
+
+## Eclipse Plugin
+To install Bacatá please use the following update site [https://update.rascal-mpl.org/libs/](https://update.rascal-mpl.org/libs/) and select the __Bacata__ feature.
+
+### Requirements
+* [Jupyter](https://github.com/maveme/notebook).
+* [Rascal](https://www.rascal-mpl.org/start/).
+
+### Set-up
+* Install Bacatá
+* Set the following environment variables.
+	* __ECLIPSE_HOME__: this variable points to the _Contents_ folder of Eclipse.
+		* Example: ECLIPSE_HOME = /Applications/Eclipse\ 3.app/Contents
+	* __JUPYTER_HOME__: this variable points to the Jupyter installation.
+		* _Example:_ JUPYTER_HOME = /Library/Frameworks/Python.framework/Versions/3.7/bin/jupyter
+			
+__NOTE__: Verify that the previous environment variables are available when you start Eclipse.
+
+### Usage
+* Right click on the root of your project and initiate a _Rascal Console_.
+* Import the Bacatá notebook module.
+	* `import bacata::Notebook_`
+* Create a _Kernel_.
+	* `k = kernel("Calc", |home:///Documents/calc/src|, "CalcREPL::myRepl", salixPath=|home:///Documents/Rascal/salix/src|, logo = |home:///calc.png|);`
+* Create a Notebook object.
+	* `nb = createNotebook(k);`
+* Start the Jupyter notebook.
+	* `nb.serve();`
+* After executing the previous command, you will obtain in the console the url in which Jupyter is running.	
+* To stop the server use the following command.
+	* `nb.stop();`
+____
+
 ### Intall
 * Python 3 
 * Pip3
