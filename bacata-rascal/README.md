@@ -6,6 +6,7 @@ To install Bacatá please use the following update site [https://update.rascal-m
 ### Requirements
 * [Jupyter](https://github.com/maveme/notebook).
 * [Rascal](https://www.rascal-mpl.org/start/).
+* [Salix](https://github.com/cwi-swat/salix/tree/scoped-salix) (Optional): Clone and add the Salix project to your Eclipse workspace.
 
 ### Set-up
 * Install Bacatá
