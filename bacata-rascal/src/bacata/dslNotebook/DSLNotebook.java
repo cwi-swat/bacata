@@ -79,12 +79,9 @@ public class DSLNotebook extends JupyterServer{
 	@Override
 	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest, Map<String, String> metadata) {
 		Map<String, InputStream> data = new HashMap<>();
-		if(!contentExecuteRequest.isSilent())
-		{
-			if(contentExecuteRequest.isStoreHistory())
-			{
+		if (!contentExecuteRequest.isSilent()) {
+			if (contentExecuteRequest.isStoreHistory()) {
 				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, metadata, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
-
 				try {
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
 					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
@@ -95,15 +92,15 @@ public class DSLNotebook extends JupyterServer{
 						stdout.flush();
 					}
 
-					if(!stderr.toString().trim().equals("")){
+					if (!stderr.toString().trim().equals("")) {
 						// This message is used to Render locations in html because STREM channel does not support it
 						String logs = metadata.get("ERROR-LOG");
-						if( logs != null){
+						if ( logs != null){
 							metadata.remove("ERROR-LOG");
 							metadata.put("text/html", logs);
 							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, metadata, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
 						}
-						else{
+						else {
 							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stderr", stderr.toString()));
 						}
 						stderr.getBuffer().setLength(0);
@@ -111,8 +108,7 @@ public class DSLNotebook extends JupyterServer{
 					}
 
 					// sends the result
-					if(!data.isEmpty())
-					{
+					if (!data.isEmpty()) {
 						replyRequest(parentHeader,data, metadata);
 					}
 
@@ -120,12 +116,12 @@ public class DSLNotebook extends JupyterServer{
 					e.printStackTrace();
 				}
 			}
-			else{
+			else {
 				// TODO evaluate user code 
 			}
 			executionNumber ++;
 		}
-		else{
+		else {
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
 			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
@@ -162,12 +158,11 @@ public class DSLNotebook extends JupyterServer{
 	@Override
 	public void processShutdownRequest(Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown, Map<String, String> metadata) {
 		boolean restart = false;
-		if(contentShutdown.getRestart())
-		{
+		if (contentShutdown.getRestart()) {
 			restart = true;
 			// TODO: how should I restart rascal?
 		}
-		else{
+		else {
 			this.language.stop();
 			getCommunication().getRequests().close();
 			getCommunication().getPublish().close();
@@ -186,11 +181,11 @@ public class DSLNotebook extends JupyterServer{
 	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request, Map<String, String> metadata) {
 		//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
 		String status, indent="";
-		if(this.language.isStatementComplete(request.getCode())){
+		if (this.language.isStatementComplete(request.getCode())) {
 			System.out.println("COMPLETO");
 			status = Status.COMPLETE;
 		}
-		else{
+		else {
 			status = Status.INCOMPLETE;
 			indent = "??????";
 		}
@@ -201,11 +196,11 @@ public class DSLNotebook extends JupyterServer{
 	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata) {
 		int cursorPosition = request.getCursorPosition();
 		ArrayList<String> sugestions = null;
-		if(request.getCode().startsWith("import ")){
+		if (request.getCode().startsWith("import ")) {
 			cursorPosition=7;
 		}
 		CompletionResult result = this.language.completeFragment(request.getCode(), cursorPosition);
-		if(result != null)
+		if (result != null)
 			sugestions = (ArrayList<String>)result.getSuggestions();
 		
 		ContentCompleteReply content = new ContentCompleteReply(sugestions, result != null ? result.getOffset() : 0, request.getCode().length(), new HashMap<String, String>(), Status.OK);
@@ -252,7 +247,7 @@ public class DSLNotebook extends JupyterServer{
 					eval.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, RascalManifest.DEFAULT_SRC));
 				}
 			}
-			if(salixPath!=null && salixPath.length!=0)
+			if (salixPath!=null && salixPath.length!=0)
 				eval.addRascalSearchPath(URIUtil.createFromURI((salixPath[0])));
 			eval.addRascalSearchPath(URIUtil.createFromURI(source));
 		} catch (URISyntaxException | IOException e1) {
@@ -278,7 +273,7 @@ public class DSLNotebook extends JupyterServer{
 
 	public static void main(String[] args) {
 		try {
-			if(args.length==5)
+			if (args.length==5)
 				new DSLNotebook(args[0], args[1], args[2], args[3], args[4]);
 			else
 				new DSLNotebook(args[0], args[1], args[2], args[3], args[4], args[5]);
