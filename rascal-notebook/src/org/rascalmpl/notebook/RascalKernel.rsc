@@ -13,6 +13,7 @@ str BACATA_HOME = "";
 
 void generateRascalKernel(loc kernelDestPath = |tmp:///rascal-noteboook/|, loc salixPath = |tmp:///|){
 	verifyPreRequisites();
+	copyLogoToKernel();
 	writeFile(kernelDestPath + "kernel.json", rascalKernelContent(salixPath));
 	installKernel(kernelDestPath);
 }
@@ -93,4 +94,12 @@ str getLatestVersion(list[loc] versions) {
 		}
 	}
 	return resolveLocation(latest).path;
+}
+
+/*
+* This function takes the url of a logo image (64x64) for the language to be displayed in the browser when the kernel is loaded
+*/
+void copyLogoToKernel(loc urlLogo, loc destPath) {
+	list[int] imgBytes= readFileBytes(urlLogo);
+	writeFileBytes(destPath + "logo-64x64.png", imgBytes);
 }
