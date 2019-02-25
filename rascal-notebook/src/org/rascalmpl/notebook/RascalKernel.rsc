@@ -1,6 +1,7 @@
 module org::rascalmpl::notebook::RascalKernel
 
 import IO;
+import List;
 import String;
 import util::Resources;
 import util::ShellExec;
