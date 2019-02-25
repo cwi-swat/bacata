@@ -16,6 +16,7 @@
 	<modules>
 		<module>bacata-core</module>
 		<module>bacata-rascal</module>
+		<module>rascal-notebook</module>
 	</modules>
 
 	<properties>
