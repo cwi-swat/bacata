@@ -34,7 +34,7 @@ str rascalKernelContent(loc salixPath){
 
 void verifyBacataInstallation() {
 	BACATA_HOME = getNotebookPluginLocation();
-	if(BACATA_HOME == "")
+	if (BACATA_HOME == "")
 		throw "BACATA_HOME is not defined as environment variable";
 }
 
@@ -49,7 +49,7 @@ str getNotebookPluginLocation() {
 */
 void verifyJupyterInstallation() {
 	JUPYTER_HOME = readEnvVariable("JUPYTER_HOME");
-	if(JUPYTER_HOME == "")
+	if (JUPYTER_HOME == "")
 		throw "JUPYTER_HOME is not defined as environment variable";
 }
 
@@ -85,9 +85,9 @@ void printErrTrace(PID pid) {
 
 str getLatestVersion(list[loc] versions) {
 	latest = |tmp:///|;
-	for( a <- versions){
-		for( b <- versions){
-			if(a >= b){
+	for (a <- versions) {
+		for (b <- versions) {
+			if (a >= b) {
 				latest = a;
 			}
 		}
