@@ -81,3 +81,15 @@ void printErrTrace(PID pid) {
     	line = readFromErr(pid);
     }
 }
+
+str getLatestVersion(list[loc] versions) {
+	latest = |tmp:///|;
+	for( a <- versions){
+		for( b <- versions){
+			if(a >= b){
+				latest = a;
+			}
+		}
+	}
+	return resolveLocation(latest).path;
+}
