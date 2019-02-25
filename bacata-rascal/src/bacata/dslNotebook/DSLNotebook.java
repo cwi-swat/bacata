@@ -273,7 +273,7 @@ public class DSLNotebook extends JupyterServer{
 
 	public static void main(String[] args) {
 		try {
-			if (args.length==5)
+			if (args.length == 5)
 				new DSLNotebook(args[0], args[1], args[2], args[3], args[4]);
 			else
 				new DSLNotebook(args[0], args[1], args[2], args[3], args[4], args[5]);
