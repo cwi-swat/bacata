@@ -12,7 +12,7 @@ Export-Package: org.rascalmpl.notebook,
  communication,
  entities,
  server
-Import-Package: bacata,
- communication,
+Import-Package: communication,
  entities,
+ org.rascalmpl.notebook,
  server
