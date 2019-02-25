@@ -41,7 +41,7 @@ void verifyBacataInstallation() {
 str getNotebookPluginLocation() {
 	pluginsFolder = resolveLocation(|cwd:///|).parent + "Eclipse/plugins/";
 	list[loc] notebookPlugins = [ plugin | plugin <- pluginsFolder.ls, startsWith(plugin.file, "rascal-notebook_")];
-	return isEmpty(notebookPlugins) ? "" : getLatestVersion(bacataPlugins);
+	return isEmpty(notebookPlugins) ? "" : getLatestVersion(notebookPlugins);
 }
 
 /*
