@@ -12,6 +12,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
+
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
 import org.rascalmpl.interpreter.utils.RascalManifest;
@@ -72,15 +74,11 @@ public class RascalNotebook extends JupyterServer {
 
 	@Override
 	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest, Map<String, String> metadata) {
-		if(!contentExecuteRequest.isSilent())
-		{
-			if(contentExecuteRequest.isStoreHistory())
-			{
+		Map<String, InputStream> data = new HashMap<>();
+		if (!contentExecuteRequest.isSilent()) {
+			if (contentExecuteRequest.isStoreHistory()) {
 				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, metadata, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
-
 				try {
-					Map<String, InputStream> data = new HashMap<>();
-
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
 					removeUnnecessaryData(data);
 					
@@ -90,8 +88,10 @@ public class RascalNotebook extends JupyterServer {
 					// sends the result
 					if(!data.isEmpty())
 					{
-						Map<String, String> dat = new HashMap<>();
-						ContentExecuteResult content = new ContentExecuteResult(executionNumber, dat, metadata);
+						InputStream input = data.get("text/html");
+						Map<String, String> res = new HashMap<>();
+						res.put("text/html", convertStreamToString(input));
+						ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
 						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, metadata, content);
 					}
 
@@ -99,42 +99,48 @@ public class RascalNotebook extends JupyterServer {
 					e.printStackTrace();
 				}
 			}
-			else{
+			else {
 				// TODO evaluate user code 
 			}
 			executionNumber ++;
 		}
-		else{
+		else {
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
 			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
 		}
 	}
+	
+	@SuppressWarnings("resource")
+	public String convertStreamToString(java.io.InputStream inputStream) {
+	    Scanner s = new Scanner(inputStream, "UTF-8").useDelimiter("\\A");
+	    return s.hasNext() ? s.next() : "";
+	}
 
 	private void processStreams(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata) {
-		if(!stdout.toString().trim().equals("")){
+		if (!stdout.toString().trim().equals("")) {
 			processStreamsReply(ContentStream.STD_OUT, parentHeader, data, metadata);
 		}
-		if(!stderr.toString().trim().equals("")){
+		if (!stderr.toString().trim().equals("")) {
 			processStreamsReply(ContentStream.STD_ERR, parentHeader, data, metadata);
 		}
 	}
 
-	public void processStreamsReply(String stream, Header parentHeader,Map<String, InputStream> data, Map<String, String> metadata){
+	public void processStreamsReply(String stream, Header parentHeader,Map<String, InputStream> data, Map<String, String> metadata) {
 		String logs = stream.equals(ContentStream.STD_OUT) ? stdout.toString() : stderr.toString();
-		if(logs.contains("http://")){
+		if (logs.contains("http://")) {
 			metadata.put(MIME_TYPE_HTML, stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs)) : createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
 			sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, metadata, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
 		}
-		else{
+		else {
 			sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream(stream, logs));
 		}
 		removeUnnecessaryData(data);	
 		flushStreams();
 	}
 	
-	public void removeUnnecessaryData (Map<String, InputStream> data){
-		if(data.get(MIME_TYPE_HTML) != null && data.get(MIME_TYPE_HTML).equals("ok\n"))
+	public void removeUnnecessaryData (Map<String, InputStream> data) {
+		if (data.get(MIME_TYPE_HTML) != null && data.get(MIME_TYPE_HTML).equals("ok\n"))
 			data.remove(MIME_TYPE_HTML);
 	}
 
@@ -142,7 +148,7 @@ public class RascalNotebook extends JupyterServer {
 		return "<div class = \""+ clazz +"\">"+ (body.equals("")||body==null ? "</div>" : body+"</div>");
 	}
 
-	public void flushStreams(){
+	public void flushStreams() {
 		stdout.getBuffer().setLength(0);
 		stdout.flush();
 		stderr.getBuffer().setLength(0);
@@ -154,19 +160,18 @@ public class RascalNotebook extends JupyterServer {
 		// TODO This is only for clients to explicitly request history from a kernel
 	}
 	@Override
-	public void processKernelInfoRequest(Header parentHeader, Map<String, String> metadata){
+	public void processKernelInfoRequest(Header parentHeader, Map<String, String> metadata) {
 		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, metadata, new ContentKernelInfoReply());
 	}
 
 	@Override
 	public void processShutdownRequest(Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown, Map<String, String> metadata) {
 		boolean restart = false;
-		if(contentShutdown.getRestart())
-		{
+		if (contentShutdown.getRestart()){
 			restart = true;
 			// TODO: how can I restart rascal?
 		}
-		else{
+		else {
 			this.language.stop();
 			getCommunication().getRequests().close();
 			getCommunication().getPublish().close();
@@ -185,10 +190,10 @@ public class RascalNotebook extends JupyterServer {
 	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request, Map<String, String> metadata) {
 		//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
 		String status, indent="";
-		if(this.language.isStatementComplete(request.getCode())){
+		if (this.language.isStatementComplete(request.getCode())) {
 			status = Status.COMPLETE;
 		}
-		else{
+		else {
 			status = Status.INCOMPLETE;
 			indent = "??????";
 		}
@@ -199,11 +204,11 @@ public class RascalNotebook extends JupyterServer {
 	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata) {
 		int cursorStart =0;
 		ArrayList<String> sugestions;
-		if(request.getCode().startsWith("import ")){
+		if (request.getCode().startsWith("import ")) {
 			cursorStart=7;
 		}
 		CompletionResult result =this.language.completeFragment(request.getCode(), request.getCursorPosition());
-		if(result != null)
+		if (result != null)
 			sugestions = (ArrayList<String>)result.getSuggestions();
 		else 
 			sugestions = null;
@@ -249,8 +254,8 @@ public class RascalNotebook extends JupyterServer {
 							e.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, RascalManifest.DEFAULT_SRC));
 						}
 					}
-					//
-					e.addRascalSearchPath(URIUtil.createFromURI((salixPath[0])));
+					if (salixPath.length >0 )
+						e.addRascalSearchPath(URIUtil.createFromURI((salixPath[0])));
 				} catch (URISyntaxException | IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -262,7 +267,7 @@ public class RascalNotebook extends JupyterServer {
 
 	public String replaceLocs2html(String logs){
 		String pattern = "(?s)(.*)(\\|)(.+)(\\|)(.*$)";
-		if(logs.matches(pattern)){
+		if (logs.matches(pattern)){
 			logs = logs.replaceAll("\n", "<br>");
 			String prefix = logs.replaceAll(pattern,"$1");
 			String url = logs.replaceAll(pattern,"$3");
@@ -278,7 +283,7 @@ public class RascalNotebook extends JupyterServer {
 
 	public static void main(String[] args) {
 		try {
-			new RascalNotebook(args[0], args[1]);
+			RascalNotebook a = args.length > 1 ? new RascalNotebook(args[0], args[1]) : new RascalNotebook(args[0]);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
