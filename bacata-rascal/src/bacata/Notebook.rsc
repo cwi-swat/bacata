@@ -10,6 +10,7 @@ import util::Resources;
 import util::ShellExec;
 import bacata::Deploy;
 import bacata::util::Mode;
+import bacata::util::Util;
 //import bacata::HTML;
 import bacata::util::CodeMirror;
 
