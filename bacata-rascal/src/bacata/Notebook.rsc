@@ -77,7 +77,7 @@ NotebookServer createNotebook(Kernel kernelInfo, bool debug = false, bool docker
 		throw "ERROR: Something went wrong while creating the notebook. \n <Exc>";
 }
 
-NotebookServer createNotebook() {
+NotebookServer startJupyter() {
 	verifyPreRequisites();
 	try {
 		int pid = -1;
