@@ -9,6 +9,7 @@ import salix::App;
 import salix::HTML;
 import salix::Core;
 import salix::Node;
+import util::ShellExec;
 
 @doc{This function translate standard Rascal error Messages into a plain text to be displayed in the notebooks.}
 list[Message] translateErrorMessages(set[Message] errors) =
@@ -39,4 +40,12 @@ str parseNodesList(list[salix::Node::Node] lstnodes){
 		return (""|it + parse2HTML(x)| salix::Node::Node x <- lstnodes);
 	else
 		return "";
+}
+
+/*
+* This function reads the environment variable received as parameter.
+*/
+str readEnvVariable(str key) {
+	process = createProcess("printenv", args=[key]);
+	return replaceAll(readEntireStream(process),"\n","");
 }

@@ -28,15 +28,6 @@ loc JUPYTER_FRONTEND_PATH = |tmp:///|;
 str JUPYTER_HOME = "";
 str BACATA_HOME = "";
 
-/*
-* This function reads the environment variable received as parameter.
-*/
-str readEnvVariable(str key) {
-	f= createProcess("printenv", args=[key]);
-	return replaceAll(readEntireStream(f),"\n","");
-}
-
-
 void verifyPreRequisites() {
 	verifyJupyterInstallation();
 	verifyBacataInstallation();
