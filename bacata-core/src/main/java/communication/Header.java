@@ -1,17 +1,16 @@
 package communication;
 
-/**
- * Created by Mauricio on 18/01/2017.
- */
+
+
 public class Header {
 
     // -----------------------------------------------------------------
     // Constants
     // -----------------------------------------------------------------
 
-    public final static String VERSION = "5.0";
+    public final static String VERSION = "5.3";
 
-    public final static String USERNAME = "JavaKernel";
+    public final static String USERNAME = "Bacata";
 
     // -----------------------------------------------------------------
     // Fields

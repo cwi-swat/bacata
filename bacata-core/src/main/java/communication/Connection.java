@@ -1,134 +1,131 @@
 package communication;
 
 
-/**
- * Created by Mauricio on 18/01/2017.
- */
 public class Connection {
 
-    // -----------------------------------------------------------------
-    // Fields
-    // -----------------------------------------------------------------
+	// -----------------------------------------------------------------
+	// Fields
+	// -----------------------------------------------------------------
 
-    private Long shellPort;
+	private Long shell;
 
-    private Long iopubPort;
+	private Long IOPub;
 
-    private Long hbPort;
+	private Long hbPort;
 
-    private Long controlPort;
+	private Long control;
 
-    private Long stdinPort;
+	private Long stdin;
 
-    private String ip;
+	private String ip;
 
-    private String transport;
+	private String transport;
 
-    private String key;
+	private String key;
 
-    private String kernelName;
+	private String kernelName;
 
-    private String signatureScheme;
+	private String signatureScheme;
 
-    // -----------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------
+	// -----------------------------------------------------------------
+	// Constructor
+	// -----------------------------------------------------------------
 
-    public Connection() {
-    }
+	public Connection() {
+	}
 
-    // -----------------------------------------------------------------
-    // Methods
-    // -----------------------------------------------------------------
+	// -----------------------------------------------------------------
+	// Methods
+	// -----------------------------------------------------------------
 
-    public Long getShellPort() {
-        return shellPort;
-    }
-
-
-    public Long getIOPubPort() {
-        return iopubPort;
-    }
+	public Long getShellPort() {
+		return shell;
+	}
 
 
-    public Long getHbPort() {
-        return hbPort;
-    }
+	public Long getIOPubPort() {
+		return IOPub;
+	}
 
 
-    public Long getControlPort() {
-        return controlPort;
-    }
+	public Long getHbPort() {
+		return hbPort;
+	}
 
 
-    public Long getStdinPort() {
-        return stdinPort;
-    }
-    
-    public String getShellURI() {
-        return toUri(shellPort);
-    }
+	public Long getControlPort() {
+		return control;
+	}
 
 
-    public String getIOPubURI() {
-    	return toUri(iopubPort);
-    }
+	public Long getStdinPort() {
+		return stdin;
+	}
+
+	public String getShellURI() {
+		return toUri(shell);
+	}
 
 
-    public String getHbURI() {
-        return toUri(hbPort);
-    }
+	public String getIOPubURI() {
+		return toUri(IOPub);
+	}
 
 
-    public String getControlURI() {
-        return toUri(controlPort);
-    }
+	public String getHbURI() {
+		return toUri(hbPort);
+	}
 
 
-    public String getStdinURI() {
-        return toUri(stdinPort);
-    }
+	public String getControlURI() {
+		return toUri(control);
+	}
 
 
-    public String getIp() {
-        return ip;
-    }
+	public String getStdinURI() {
+		return toUri(stdin);
+	}
 
 
-    public String getTransport() {
-        return transport;
-    }
+	public String getIp() {
+		return ip;
+	}
 
 
-    public String getKey() {
-        return key;
-    }
+	public String getTransport() {
+		return transport;
+	}
 
 
-    public String getKernelName() {
-        return kernelName;
-    }
+	public String getKey() {
+		return key;
+	}
 
 
-    public String getSignatureScheme() {
-        return signatureScheme;
-    }
-    
-    private String toUri(Long pPort) {
-        return String.format("%s://%s:%d", getTransport(), getIp(), pPort);
-    }
+	public String getKernelName() {
+		return kernelName;
+	}
 
 
-    public void printConnectionSettings() {
-        System.out.println("SHELL PORT: " + this.getShellPort());
-        System.out.println("IO pub PORT: " + this.getIOPubPort());
-        System.out.println("HB PORT: " + this.getHbPort());
-        System.out.println("Control PORT: " + this.getControlPort());
-        System.out.println("STDIN PORT: " + this.getStdinPort());
-        System.out.println("IP: " + this.getIp());
-        System.out.println("Transport: " + this.getTransport());
-        System.out.println("key: " + this.getKey());
-        System.out.println("kernel name: " + this.getKernelName());
-        System.out.println("signature scheme: " + this.getSignatureScheme());
-    }
+	public String getSignatureScheme() {
+		return signatureScheme;
+	}
+
+	private String toUri(Long pPort) {
+		return String.format("%s://%s:%d", getTransport(), getIp(), pPort);
+	}
+
+
+	public void printConnectionSettings() {
+		System.out.println("SHELL PORT: " + this.getShellPort());
+		System.out.println("IO pub PORT: " + this.getIOPubPort());
+		System.out.println("HB PORT: " + this.getHbPort());
+		System.out.println("Control PORT: " + this.getControlPort());
+		System.out.println("STDIN PORT: " + this.getStdinPort());
+		System.out.println("IP: " + this.getIp());
+		System.out.println("Transport: " + this.getTransport());
+		System.out.println("key: " + this.getKey());
+		System.out.println("kernel name: " + this.getKernelName());
+		System.out.println("signature scheme: " + this.getSignatureScheme());
+	}
 }
