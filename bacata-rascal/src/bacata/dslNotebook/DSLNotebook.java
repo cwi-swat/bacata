@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
@@ -55,22 +54,26 @@ public class DSLNotebook extends JupyterServer{
 	// -----------------------------------------------------------------
 
 	private String languageName;
+	
+	private static long a;
 
 	// -----------------------------------------------------------------
 	// Constructor
 	// -----------------------------------------------------------------
 
-	public DSLNotebook(String connectionFilePath, String source, String replQualifiedName, String pLanguageName, String... salixPath) throws Exception {
-		super(connectionFilePath);
+	public DSLNotebook(String connectionDetails, String source, String replQualifiedName, String pLanguageName, String... salixPath) throws Exception {
+		super(connectionDetails);
+		System.out.println("Connection: " + (System.currentTimeMillis() -  a));
 		languageName = pLanguageName;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
+		long start = System.currentTimeMillis();
 		this.language = makeInterpreter(source, replQualifiedName, salixPath);
+		System.out.println("MAKE INTERPRETER: " + (System.currentTimeMillis() -  start));
 		this.language.initialize(stdout, stderr);
-//		generateKernel();
-//		installKernel();
 		startServer();
 	}
+	
 
 	// -----------------------------------------------------------------
 	// Methods
@@ -113,6 +116,8 @@ public class DSLNotebook extends JupyterServer{
 					}
 
 				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -167,8 +172,8 @@ public class DSLNotebook extends JupyterServer{
 			getCommunication().getRequests().close();
 			getCommunication().getPublish().close();
 			getCommunication().getControl().close();
-			getCommunication().getContext().close();
-			getCommunication().getContext().term();
+//			getCommunication().getContext().close();
+//			getCommunication().getContext().term();
 			System.exit(-1);
 		}
 		sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, new HashMap<String, String>(), new ContentShutdownReply(restart));
@@ -222,7 +227,7 @@ public class DSLNotebook extends JupyterServer{
 	}
 		
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, String... salixPath)  {
+	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, String... salixPath) throws IOException, URISyntaxException {
 		String[] tmp = replQualifiedName.split("::");
 		String variableName = tmp[tmp.length-1];
 		String moduleName = replQualifiedName.replaceFirst("::"+variableName, "");
@@ -259,12 +264,8 @@ public class DSLNotebook extends JupyterServer{
 		Result<IValue> var = module.getSimpleVariable(variableName);
 		IConstructor repl = (var != null ? (IConstructor) var.getValue() : (IConstructor) eval.call(variableName, new IValue[]{}));
 		
-		try {
-			return new TermREPL.TheREPL(vf, repl, eval);
-		} catch (IOException| URISyntaxException e) {
-			e.printStackTrace();
-			return null;
-		}
+		return new TermREPL.TheREPL(vf, repl, eval);
+		
 	}
 	
 	// -----------------------------------------------------------------
@@ -273,9 +274,11 @@ public class DSLNotebook extends JupyterServer{
 
 	public static void main(String[] args) {
 		try {
-			if (args.length == 5)
+			if (args.length == 5) {
+				a =  System.currentTimeMillis();
 				new DSLNotebook(args[0], args[1], args[2], args[3], args[4]);
-			else
+			}
+			else 
 				new DSLNotebook(args[0], args[1], args[2], args[3], args[4], args[5]);
 		} catch (Exception e) {
 			e.printStackTrace();

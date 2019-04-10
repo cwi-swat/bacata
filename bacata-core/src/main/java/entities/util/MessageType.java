@@ -23,6 +23,8 @@ public class MessageType {
 
     public final static String INSPECT_REQUEST = "inspect_request";
     
+    public final static String COMM_INFO_REQUEST = "comm_info_request";
+    
     // -----------------------------------------------------------------
     // Reply constants
     // -----------------------------------------------------------------
@@ -44,6 +46,8 @@ public class MessageType {
     public final static String EXECUTE_RESULT = "execute_result";
 
     public final static String DISPLAY_DATA = "display_data";
+    
+    public final static String COMM_INFO_REPLY = "comm_info_reply";
 
     // -----------------------------------------------------------------
     // Common constants

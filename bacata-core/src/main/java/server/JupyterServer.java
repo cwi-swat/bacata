@@ -3,6 +3,9 @@ package server;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
+
 import communication.Communication;
 import communication.Connection;
 import communication.Header;
@@ -16,16 +19,16 @@ import entities.util.MessageType;
 import entities.util.Status;
 import org.apache.commons.codec.binary.Hex;
 import org.rascalmpl.repl.ILanguageProtocol;
+import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -77,6 +80,8 @@ public abstract class JupyterServer {
 	protected StringWriter stderr;
 	
 	protected int executionNumber;
+	
+	private Mac sha256;
 	// -----------------------------------------------------------------
 	// Constructor
 	// -----------------------------------------------------------------
@@ -84,12 +89,10 @@ public abstract class JupyterServer {
 	public JupyterServer(String connectionFilePath) throws Exception {
 		parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 		connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
-		communication = new Communication(this);
-		poller = new ZMQ.Poller(4);
-		poller.register(communication.getRequests(), ZMQ.Poller.POLLIN);
-		poller.register(communication.getControl(), ZMQ.Poller.POLLIN);
-		poller.register(communication.getPublish(), ZMQ.Poller.POLLIN);
-		poller.register(communication.getHeartbeat(), ZMQ.Poller.POLLIN);
+		sha256 = Mac.getInstance(HASH_ALGORITHM);
+		SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
+		sha256.init(secretKey);
+//		communication = new Communication(connection);
 		executionNumber = 1;
 	}
 
@@ -98,17 +101,30 @@ public abstract class JupyterServer {
 	// Methods
 	// -----------------------------------------------------------------
 
-	public void startServer(){
-		while (!Thread.currentThread().isInterrupted()) {
-			poller.poll();
-			if(poller.pollin(0))
-				listenSocket(communication.getRequests(), SHELL);
-			if(poller.pollin(1))
-				listenSocket(communication.getControl(), CONTROL);
-			if(poller.pollin(2))
-				listenSocket(communication.getPublish(), PUBLISH);
-			if(poller.pollin(3))
-				listenHeartbeatSocket();
+	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+		
+		try (ZContext context = new ZContext()) {
+			communication = new Communication(connection, context);
+			
+			poller = context.createPoller(4);
+			poller.register(communication.getRequests(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getControl(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getPublish(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getHeartbeat(), ZMQ.Poller.POLLIN);
+			
+			while (!Thread.currentThread().isInterrupted()) {
+				int xc = poller.poll(0);
+				
+				if(poller.pollin(0))
+					listenSocket(communication.getRequests(), SHELL);
+				if(poller.pollin(1))
+					listenSocket(communication.getControl(), CONTROL);
+				if(poller.pollin(2))
+					listenSocket(communication.getPublish(), PUBLISH);
+				if(poller.pollin(3))
+					listenHeartbeatSocket();
+			}
+		
 		}
 	}
 	
@@ -117,20 +133,18 @@ public abstract class JupyterServer {
 	 * @param socket
 	 * @param socketType
 	 */
-	private void listenSocket(ZMQ.Socket socket, String socketType)
-	{
-		socket.recvStr(ZMQ.DONTWAIT); // ZMQIdentity
-		socket.recvStr(); // Delimeter
-		socket.recvStr(); // HmacSignature
-		Header header = parser.fromJson(communication.getRequests().recvStr(), Header.class); // Header
-		parser.fromJson(communication.getRequests().recvStr(), Header.class); // Parent Header
+	private void listenSocket(ZMQ.Socket socket, String socketType) {
+		socket.recv(ZMQ.DONTWAIT); // ZMQIdentity
+		socket.recv(ZMQ.DONTWAIT); // Delimeter
+		socket.recv(ZMQ.DONTWAIT); // HmacSignature
+		Header header = parser.fromJson(communication.getRequests().recvStr(ZMQ.DONTWAIT), Header.class); // Header
+		parser.fromJson(communication.getRequests().recvStr(ZMQ.DONTWAIT), Header.class); // Parent Header
 		Map<String,String> map = new HashMap<String,String>();
 		@SuppressWarnings("unchecked")
-		Map<String, String> metadata = parser.fromJson(socket.recvStr(), map.getClass());
-		String content = socket.recvStr(); // Content
+		Map<String, String> metadata = parser.fromJson(socket.recvStr(ZMQ.DONTWAIT), map.getClass());
+		String content = socket.recvStr(ZMQ.DONTWAIT); // Content
 		
-		if(socketType.equals(SHELL))
-		{
+		if(socketType.equals(SHELL)) {
 			statusUpdate(header, Status.BUSY);
 			processShellMessageType(header, content, metadata);
 			statusUpdate(header, Status.IDLE);
@@ -147,7 +161,9 @@ public abstract class JupyterServer {
 	public void processShellMessageType(Header header, String content, Map<String, String> metadata) {
 		switch (header.getMsgType()) {
 		case MessageType.KERNEL_INFO_REQUEST:
+			long x = System.currentTimeMillis();
 			processKernelInfoRequest(header, metadata);
+			System.out.println("KERNEL INFO REQUEST: " + (System.currentTimeMillis() - x));
 			break;
 		case MessageType.SHUTDOWN_REQUEST:
 			processShutdownRequest(communication.getRequests(), header, parser.fromJson(content, ContentShutdownRequest.class), metadata);
@@ -185,9 +201,12 @@ public abstract class JupyterServer {
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
 	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, Map<String, String> metadata, Content content) {
+		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
+		String signedMessage = signMessage(message.getBytes());
+		// Send the message
 		socket.sendMore(header.getSession().getBytes());
 		socket.sendMore(DELIMITER.getBytes());
-		socket.sendMore(signMessage(parser.toJson(header), parser.toJson(parent), parser.toJson(metadata), parser.toJson(content)).getBytes());
+		socket.sendMore(signedMessage.getBytes());
 		socket.sendMore(parser.toJson(header).getBytes());
 		socket.sendMore(parser.toJson(parent));
 		socket.sendMore(parser.toJson(metadata));
@@ -204,25 +223,8 @@ public abstract class JupyterServer {
 		return new Header(pSession, pMessageType, Header.VERSION, Header.USERNAME, timestamp, msgid);
 	}
 
-	public String encode(String data) {
-		try {
-			Mac sha256 = Mac.getInstance(HASH_ALGORITHM);
-			SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
-			sha256.init(secretKey);
-			return new String(Hex.encodeHex(sha256.doFinal(data.getBytes())));
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	public String signMessage(String header, String parentHeader, String metadata, String content) {
-		String message = header + parentHeader + metadata + content;
-		return encode(message);
+	public String signMessage(byte[] message) {
+		return new String(Hex.encodeHex(sha256.doFinal(message)));
 	}
 
 	public Connection getConnection() {
@@ -288,5 +290,5 @@ public abstract class JupyterServer {
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	public abstract ILanguageProtocol makeInterpreter(String source, String replQualifiedName, String... salixPath) throws IOException, URISyntaxException;
+	public abstract ILanguageProtocol makeInterpreter(String source, String replQualifiedName, String... salixPath) throws IOException, URISyntaxException, Exception;
 }

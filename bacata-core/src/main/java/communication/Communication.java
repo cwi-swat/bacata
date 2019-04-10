@@ -1,5 +1,7 @@
 package communication;
 
+import org.zeromq.SocketType;
+import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import server.JupyterServer;
 
@@ -12,7 +14,7 @@ public class Communication {
     // Fields
     // -----------------------------------------------------------------
 
-    private ZMQ.Context context;
+//    private ZMQ.Context context;
 
     private ZMQ.Socket publish;
 
@@ -23,36 +25,45 @@ public class Communication {
     private ZMQ.Socket stdin;
 
     private ZMQ.Socket heartbeat;
+    
+    private Connection connection;
 
-    private JupyterServer server;
+//    private JupyterServer server;
 
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
 
-    public Communication(JupyterServer jupyterServer) {
-        server = jupyterServer;
-        context = ZMQ.context(1);
-        publish = context.socket(ZMQ.PUB);
-        requests = context.socket(ZMQ.ROUTER);
-        control = context.socket(ZMQ.ROUTER);
-        stdin = context.socket(ZMQ.ROUTER);
-        heartbeat = context.socket(ZMQ.REP);
+    public Communication(Connection connection, ZContext context) {
+//        server = jupyterServer;
+//    	this.context = context;
+    	this.connection = connection;
+        this.publish = context.createSocket(SocketType.PUB);
+        this.requests = context.createSocket(SocketType.ROUTER);
+        this.control = context.createSocket(SocketType.ROUTER);
+        this.stdin = context.createSocket(SocketType.ROUTER);
+        this.heartbeat = context.createSocket(SocketType.REP);
 
-        publish.bind(toUri(server.getConnection().getIoPubPort()));
-        requests.bind(toUri(server.getConnection().getShellPort()));
-        control.bind(toUri(server.getConnection().getControlPort()));
-        stdin.bind(toUri(server.getConnection().getStdinPort()));
-        heartbeat.bind(toUri(server.getConnection().getHbPort()));
+//        this.publish.connect(connection.getIOPubURI());
+//        this.requests.connect(connection.getShellURI());
+//        this.control.connect(connection.getControlURI());
+//        this.stdin.connect(connection.getStdinURI());
+//        this.heartbeat.connect(connection.getHbURI());
+        
+        this.publish.bind(connection.getIOPubURI());
+        this.requests.bind(connection.getShellURI());
+        this.control.bind(connection.getControlURI());
+        this.stdin.bind(connection.getStdinURI());
+        this.heartbeat.bind(connection.getHbURI());
     }
 
     // -----------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------
 
-    public ZMQ.Context getContext() {
-        return context;
-    }
+//    public ZMQ.Context getContext() {
+//        return context;
+//    }
 
     public ZMQ.Socket getPublish() {
         return publish;
@@ -74,7 +85,4 @@ public class Communication {
         return heartbeat;
     }
 
-    private String toUri(Long pPort) {
-        return String.format("%s://%s:%d", server.getConnection().getTransport(), server.getConnection().getIp(), pPort);
-    }
 }

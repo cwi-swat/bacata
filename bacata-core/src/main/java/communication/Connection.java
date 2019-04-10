@@ -46,7 +46,7 @@ public class Connection {
     }
 
 
-    public Long getIoPubPort() {
+    public Long getIOPubPort() {
         return iopubPort;
     }
 
@@ -63,6 +63,30 @@ public class Connection {
 
     public Long getStdinPort() {
         return stdinPort;
+    }
+    
+    public String getShellURI() {
+        return toUri(shellPort);
+    }
+
+
+    public String getIOPubURI() {
+    	return toUri(iopubPort);
+    }
+
+
+    public String getHbURI() {
+        return toUri(hbPort);
+    }
+
+
+    public String getControlURI() {
+        return toUri(controlPort);
+    }
+
+
+    public String getStdinURI() {
+        return toUri(stdinPort);
     }
 
 
@@ -89,11 +113,15 @@ public class Connection {
     public String getSignatureScheme() {
         return signatureScheme;
     }
+    
+    private String toUri(Long pPort) {
+        return String.format("%s://%s:%d", getTransport(), getIp(), pPort);
+    }
 
 
     public void printConnectionSettings() {
         System.out.println("SHELL PORT: " + this.getShellPort());
-        System.out.println("IO pub PORT: " + this.getIoPubPort());
+        System.out.println("IO pub PORT: " + this.getIOPubPort());
         System.out.println("HB PORT: " + this.getHbPort());
         System.out.println("Control PORT: " + this.getControlPort());
         System.out.println("STDIN PORT: " + this.getStdinPort());

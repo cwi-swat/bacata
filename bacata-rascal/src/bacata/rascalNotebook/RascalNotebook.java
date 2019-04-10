@@ -171,8 +171,8 @@ public class RascalNotebook extends JupyterServer {
 			getCommunication().getRequests().close();
 			getCommunication().getPublish().close();
 			getCommunication().getControl().close();
-			getCommunication().getContext().close();
-			getCommunication().getContext().term();
+//			getCommunication().getContext().close();
+//			getCommunication().getContext().term();
 			System.exit(-1);
 		}
 		sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, metadata, new ContentShutdownReply(restart));
