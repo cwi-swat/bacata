@@ -7,15 +7,15 @@ public class Connection {
 	// Fields
 	// -----------------------------------------------------------------
 
-	private Long shell;
+	private Long shellPort;
 
-	private Long IOPub;
+	private Long iopubPort;
 
 	private Long hbPort;
 
-	private Long control;
+	private Long controlPort;
 
-	private Long stdin;
+	private Long stdinPort;
 
 	private String ip;
 
@@ -39,12 +39,12 @@ public class Connection {
 	// -----------------------------------------------------------------
 
 	public Long getShellPort() {
-		return shell;
+		return shellPort;
 	}
 
 
 	public Long getIOPubPort() {
-		return IOPub;
+		return iopubPort;
 	}
 
 
@@ -54,21 +54,21 @@ public class Connection {
 
 
 	public Long getControlPort() {
-		return control;
+		return controlPort;
 	}
 
 
 	public Long getStdinPort() {
-		return stdin;
+		return stdinPort;
 	}
 
 	public String getShellURI() {
-		return toUri(shell);
+		return toUri(shellPort);
 	}
 
 
 	public String getIOPubURI() {
-		return toUri(IOPub);
+		return toUri(iopubPort);
 	}
 
 
@@ -78,12 +78,12 @@ public class Connection {
 
 
 	public String getControlURI() {
-		return toUri(control);
+		return toUri(controlPort);
 	}
 
 
 	public String getStdinURI() {
-		return toUri(stdin);
+		return toUri(stdinPort);
 	}
 
 
