@@ -12,10 +12,9 @@ import com.google.gson.GsonBuilder;
 import communication.Header;
 import entities.util.Content;
 
-/**
- * Created by Mauricio on 18/01/2017.
- */
+
 public class Message {
+	
 	//	  b'u-u-i-d',         # zmq identity(ies)
 	//	  b'<IDS|MSG>',       # delimiter
 	//	  b'baddad42',        # HMAC signature
@@ -25,14 +24,23 @@ public class Message {
 	//	  b'{content}',       # serialized content dict
 	//	  b'\xf0\x9f\x90\xb1' # extra raw data buffer(s)
 	class MessageParts {
+		
         public static final int UUID = 0;
+        
         public static final int DELIMETER = 1;
+        
         public static final int HMAC = 2;
+        
         public static final int HEADER = 3;
-        public static final int PARENT = 4;
+        
+        public static final int PARENT_HEADER = 4;
+        
         public static final int METADATA = 5;
+        
         public static final int CONTENT = 6;
-        public static final int BLOB = 7;
+        
+        public static final int EXTRA = 7;
+        
     }  
 
     // -----------------------------------------------------------------
@@ -63,12 +71,6 @@ public class Message {
     }
 
     public Message(String zmqIdentity, String hmacSignature, Header header, Header parentHeader, Content content, String metadata) {
-//        this.UUID = zmqIdentity;
-//        this.hmacSignature = hmacSignature;
-//        this.header = header;
-//        this.parentHeader = parentHeader;
-//        this.content = content;
-//        this.metadata = metadata;
     }
     
     @SuppressWarnings("unchecked")
@@ -76,7 +78,7 @@ public class Message {
     	Gson parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
     	// Some required pre-processing
     	String rawMetadata = new String(zframes[MessageParts.METADATA].getData());
-    	String rawParent = new String(zframes[MessageParts.PARENT].getData());
+    	String rawParent = new String(zframes[MessageParts.PARENT_HEADER].getData());
     	String rawHeader = new String(zframes[MessageParts.HEADER].getData());
     	
     	this.UUID = new String(zframes[MessageParts.UUID].getData());
