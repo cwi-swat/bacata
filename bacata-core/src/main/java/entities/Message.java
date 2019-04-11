@@ -58,7 +58,7 @@ public class Message {
 
     private Header parentHeader;
 
-    private String content;
+    private String rawContent;
 
     private Map<String,String> metadata;
 
@@ -87,7 +87,7 @@ public class Message {
     	this.header = parser.fromJson(rawHeader, Header.class);
     	this.parentHeader = parser.fromJson(rawParent, Header.class);
     	this.metadata = parser.fromJson(rawMetadata, new HashMap<String,String>().getClass());		
-    	this.content = new String(zframes[MessageParts.CONTENT].getData());
+    	this.rawContent = new String(zframes[MessageParts.CONTENT].getData());
     }
 
     // -----------------------------------------------------------------
@@ -118,12 +118,12 @@ public class Message {
         this.parentHeader = parentHeader;
     }
 
-    public String getContent() {
-        return content;
+    public String getRawContent() {
+        return rawContent;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setRawContent(String content) {
+        this.rawContent = content;
     }
 
     public Map<String, String> getMetadata() {
