@@ -9,6 +9,8 @@ import com.google.gson.JsonSyntaxException;
 import communication.Communication;
 import communication.Connection;
 import communication.Header;
+import entities.Message;
+import entities.reply.ContentKernelInfoReply;
 import entities.request.ContentCompleteRequest;
 import entities.request.ContentExecuteRequest;
 import entities.request.ContentIsCompleteRequest;
@@ -17,10 +19,14 @@ import entities.util.Content;
 import entities.util.ContentStatus;
 import entities.util.MessageType;
 import entities.util.Status;
+
 import org.apache.commons.codec.binary.Hex;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.zeromq.ZContext;
+import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -32,7 +38,6 @@ import java.net.URISyntaxException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 
@@ -82,6 +87,7 @@ public abstract class JupyterServer {
 	protected int executionNumber;
 	
 	private Mac sha256;
+	
 	// -----------------------------------------------------------------
 	// Constructor
 	// -----------------------------------------------------------------
@@ -92,7 +98,6 @@ public abstract class JupyterServer {
 		sha256 = Mac.getInstance(HASH_ALGORITHM);
 		SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
 		sha256.init(secretKey);
-//		communication = new Communication(connection);
 		executionNumber = 1;
 	}
 
@@ -101,108 +106,118 @@ public abstract class JupyterServer {
 	// Methods
 	// -----------------------------------------------------------------
 
-	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException {
 		
 		try (ZContext context = new ZContext()) {
 			communication = new Communication(connection, context);
-			
+			// Create the poll to deal with the 4 different sockets
 			poller = context.createPoller(4);
-			poller.register(communication.getRequests(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getControl(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getPublish(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getHeartbeat(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 			
 			while (!Thread.currentThread().isInterrupted()) {
-				int xc = poller.poll(0);
-				
-				if(poller.pollin(0))
-					listenSocket(communication.getRequests(), SHELL);
-				if(poller.pollin(1))
-					listenSocket(communication.getControl(), CONTROL);
-				if(poller.pollin(2))
-					listenSocket(communication.getPublish(), PUBLISH);
+				poller.poll(0);
+				if(poller.pollin(1)) {
+					Message message = getMessage(communication.getControlSocket());
+					if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
+						ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
+						processShutdownRequest(communication.getControlSocket(), content, message);
+					}
+				}
 				if(poller.pollin(3))
 					listenHeartbeatSocket();
+				if(poller.pollin(0)) {
+					Message message = getMessage(communication.getShellSocket());
+					statusUpdate(message.getHeader(), Status.BUSY);
+					processShellMessage(message);
+					statusUpdate(message.getHeader(), Status.IDLE);
+				}
+				if(poller.pollin(2))
+					getMessage(communication.getIOPubSocket());
 			}
 		
 		}
-	}
-	
-	/**
-	 * This method receives the information received from the socket given as parameter.
-	 * @param socket
-	 * @param socketType
-	 */
-	private void listenSocket(ZMQ.Socket socket, String socketType) {
-		socket.recv(ZMQ.DONTWAIT); // ZMQIdentity
-		socket.recv(ZMQ.DONTWAIT); // Delimeter
-		socket.recv(ZMQ.DONTWAIT); // HmacSignature
-		Header header = parser.fromJson(communication.getRequests().recvStr(ZMQ.DONTWAIT), Header.class); // Header
-		parser.fromJson(communication.getRequests().recvStr(ZMQ.DONTWAIT), Header.class); // Parent Header
-		Map<String,String> map = new HashMap<String,String>();
-		@SuppressWarnings("unchecked")
-		Map<String, String> metadata = parser.fromJson(socket.recvStr(ZMQ.DONTWAIT), map.getClass());
-		String content = socket.recvStr(ZMQ.DONTWAIT); // Content
-		
-		if(socketType.equals(SHELL)) {
-			statusUpdate(header, Status.BUSY);
-			processShellMessageType(header, content, metadata);
-			statusUpdate(header, Status.IDLE);
-		}
-		else if(socketType.equals(CONTROL))
-		{
-			if (header.getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
-				processShutdownRequest(socket, header, parser.fromJson(content, ContentShutdownRequest.class), metadata);
-			}
-		}
-		
 	}
 
-	public void processShellMessageType(Header header, String content, Map<String, String> metadata) {
-		switch (header.getMsgType()) {
-		case MessageType.KERNEL_INFO_REQUEST:
-			long x = System.currentTimeMillis();
-			processKernelInfoRequest(header, metadata);
-			System.out.println("KERNEL INFO REQUEST: " + (System.currentTimeMillis() - x));
-			break;
-		case MessageType.SHUTDOWN_REQUEST:
-			processShutdownRequest(communication.getRequests(), header, parser.fromJson(content, ContentShutdownRequest.class), metadata);
-			break;
-		case MessageType.IS_COMPLETE_REQUEST:
-			processIsCompleteRequest(header, parser.fromJson(content, ContentIsCompleteRequest.class), metadata);
-			break;
-		case MessageType.EXECUTE_REQUEST:
-			processExecuteRequest(header, parser.fromJson(content, ContentExecuteRequest.class), metadata);
-			break;
-		case MessageType.HISTORY_REQUEST:
-			processHistoryRequest(header, metadata);
-			break;
-		case MessageType.COMPLETE_REQUEST:
-			processCompleteRequest(header, parser.fromJson(content, ContentCompleteRequest.class), metadata);
-			break;
-		case MessageType.INSPECT_REQUEST:
-			break;
-		default:
-			System.out.println("NEW_MESSAGE_TYPE_REQUEST: " + header.getMsgType());
-			System.out.println("CONTENT: "+ content);
-			break;
+	/**
+	 * This method reads the data received from the socket given as parameter and encapsulates it into a Message object.
+	 * @param socket
+	 * @return Message with the information of the received data.
+	 */
+	public Message getMessage(ZMQ.Socket socket) throws RuntimeException {
+		ZMsg zmsg = ZMsg.recvMsg(socket);
+		ZFrame[] zFrames = new ZFrame[zmsg.size()];
+		zmsg.toArray(zFrames);
+		
+		// Jupyter description says that the client should always send at least 7 chunks of information.
+		if (zmsg.size() < 7) {
+			throw new RuntimeException("Missing information from the Jupyter client");
+		}
+		return new Message(zFrames);
+	}
+	
+	
+	public void processShellMessage(Message message) {
+		Content content  = null;
+		switch (message.getHeader().getMsgType()) {
+			case MessageType.KERNEL_INFO_REQUEST:
+				Header header = createHeader(message.getHeader().getSession(), MessageType.KERNEL_INFO_REPLY);
+				ContentKernelInfoReply contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
+				sendMessage(communication.getShellSocket(), header, message.getHeader(), contentReply);
+				break;
+			case MessageType.SHUTDOWN_REQUEST:
+				content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
+				processShutdownRequest(communication.getShellSocket(), (ContentShutdownRequest) content, message);
+				break;
+			case MessageType.IS_COMPLETE_REQUEST:
+				content = parser.fromJson(message.getRawContent(), ContentIsCompleteRequest.class);
+				processIsCompleteRequest((ContentIsCompleteRequest) content, message);
+				break;
+			case MessageType.EXECUTE_REQUEST:
+				content = parser.fromJson(message.getRawContent(), ContentExecuteRequest.class);
+				processExecuteRequest((ContentExecuteRequest) content, message);
+				break;
+			case MessageType.HISTORY_REQUEST:
+				processHistoryRequest(message);
+				break;
+			case MessageType.COMPLETE_REQUEST:
+				content = parser.fromJson(message.getRawContent(), ContentCompleteRequest.class);
+				processCompleteRequest((ContentCompleteRequest) content, message);
+				break;
+			case MessageType.INSPECT_REQUEST:
+				break;
+			case MessageType.COMM_INFO_REQUEST:
+				System.out.println("COMM_INFO_REQUEST");
+				System.out.println("CONTENT: " + message.getRawContent());
+				break;
+			default:
+				System.out.println("NEW_MESSAGE_TYPE_REQUEST: " + message.getHeader().getMsgType());
+				System.out.println("CONTENT: " + message.getRawContent());
+				break;
 		}
 	}
 
 	public void listenHeartbeatSocket() {
 		@SuppressWarnings("unused")
-		String ping;
-		while ((ping = communication.getHeartbeat().recvStr(ZMQ.DONTWAIT)) != null) {
+		byte[] ping;
+		while ((ping = communication.getHeartbeatSocket().recv(ZMQ.DONTWAIT)) != null) {
 			heartbeatChannel();
 		}
 	}
 
+	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
+		HashMap<String, String> metadata = new HashMap<String, String>();
+		sendMessage(socket, header, parent, metadata, content);
+	}
 	/**
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
-	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, Map<String, String> metadata, Content content) {
+	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
 		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
 		String signedMessage = signMessage(message.getBytes());
+		
 		// Send the message
 		socket.sendMore(header.getSession().getBytes());
 		socket.sendMore(DELIMITER.getBytes());
@@ -212,9 +227,13 @@ public abstract class JupyterServer {
 		socket.sendMore(parser.toJson(metadata));
 		socket.send(parser.toJson(content), 0);
 	}
+	
+	public void sendShellMessage(Header header, Content content ) {
+		
+	}
 
 	public void heartbeatChannel() {
-		communication.getHeartbeat().send(HEARTBEAT_MESSAGE, 0);
+		communication.getHeartbeatSocket().send(HEARTBEAT_MESSAGE);
 	}
 
 	public Header createHeader(String pSession, String pMessageType) {
@@ -243,7 +262,9 @@ public abstract class JupyterServer {
 	 * This method updates the kernel status with the value received as a parameter.
 	 */
 	public void statusUpdate(Header parentHeader, String status) {
-		sendMessage(communication.getPublish(), createHeader(parentHeader.getSession(), MessageType.STATUS), parentHeader, new HashMap<String, String>(), new ContentStatus(status));
+		Header header = createHeader(parentHeader.getSession(), MessageType.STATUS);
+		ContentStatus content = new ContentStatus(status);
+		sendMessage(communication.getIOPubSocket(), header, parentHeader, content);
 	}
 
 	// -----------------------------------------------------------------
@@ -253,34 +274,34 @@ public abstract class JupyterServer {
 	/**
 	 * This method processes the execute_request message and replies with a execute_reply message.
 	 */
-	public abstract void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest, Map<String, String> metadata);
+	public abstract void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message);
 
 	/**
 	 * This method processes the complete_request message and replies with a complete_reply message.
 	 */
-	public abstract void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata);
+	public abstract void processCompleteRequest(ContentCompleteRequest contentCompleteRequest, Message message);
 
 	/**
 	 * This method processes the history_request message and replies with a history_reply message.
 	 */
-	public abstract void processHistoryRequest(Header parentHeader, Map<String, String> metadata);
+	public abstract void processHistoryRequest(Message message);
 
 	/**
 	 * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
 	 */
-	public abstract void processKernelInfoRequest(Header parentHeader, Map<String, String> metadata);
+	public abstract Content processKernelInfoRequest(Message message);
 
 	/**
 	 * This method processes the shutdown_request message and replies with a shutdown_reply message.
 	 */
-	public abstract void processShutdownRequest(ZMQ.Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown, Map<String, String> metadata);
+	public abstract void processShutdownRequest(ZMQ.Socket socket, ContentShutdownRequest contentShutdownRequest, Message message);
 
 	/**
 	 * This method processes the is_complete_request message and replies with a is_complete_reply message.
 	 * @param header
 	 * @param content
 	 */
-	public abstract void processIsCompleteRequest(Header header, ContentIsCompleteRequest content, Map<String, String> metadata);
+	public abstract void processIsCompleteRequest(ContentIsCompleteRequest contentIsCompleteRequest, Message message);
 
 	/**
 	 * This method creates the interpreter to be used as a REPL
