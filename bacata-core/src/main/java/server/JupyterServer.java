@@ -11,6 +11,7 @@ import communication.Connection;
 import communication.Header;
 import entities.Message;
 import entities.reply.ContentKernelInfoReply;
+import entities.reply.ContentShutdownReply;
 import entities.request.ContentCompleteRequest;
 import entities.request.ContentExecuteRequest;
 import entities.request.ContentIsCompleteRequest;
@@ -123,7 +124,9 @@ public abstract class JupyterServer {
 					Message message = getMessage(communication.getControlSocket());
 					if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
 						ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
-						processShutdownRequest(communication.getControlSocket(), content, message);
+						Content contentReply = processShutdownRequest(content);
+						Header header = createHeader(message.getHeader().getSession(), MessageType.SHUTDOWN_REPLY);
+						sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply);
 					}
 				}
 				if(poller.pollin(3))
@@ -160,20 +163,28 @@ public abstract class JupyterServer {
 	
 	
 	public void processShellMessage(Message message) {
-		Content content  = null;
+		Content content;
+		Content contentReply;
+		Header header;
+		String session = message.getHeader().getSession();
 		switch (message.getHeader().getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
-				Header header = createHeader(message.getHeader().getSession(), MessageType.KERNEL_INFO_REPLY);
-				ContentKernelInfoReply contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
+				header = createHeader(session, MessageType.KERNEL_INFO_REPLY);
+				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
 				sendMessage(communication.getShellSocket(), header, message.getHeader(), contentReply);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
+				header = createHeader(session, MessageType.SHUTDOWN_REPLY);
 				content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
-				processShutdownRequest(communication.getShellSocket(), (ContentShutdownRequest) content, message);
+				contentReply = (ContentShutdownReply) processShutdownRequest((ContentShutdownRequest) content);
+				closeAllSockets();
+				sendMessage(communication.getShellSocket(), header, message.getHeader(), contentReply);
 				break;
 			case MessageType.IS_COMPLETE_REQUEST:
+				header = createHeader(message.getHeader().getSession(), MessageType.IS_COMPLETE_REPLY);
 				content = parser.fromJson(message.getRawContent(), ContentIsCompleteRequest.class);
-				processIsCompleteRequest((ContentIsCompleteRequest) content, message);
+				contentReply = processIsCompleteRequest((ContentIsCompleteRequest) content);
+				sendMessage(communication.getShellSocket(),header , message.getHeader(), contentReply);
 				break;
 			case MessageType.EXECUTE_REQUEST:
 				content = parser.fromJson(message.getRawContent(), ContentExecuteRequest.class);
@@ -183,8 +194,10 @@ public abstract class JupyterServer {
 				processHistoryRequest(message);
 				break;
 			case MessageType.COMPLETE_REQUEST:
+				header = createHeader(session, MessageType.COMPLETE_REPLY);
 				content = parser.fromJson(message.getRawContent(), ContentCompleteRequest.class);
-				processCompleteRequest((ContentCompleteRequest) content, message);
+				contentReply = processCompleteRequest((ContentCompleteRequest) content);
+				sendMessage(getCommunication().getShellSocket(), header, message.getHeader(), contentReply);
 				break;
 			case MessageType.INSPECT_REQUEST:
 				break;
@@ -199,6 +212,15 @@ public abstract class JupyterServer {
 		}
 	}
 
+	public void closeAllSockets() {
+		communication.getControlSocket().close();
+		communication.getHeartbeatSocket().close();
+		communication.getIOPubSocket().close();
+		communication.getShellSocket().close();
+		communication.getStdinSocket().close();
+		System.exit(-1);
+	}
+	
 	public void listenHeartbeatSocket() {
 		@SuppressWarnings("unused")
 		byte[] ping;
@@ -279,7 +301,7 @@ public abstract class JupyterServer {
 	/**
 	 * This method processes the complete_request message and replies with a complete_reply message.
 	 */
-	public abstract void processCompleteRequest(ContentCompleteRequest contentCompleteRequest, Message message);
+	public abstract Content processCompleteRequest(ContentCompleteRequest contentCompleteRequest);
 
 	/**
 	 * This method processes the history_request message and replies with a history_reply message.
@@ -294,14 +316,14 @@ public abstract class JupyterServer {
 	/**
 	 * This method processes the shutdown_request message and replies with a shutdown_reply message.
 	 */
-	public abstract void processShutdownRequest(ZMQ.Socket socket, ContentShutdownRequest contentShutdownRequest, Message message);
+	public abstract Content processShutdownRequest(ContentShutdownRequest contentShutdownRequest);
 
 	/**
 	 * This method processes the is_complete_request message and replies with a is_complete_reply message.
 	 * @param header
 	 * @param content
 	 */
-	public abstract void processIsCompleteRequest(ContentIsCompleteRequest contentIsCompleteRequest, Message message);
+	public abstract Content processIsCompleteRequest(ContentIsCompleteRequest contentIsCompleteRequest);
 
 	/**
 	 * This method creates the interpreter to be used as a REPL
