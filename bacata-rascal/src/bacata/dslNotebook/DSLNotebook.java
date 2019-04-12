@@ -98,7 +98,7 @@ public class DSLNotebook extends JupyterServer {
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
 					sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
 
-					if(!stdout.toString().trim().equals("")){
+					if (!stdout.toString().trim().equals("")) {
 						sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stdout", stdout.toString()));
 						stdout.getBuffer().setLength(0);
 						stdout.flush();
@@ -107,12 +107,11 @@ public class DSLNotebook extends JupyterServer {
 					if (!stderr.toString().trim().equals("")) {
 						// This message is used to Render locations in html because STREM channel does not support it
 						String logs = metadata.get("ERROR-LOG");
-						if ( logs != null){
+						if ( logs != null) {
 							metadata.remove("ERROR-LOG");
 							metadata.put("text/html", logs);
 							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
-						}
-						else {
+						} else {
 							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stderr", stderr.toString()));
 						}
 						stderr.getBuffer().setLength(0);
