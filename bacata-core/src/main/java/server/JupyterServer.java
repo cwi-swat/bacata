@@ -120,7 +120,7 @@ public abstract class JupyterServer {
 			
 			while (!Thread.currentThread().isInterrupted()) {
 				poller.poll(0);
-				if(poller.pollin(1)) {
+				if (poller.pollin(1)) {
 					Message message = getMessage(communication.getControlSocket());
 					if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
 						ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
@@ -129,15 +129,15 @@ public abstract class JupyterServer {
 						sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply);
 					}
 				}
-				if(poller.pollin(3))
+				if (poller.pollin(3))
 					listenHeartbeatSocket();
-				if(poller.pollin(0)) {
+				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
 					statusUpdate(message.getHeader(), Status.BUSY);
 					processShellMessage(message);
 					statusUpdate(message.getHeader(), Status.IDLE);
 				}
-				if(poller.pollin(2))
+				if (poller.pollin(2))
 					getMessage(communication.getIOPubSocket());
 			}
 		
