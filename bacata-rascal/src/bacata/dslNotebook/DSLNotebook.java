@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
@@ -22,10 +23,12 @@ import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
-import org.zeromq.ZMQ.Socket;
+
 import communication.Header;
+
 import entities.ContentExecuteInput;
 import entities.ContentStream;
+import entities.Message;
 import entities.reply.ContentCompleteReply;
 import entities.reply.ContentDisplayData;
 import entities.reply.ContentExecuteReplyOk;
@@ -37,16 +40,18 @@ import entities.request.ContentCompleteRequest;
 import entities.request.ContentExecuteRequest;
 import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
+import entities.util.Content;
 import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
+
 import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
 import server.JupyterServer;
 
-public class DSLNotebook extends JupyterServer{
+public class DSLNotebook extends JupyterServer {
 
 
 	// -----------------------------------------------------------------
@@ -80,17 +85,21 @@ public class DSLNotebook extends JupyterServer{
 	// -----------------------------------------------------------------
 
 	@Override
-	public void processExecuteRequest(Header parentHeader, ContentExecuteRequest contentExecuteRequest, Map<String, String> metadata) {
+	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
+		Header parentHeader = message.getParentHeader();
+		Map<String, String> metadata = message.getMetadata();
 		Map<String, InputStream> data = new HashMap<>();
+		String session = message.getHeader().getSession();
+		
 		if (!contentExecuteRequest.isSilent()) {
 			if (contentExecuteRequest.isStoreHistory()) {
-				sendMessage(getCommunication().getPublish(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, metadata, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 				try {
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
-					sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
+					sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
 
 					if(!stdout.toString().trim().equals("")){
-						sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stdout", stdout.toString()));
+						sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stdout", stdout.toString()));
 						stdout.getBuffer().setLength(0);
 						stdout.flush();
 					}
@@ -101,10 +110,10 @@ public class DSLNotebook extends JupyterServer{
 						if ( logs != null){
 							metadata.remove("ERROR-LOG");
 							metadata.put("text/html", logs);
-							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, metadata, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
+							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
 						}
 						else {
-							sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, metadata, new ContentStream("stderr", stderr.toString()));
+							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stderr", stderr.toString()));
 						}
 						stderr.getBuffer().setLength(0);
 						stderr.flush();
@@ -112,7 +121,7 @@ public class DSLNotebook extends JupyterServer{
 
 					// sends the result
 					if (!data.isEmpty()) {
-						replyRequest(parentHeader,data, metadata);
+						replyRequest(message.getHeader(), session, data, metadata);
 					}
 
 				} catch (InterruptedException e) {
@@ -129,17 +138,16 @@ public class DSLNotebook extends JupyterServer{
 		else {
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
-			sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, metadata, new ContentExecuteReplyOk(executionNumber));
+			sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
 		}
 	}
 	
-	public void replyRequest(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata) {
+	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
 		InputStream input = data.get("text/html");
 		Map<String, String> res= new HashMap<>();
 		res.put("text/html", convertStreamToString(input));
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
-		sendMessage(getCommunication().getPublish(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, metadata, content);
-		
+		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
 	}
 
 	@SuppressWarnings("resource")
@@ -150,66 +158,58 @@ public class DSLNotebook extends JupyterServer{
 	
 
 	@Override
-	public void processHistoryRequest(Header parentHeader, Map<String, String> metadata) {
+	public void processHistoryRequest(Message message) {
 		// TODO This is only for clients to explicitly request history from a kernel
 	}
 	
 	@Override
-	public void processKernelInfoRequest(Header parentHeader, Map<String, String> metadata){
-//		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new JsonObject(), new ContentKernelInfoReply());
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY), parentHeader, new HashMap<String, String>(), new ContentKernelInfoReply(new LanguageInfo(languageName)));
+	public Content processKernelInfoRequest(Message message) {
+		LanguageInfo langInf = new LanguageInfo(languageName);
+		ContentKernelInfoReply content = new ContentKernelInfoReply(langInf);
+		return content;
 	}
 
 	@Override
-	public void processShutdownRequest(Socket socket, Header parentHeader, ContentShutdownRequest contentShutdown, Map<String, String> metadata) {
+	public Content processShutdownRequest(ContentShutdownRequest contentShutdown) {
 		boolean restart = false;
 		if (contentShutdown.getRestart()) {
 			restart = true;
-			// TODO: how should I restart rascal?
-		}
-		else {
+			// TODO: how can I restart rascal from here?
+		} else 
 			this.language.stop();
-			getCommunication().getRequests().close();
-			getCommunication().getPublish().close();
-			getCommunication().getControl().close();
-//			getCommunication().getContext().close();
-//			getCommunication().getContext().term();
-			System.exit(-1);
-		}
-		sendMessage(socket, createHeader(parentHeader.getSession(), MessageType.SHUTDOWN_REPLY), parentHeader, new HashMap<String, String>(), new ContentShutdownReply(restart));
+		return new ContentShutdownReply(restart);
 	}
 
 	/**
 	 * This method is executed when the kernel receives a is_complete_request message.
 	 */
 	@Override
-	public void processIsCompleteRequest(Header header, ContentIsCompleteRequest request, Map<String, String> metadata) {
+	public Content processIsCompleteRequest(ContentIsCompleteRequest request) {
 		//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
 		String status, indent="";
 		if (this.language.isStatementComplete(request.getCode())) {
 			System.out.println("COMPLETO");
 			status = Status.COMPLETE;
-		}
-		else {
+		} else {
 			status = Status.INCOMPLETE;
 			indent = "??????";
 		}
-		sendMessage(getCommunication().getRequests(), createHeader(header.getSession(), MessageType.IS_COMPLETE_REPLY), header, new HashMap<String, String>(), new ContentIsCompleteReply(status, indent));
+		return new ContentIsCompleteReply(status, indent);
 	}
 
 	@Override
-	public void processCompleteRequest(Header parentHeader, ContentCompleteRequest request, Map<String, String> metadata) {
-		int cursorPosition = request.getCursorPosition();
+	public Content processCompleteRequest(ContentCompleteRequest contentCompleteRequest) {
+		int cursorPosition = contentCompleteRequest.getCursorPosition();
 		ArrayList<String> sugestions = null;
-		if (request.getCode().startsWith("import ")) {
+		
+		if (contentCompleteRequest.getCode().startsWith("import "))
 			cursorPosition=7;
-		}
-		CompletionResult result = this.language.completeFragment(request.getCode(), cursorPosition);
+
+			CompletionResult result = this.language.completeFragment(contentCompleteRequest.getCode(), cursorPosition);
 		if (result != null)
 			sugestions = (ArrayList<String>)result.getSuggestions();
 		
-		ContentCompleteReply content = new ContentCompleteReply(sugestions, result != null ? result.getOffset() : 0, request.getCode().length(), new HashMap<String, String>(), Status.OK);
-		sendMessage(getCommunication().getRequests(), createHeader(parentHeader.getSession(), MessageType.COMPLETE_REPLY), parentHeader, new HashMap<String, String>(), content);
+		return new ContentCompleteReply(sugestions, result != null ? result.getOffset() : 0, contentCompleteRequest.getCode().length(), new HashMap<String, String>(), Status.OK);
 	}
 	
 	private static final String JAR_FILE_PREFIX = "jar:file:";
@@ -219,11 +219,9 @@ public class DSLNotebook extends JupyterServer{
 		if (full.startsWith(JAR_FILE_PREFIX)) {
 			full = full.substring(JAR_FILE_PREFIX.length());
 			return vf.sourceLocation("jar", null, full);
-		}
-		else {
+		} else {
 			return vf.sourceLocation(URIUtil.fromURL(u));
 		}
-			
 	}
 		
 	@Override
@@ -265,7 +263,6 @@ public class DSLNotebook extends JupyterServer{
 		IConstructor repl = (var != null ? (IConstructor) var.getValue() : (IConstructor) eval.call(variableName, new IValue[]{}));
 		
 		return new TermREPL.TheREPL(vf, repl, eval);
-		
 	}
 	
 	// -----------------------------------------------------------------
@@ -274,10 +271,8 @@ public class DSLNotebook extends JupyterServer{
 
 	public static void main(String[] args) {
 		try {
-			if (args.length == 5) {
-				a =  System.currentTimeMillis();
+			if (args.length == 5)
 				new DSLNotebook(args[0], args[1], args[2], args[3], args[4]);
-			}
 			else 
 				new DSLNotebook(args[0], args[1], args[2], args[3], args[4], args[5]);
 		} catch (Exception e) {
