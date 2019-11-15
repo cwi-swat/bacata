@@ -45,11 +45,10 @@
 				</includes>
 			</resource>
 		</resources>
-		<pluginManagement>
+		<!-- <pluginManagement> -->
 			<plugins>
 				<plugin>
-					<!-- Copy non-Eclipse plugins to target/dependency so that may be referenced 
-						for runtime use. -->
+					<!-- Copy non-Eclipse plugins to target/dependency so that may be referenced for runtime use. -->
 					<artifactId>maven-dependency-plugin</artifactId>
 					<version>3.1.1</version>
 					<executions>
@@ -120,6 +119,6 @@
 					</executions>
 				</plugin>
 			</plugins>
-		</pluginManagement>
+		<!-- </pluginManagement> -->
 	</build>
 </project>
