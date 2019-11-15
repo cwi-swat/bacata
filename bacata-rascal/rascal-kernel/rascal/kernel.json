@@ -1,0 +1,11 @@
+{
+	"argv": [
+		"java",
+		"-jar",
+		"/root/bacata/bacata-rascal/target/bacata-rascal.jar",
+		"{connection_file}",
+		"home:///salix/src"
+	],
+	"display_name": "Rascal",
+	"language": "Rascal"
+}
