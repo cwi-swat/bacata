@@ -44,7 +44,7 @@
 				</includes>
 			</resource>
 		</resources>
-		<pluginManagement>
+		<!-- <pluginManagement> -->
 			<plugins>
 				<plugin>
 					<!-- Copy non-Eclipse plugins to target/dependency so that may be referenced 
@@ -119,6 +119,6 @@
 					</executions>
 				</plugin>
 			</plugins>
-		</pluginManagement>
+		<!-- </pluginManagement> -->
 	</build>
 </project>
