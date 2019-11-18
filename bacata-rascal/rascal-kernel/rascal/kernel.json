@@ -3,8 +3,7 @@
 		"java",
 		"-jar",
 		"/root/bacata/rascal-notebook/target/rascal-notebook-0.0.1-SNAPSHOT.jar",
-		"{connection_file}",
-		"home:///salix/src"
+		"{connection_file}"
 	],
 	"display_name": "Rascal",
 	"language": "Rascal"
