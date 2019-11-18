@@ -2,7 +2,7 @@
 	"argv": [
 		"java",
 		"-jar",
-		"/root/bacata/bacata-rascal/target/bacata-rascal.jar",
+		"/root/bacata/bacata-rascal/target/bacata-rascal-0.2.0-SNAPSHOT.jar",
 		"{connection_file}",
 		"home:///salix/src"
 	],
