@@ -25,6 +25,8 @@ public class MessageType {
     
     public final static String COMM_INFO_REQUEST = "comm_info_request";
     
+    public final static String CONNECT_REQUEST = "connect_request";
+    
     // -----------------------------------------------------------------
     // Reply constants
     // -----------------------------------------------------------------

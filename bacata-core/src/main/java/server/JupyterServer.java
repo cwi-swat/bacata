@@ -119,9 +119,10 @@ public abstract class JupyterServer {
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 			
 			while (!Thread.currentThread().isInterrupted()) {
-				poller.poll(0);
+				poller.poll();
 				if (poller.pollin(1)) {
-					Message message = getMessage(communication.getControlSocket());
+					Message message = getMessage(communication.getControlSocket());					
+					processControlMessage(message);
 					if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
 						ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
 						Content contentReply = processShutdownRequest(content);
@@ -161,6 +162,17 @@ public abstract class JupyterServer {
 		return new Message(zFrames);
 	}
 	
+	public void processControlMessage(Message message) {
+		switch (message.getHeader().getMsgType()) {
+		case "input_request":
+			System.out.println("");
+			break;
+		default:
+			break;
+		}
+		
+	}
+	
 	
 	public void processShellMessage(Message message) {
 		Content content;
@@ -169,6 +181,7 @@ public abstract class JupyterServer {
 		String session = message.getHeader().getSession();
 		switch (message.getHeader().getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
+//				statusUpdate(message.getHeader(), Status.STARTING);
 				header = createHeader(session, MessageType.KERNEL_INFO_REPLY);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
 				sendMessage(communication.getShellSocket(), header, message.getHeader(), contentReply);
@@ -200,6 +213,9 @@ public abstract class JupyterServer {
 				sendMessage(getCommunication().getShellSocket(), header, message.getHeader(), contentReply);
 				break;
 			case MessageType.INSPECT_REQUEST:
+				break;
+			case MessageType.CONNECT_REQUEST:
+				System.out.println();
 				break;
 			case MessageType.COMM_INFO_REQUEST:
 				System.out.println("COMM_INFO_REQUEST");

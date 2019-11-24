@@ -1,5 +1,6 @@
 package org.rascalmpl.notebook;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -7,6 +8,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -74,29 +76,58 @@ public class RascalNotebook extends JupyterServer{
 	// Methods
 	// -----------------------------------------------------------------
 
+//	@Override
+//	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
+//		Header parentHeader = message.getParentHeader();
+//		Map<String, String> metadata = message.getMetadata();
+//		Map<String, InputStream> data = new HashMap<>();
+//		String session = message.getHeader().getSession();
+//		
+//		data.put("text/html", stringStream("<div>funciona</div>"));
+//		
+//		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+//		sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
+//		
+//		replyRequest(message.getHeader(), session, data, metadata);
+//	}
+	
+    private InputStream stringStream(String x) {
+        return new ByteArrayInputStream(x.getBytes(StandardCharsets.UTF_8));
+    }
+	
+	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
+		InputStream input = data.get("text/html");
+		Map<String, String> res= new HashMap<>();
+		res.put("text/html", convertStreamToString(input));
+		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
+		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
+	}
 	@Override
 	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
 		Header parentHeader = message.getParentHeader();
 		Map<String, String> metadata = message.getMetadata();
 		Map<String, InputStream> data = new HashMap<>();
+		String session = message.getHeader().getSession();
+		
 		if (!contentExecuteRequest.isSilent()) {
 			if (contentExecuteRequest.isStoreHistory()) {
-				sendMessage(getCommunication().getIOPubSocket(),createHeader(parentHeader.getSession(), MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 				try {
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
 					removeUnnecessaryData(data);
 					
-					sendMessage(getCommunication().getShellSocket(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
+					sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
 
-					processStreams(parentHeader, data, metadata);
+					processStreams(parentHeader, data, metadata, session);
 					// sends the result
 					if(!data.isEmpty())
 					{
-						InputStream input = data.get("text/html");
-						Map<String, String> res = new HashMap<>();
-						res.put("text/html", convertStreamToString(input));
-						ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
-						sendMessage(getCommunication().getIOPubSocket(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_RESULT), parentHeader, content);
+						replyRequest(message.getHeader(), session, data, metadata);
+//						InputStream input = data.get("text/html");
+//						Map<String, String> res = new HashMap<>();
+//						res.put("text/html", convertStreamToString(input));
+//						ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
+//						sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
 					}
 
 				} catch (InterruptedException e) {
@@ -111,7 +142,7 @@ public class RascalNotebook extends JupyterServer{
 		else {
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
-			sendMessage(getCommunication().getShellSocket(), createHeader(parentHeader.getSession(), MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
+			sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
 		}
 	}
 	
@@ -121,23 +152,23 @@ public class RascalNotebook extends JupyterServer{
 	    return s.hasNext() ? s.next() : "";
 	}
 
-	private void processStreams(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata) {
+	private void processStreams(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata, String session) {
 		if (!stdout.toString().trim().equals("")) {
-			processStreamsReply(ContentStream.STD_OUT, parentHeader, data, metadata);
+			processStreamsReply(ContentStream.STD_OUT, parentHeader, data, metadata, session);
 		}
 		if (!stderr.toString().trim().equals("")) {
-			processStreamsReply(ContentStream.STD_ERR, parentHeader, data, metadata);
+			processStreamsReply(ContentStream.STD_ERR, parentHeader, data, metadata, session);
 		}
 	}
 
-	public void processStreamsReply(String stream, Header parentHeader,Map<String, InputStream> data, Map<String, String> metadata) {
+	public void processStreamsReply(String stream, Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata, String session) {
 		String logs = stream.equals(ContentStream.STD_OUT) ? stdout.toString() : stderr.toString();
 		if (logs.contains("http://")) {
 			metadata.put(MIME_TYPE_HTML, stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs)) : createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
-			sendMessage(getCommunication().getIOPubSocket(), createHeader(parentHeader.getSession(), MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
+			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
 		}
 		else {
-			sendMessage(getCommunication().getIOPubSocket(), createHeader(parentHeader.getSession(), MessageType.STREAM), parentHeader, new ContentStream(stream, logs));
+			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream(stream, logs));
 		}
 		removeUnnecessaryData(data);	
 		flushStreams();
