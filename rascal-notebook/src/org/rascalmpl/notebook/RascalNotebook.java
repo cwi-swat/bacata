@@ -1,6 +1,5 @@
 package org.rascalmpl.notebook;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -8,7 +7,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -25,7 +23,6 @@ import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
-import org.zeromq.ZMQ.Socket;
 import communication.Header;
 import entities.ContentExecuteInput;
 import entities.ContentStream;
@@ -75,60 +72,36 @@ public class RascalNotebook extends JupyterServer{
 	// -----------------------------------------------------------------
 	// Methods
 	// -----------------------------------------------------------------
-
-//	@Override
-//	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
-//		Header parentHeader = message.getParentHeader();
-//		Map<String, String> metadata = message.getMetadata();
-//		Map<String, InputStream> data = new HashMap<>();
-//		String session = message.getHeader().getSession();
-//		
-//		data.put("text/html", stringStream("<div>funciona</div>"));
-//		
-//		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
-//		sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
-//		
-//		replyRequest(message.getHeader(), session, data, metadata);
-//	}
-	
-    private InputStream stringStream(String x) {
-        return new ByteArrayInputStream(x.getBytes(StandardCharsets.UTF_8));
-    }
 	
 	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
 		InputStream input = data.get("text/html");
-		Map<String, String> res= new HashMap<>();
+		Map<String, String> res = new HashMap<>();
 		res.put("text/html", convertStreamToString(input));
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
 		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
 	}
 	@Override
 	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
-		Header parentHeader = message.getParentHeader();
+		Header header, parentHeader = message.getHeader();
 		Map<String, String> metadata = message.getMetadata();
 		Map<String, InputStream> data = new HashMap<>();
 		String session = message.getHeader().getSession();
 		
 		if (!contentExecuteRequest.isSilent()) {
 			if (contentExecuteRequest.isStoreHistory()) {
-				sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				header = new Header(MessageType.EXECUTE_INPUT, parentHeader);
+				sendMessage(getCommunication().getIOPubSocket(), header, parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 				try {
-					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
+					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata); // Execute user's code
+					// Not sure about removing this.
 					removeUnnecessaryData(data);
 					
-					sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
+					sendMessage(getCommunication().getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parentHeader), parentHeader, new ContentExecuteReplyOk(executionNumber));
 
-					processStreams(parentHeader, data, metadata, session);
-					// sends the result
+					processStreams(parentHeader, data, metadata, session); // stdout writing
+					
 					if(!data.isEmpty())
-					{
-						replyRequest(message.getHeader(), session, data, metadata);
-//						InputStream input = data.get("text/html");
-//						Map<String, String> res = new HashMap<>();
-//						res.put("text/html", convertStreamToString(input));
-//						ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
-//						sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
-					}
+						replyRequest(parentHeader, session, data, metadata); // // Returns the result
 
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -142,7 +115,8 @@ public class RascalNotebook extends JupyterServer{
 		else {
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
-			sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
+			header = new Header(MessageType.EXECUTE_REPLY, parentHeader);
+			sendMessage(getCommunication().getShellSocket(), header, parentHeader, new ContentExecuteReplyOk(executionNumber));
 		}
 	}
 	
@@ -168,7 +142,7 @@ public class RascalNotebook extends JupyterServer{
 			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
 		}
 		else {
-			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream(stream, logs));
+			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream(stream, stdout.toString()));
 		}
 		removeUnnecessaryData(data);	
 		flushStreams();
@@ -312,6 +286,7 @@ public class RascalNotebook extends JupyterServer{
 	// Execution
 	// -----------------------------------------------------------------
 
+	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		try {
 			RascalNotebook a = args.length > 1 ? new RascalNotebook(args[0], args[1]) : new RascalNotebook(args[0]);
