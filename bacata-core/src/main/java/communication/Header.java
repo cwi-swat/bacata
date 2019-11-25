@@ -1,6 +1,8 @@
 package communication;
 
-
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 public class Header {
 
@@ -43,6 +45,26 @@ public class Header {
         this.username = username;
         this.date = date;
         this.msgId = msgId;
+    }
+    
+    public Header(String session, String msgType, String version, String username) {
+		this.session = session;
+		this.msgType = msgType;
+        this.version = version;
+        this.username = username;
+        
+        this.date = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+        this.msgId = String.valueOf(UUID.randomUUID());
+    }
+    
+    public Header(String msgType, Header parentHeader) {
+		this.session = parentHeader.getSession();
+		this.msgType = msgType;
+        this.version = parentHeader.getVersion();
+        this.username = parentHeader.getUsername();
+        
+        this.date = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+        this.msgId = String.valueOf(UUID.randomUUID());
     }
 
     // -----------------------------------------------------------------
