@@ -2,4 +2,4 @@ Manifest-Version: 0.0.1
 Main-Function: main
 Main-Module: Plugin
 Source: src
-Project-Name: bacata 
+Project-Name: bacata-rascal
