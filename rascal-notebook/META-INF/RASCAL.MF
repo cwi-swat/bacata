@@ -3,4 +3,5 @@ Main-Function: main
 Courses: courses
 Main-Module: Plugin
 Source: src
-
+Project-Name: rascal-notebook
+Require-Libraries: |lib://salix|
