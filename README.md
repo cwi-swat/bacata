@@ -1,6 +1,9 @@
 # Bacatá
 Jupyter language kernel generator for DSLs developed using the [Rascal Language Workbench](http://rascal-mpl.org/).
 
+[![DOI](https://zenodo.org/badge/112358270.svg)](https://zenodo.org/badge/latestdoi/112358270)
+
+
 ## Eclipse Plugin
 To install Bacatá please use the following update site [https://update.rascal-mpl.org/libs/](https://update.rascal-mpl.org/libs/) and select the __Bacata__ feature.
 
