@@ -3,28 +3,29 @@ module bacata::salix::Bridge
 import IO;
 import String;
 import salix::App;
+import bacata::REPL;
 import util::Webserver;
-extend util::REPL;
+//extend util::REPL;
 
 
-data CommandResult(list[Message] messages = [])
-  = salix(SalixApp[&T] salixApp)
-  ; 
-  
-data REPL(SalixMultiplexer visualization = noOp())
-  =  	repl( 
-         CommandResult (str line) handler,
-         Completion(str line, int cursor) completor
-        )
-  ;
+//data CommandResult(list[Message] messages = [])
+//  = salix(SalixApp[&T] salixApp)
+//  ; 
+//  
+//data REPL(SalixMultiplexer visualization = noOp())
+//  =  	repl( 
+//         CommandResult (str line) handler,
+//         Completion(str line, int cursor) completor
+//        )
+//  ;
 
-alias VisOutput = str;
+//alias VisOutput = str;
 
-alias SalixConsumer
-  = VisOutput(SalixApp[value] app, str scope);
-
-alias SalixMultiplexer
-  = tuple[SalixConsumer consumer, void() stop, loc http];
+//alias SalixConsumer
+//  = VisOutput(SalixApp[value] app, str scope);
+//
+//alias SalixMultiplexer
+//  = tuple[SalixConsumer consumer, void() stop, loc http];
   
 SalixMultiplexer noOp() = <(SalixApp[value] x) {}, () {}, |http://localhost|>;
 
