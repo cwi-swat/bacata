@@ -25,6 +25,11 @@
 			<version>1.1-SNAPSHOT</version>
 			<classifier>jar-with-dependencies</classifier>
 		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>28.2-jre</version>
+		</dependency>
 <!-- 		<dependency>
 			<artifactId>salix</artifactId>
 			<groupId>org.rascalmpl</groupId>

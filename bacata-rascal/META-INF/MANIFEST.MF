@@ -14,6 +14,7 @@ Export-Package: bacata,
  entities,
  server
 Import-Package: bacata,
+ com.google.common.graph;version="21.0.0",
  communication,
  entities,
  server
