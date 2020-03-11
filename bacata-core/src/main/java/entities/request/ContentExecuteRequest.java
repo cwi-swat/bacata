@@ -38,6 +38,17 @@ public class ContentExecuteRequest extends Content {
 
     private boolean stopOnError;
 
+    /**
+     * Represents the cell id of a code cell. This is used for the execution graph.
+     */
+    private String cellId;
+    
+    /**
+     * Represents the current cell in the execution graph.
+     */
+    private String currentCell;
+    
+
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
@@ -73,4 +84,13 @@ public class ContentExecuteRequest extends Content {
     public boolean isStopOnError() {
         return stopOnError;
     }
+
+	public String getCellId() {
+		return cellId;
+	}
+
+	public String getCurrentCell() {
+		return currentCell;
+	}
+	
 }

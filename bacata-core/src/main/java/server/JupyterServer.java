@@ -122,7 +122,11 @@ public abstract class JupyterServer {
 				poller.poll();
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
+//					if (message.getHeader().getMsgType().equals(MessageType.KERNEL_INFO_REQUEST)) {
+//						statusUpdate(message.getHeader(), Status.STARTING);
+//					}
 					statusUpdate(message.getHeader(), Status.BUSY);
+					
 					processShellMessage(message);
 					statusUpdate(message.getHeader(), Status.IDLE);
 				}
@@ -151,7 +155,8 @@ public abstract class JupyterServer {
 	 * @return Message with the information of the received data.
 	 */
 	public Message getMessage(ZMQ.Socket socket) throws RuntimeException {
-		ZMsg zmsg = ZMsg.recvMsg(socket);
+		ZMsg zmsg = ZMsg.recvMsg(socket, false); // Non-blocking recv
+		
 		ZFrame[] zFrames = new ZFrame[zmsg.size()];
 		zmsg.toArray(zFrames);
 		

@@ -33,6 +33,11 @@ public class Status {
      * This constant is used if the kernel is busy
      */
     public final static String BUSY = "busy";
+    
+    /**
+     * This constant is used if the kernel is once at process startup.
+     */
+    public final static String STARTING = "starting";
 
     /**
      * This constant is used if the kernel is idle

@@ -28,7 +28,7 @@ public class LanguageInfo {
 
     private String mimetype;
 
-    private String file_extension;
+    private String fileExtension;
 
     private String pygmentsLexer;
 
@@ -45,7 +45,7 @@ public class LanguageInfo {
         this.name = LANGUAGE_NAME;
         this.version = LANGUAGE_VERSION;
         this.mimetype = LANGUAGE_MIMETYPE;
-        this.file_extension = LANGUAGE_EXTENSION;
+        this.fileExtension = LANGUAGE_EXTENSION;
         this.pygmentsLexer = null;
         this.codemirrorMode = new CodeMirrorMode(codemirrorName);
         this.nbconvertExporter = null;
@@ -55,7 +55,7 @@ public class LanguageInfo {
         this.name = name;
         this.version = version;
         this.mimetype = mimetype;
-        this.file_extension = file_extension;
+        this.fileExtension = file_extension;
         this.pygmentsLexer = null;
         this.codemirrorMode = null;
         this.nbconvertExporter = null;
@@ -78,7 +78,7 @@ public class LanguageInfo {
     }
 
     public String getFile_extension() {
-        return file_extension;
+        return fileExtension;
     }
 
     public String getPygmentsLexer() {
