@@ -1,4 +1,5 @@
 package bacata.dslNotebook;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -12,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.rascalmpl.bacata.repl.BacataREPL;
+import org.rascalmpl.bacata.repl.replization.REPLize;
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
@@ -23,6 +26,9 @@ import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
+
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 import communication.Header;
 
@@ -76,10 +82,10 @@ public class DSLNotebook extends JupyterServer {
 		this.language = makeInterpreter(source, replQualifiedName, salixPath);
 		System.out.println("MAKE INTERPRETER: " + (System.currentTimeMillis() -  start));
 		this.language.initialize(stdout, stderr);
+		
 		startServer();
 	}
 	
-
 	// -----------------------------------------------------------------
 	// Methods
 	// -----------------------------------------------------------------
@@ -87,6 +93,7 @@ public class DSLNotebook extends JupyterServer {
 	@Override
 	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
 		Header parentHeader = message.getParentHeader();
+		// TODO: Check whether the cellId comes as part of the metadata
 		Map<String, String> metadata = message.getMetadata();
 		Map<String, InputStream> data = new HashMap<>();
 		String session = message.getHeader().getSession();
@@ -95,6 +102,7 @@ public class DSLNotebook extends JupyterServer {
 			if (contentExecuteRequest.isStoreHistory()) {
 				sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 				try {
+					
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
 					sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
 
@@ -127,6 +135,7 @@ public class DSLNotebook extends JupyterServer {
 					e.printStackTrace();
 				} catch (Exception e) {
 					e.printStackTrace();
+					// TODO: Return error messages.
 				}
 			}
 			else {
@@ -261,7 +270,8 @@ public class DSLNotebook extends JupyterServer {
 		Result<IValue> var = module.getSimpleVariable(variableName);
 		IConstructor repl = (var != null ? (IConstructor) var.getValue() : (IConstructor) eval.call(variableName, new IValue[]{}));
 		
-		return new TermREPL.TheREPL(vf, repl, eval);
+		return new BacataREPL(vf, repl, eval);
+//		return new REPLize(vf, repl, eval);
 	}
 	
 	// -----------------------------------------------------------------
