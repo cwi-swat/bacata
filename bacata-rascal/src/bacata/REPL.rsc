@@ -12,7 +12,13 @@ data REPL(SalixMultiplexer visualization = noOp())
   =  repl( 
      	CommandResult (str line) handler,
         Completion(str line, int cursor) completor
-  );
+  	  )
+  | replization(
+ 	    &T (str program, &T config) newHandler,
+ 	    &T initConfig,
+ 	    CommandResult (&T old, &T prev) printer
+  )
+  ;
   
 alias SalixConsumer
   = VisOutput(SalixApp[value] app, str scope);
