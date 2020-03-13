@@ -12,7 +12,9 @@ Bundle-ClassPath: .,
 Export-Package: bacata,
  communication,
  entities,
- server
+ server,
+ org.rascalmpl.bacata.repl,
+ org.rascalmpl.bacata.repl.replization
 Import-Package: bacata,
  com.google.common.graph;version="21.0.0",
  communication,
