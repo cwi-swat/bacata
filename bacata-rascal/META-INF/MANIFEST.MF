@@ -23,7 +23,6 @@ Export-Package: bacata,
    communication,
    com.google.gson"
 Import-Package: bacata,
- com.google.common.graph,
  communication,
  entities,
  server
