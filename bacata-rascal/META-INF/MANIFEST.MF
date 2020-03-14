@@ -10,11 +10,18 @@ Main-Class: bacata.dslNotebook.DSLNotebook
 Bundle-ClassPath: ., 
  lib/bacata-core.jar
 Export-Package: bacata,
- communication,
- entities,
- server,
- org.rascalmpl.bacata.repl,
- org.rascalmpl.bacata.repl.replization
+ communication;uses:="org.zeromq",
+ entities;uses:="entities.util,org.zeromq,communication",
+ org.rascalmpl.bacata.repl;uses:="org.rascalmpl.interpreter,io.usethesource.vallang,org.rascalmpl.repl",
+ org.rascalmpl.bacata.repl.replization;uses:="org.rascalmpl.interpreter,io.usethesource.vallang,org.rascalmpl.repl",
+ server;
+  uses:="entities,
+   org.rascalmpl.repl,
+   entities.util,
+   org.zeromq,
+   entities.request,
+   communication,
+   com.google.gson"
 Import-Package: bacata,
  com.google.common.graph,
  communication,
