@@ -23,11 +23,11 @@ data NotebookServer
 data Kernel
 	= kernel(str languageName, loc projectPath, str replQualifiedName, loc salixPath= |tmp:///|, loc logo = |tmp:///|);
 
-//str JUPYTER_PATH = "/Library/Frameworks/Python.framework/Versions/3.6/bin/jupyter";
+str JUPYTER_HOME = "/Library/Frameworks/Python.framework/Versions/3.7/bin/jupyter";
 //loc JUPYTER_FRONTEND_PATH = |home:///Documents/Jupyter/forked-notebook/notebook/static/components/codemirror/mode/|;
-loc JUPYTER_FRONTEND_PATH = |tmp:///|;
-str JUPYTER_HOME = "";
-str BACATA_HOME = "";
+//loc JUPYTER_FRONTEND_PATH = |tmp:///|;
+//str JUPYTER_HOME = "";
+str BACATA_HOME = "/Users/mauricio/Documents/ResearchProjects/bacata/bacata-rascal/target/bacata-rascal-0.2.0-SNAPSHOT.jar";
 
 void verifyPreRequisites() {
 	verifyJupyterInstallation();
@@ -47,7 +47,8 @@ void verifyJupyterFrontendPath() {
 * This function verifies the definition of the JUPYTER_HOME
 */
 void verifyJupyterInstallation() {
-	JUPYTER_HOME = readEnvVariable("JUPYTER_HOME");
+	if(JUPYTER_HOME == "")
+		JUPYTER_HOME = readEnvVariable("JUPYTER_HOME");
 	if(JUPYTER_HOME == "")
 		throw "JUPYTER_HOME is not defined as environment variable";
 }
@@ -56,7 +57,8 @@ void verifyJupyterInstallation() {
 * This function verifies the definition of the BACATA_HOME
 */
 void verifyBacataInstallation() {
-	BACATA_HOME = readEnvVariable("BACATA_HOME");
+	if(BACATA_HOME == "")
+		BACATA_HOME = readEnvVariable("BACATA_HOME");
 	if(BACATA_HOME == "") {
 		BACATA_HOME = getBacataPluginLocation();
 		if(BACATA_HOME == "")
@@ -209,7 +211,7 @@ str kernelFileContent(Kernel kernelInfo, bool debug) =
   	'	\"argv\": [
     '		\"java\",
     '		\"-jar\",
-    ' 		<if(debug){>\"-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 \",<}>
+    ' 		<if(debug){>\"-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n\",<}>
     '		\"<BACATA_HOME>\",
     '		\"{connection_file}\",
     '		\"<"<kernelInfo.projectPath>"[1..-1]>\",
