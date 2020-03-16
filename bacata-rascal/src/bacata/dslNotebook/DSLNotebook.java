@@ -210,14 +210,10 @@ public class DSLNotebook extends JupyterServer {
 		int cursorPosition = contentCompleteRequest.getCursorPosition();
 		ArrayList<String> sugestions = null;
 		
-		if (contentCompleteRequest.getCode().startsWith("import "))
-			cursorPosition=7;
-
-			CompletionResult result = this.language.completeFragment(contentCompleteRequest.getCode(), cursorPosition);
-		if (result != null)
-			sugestions = (ArrayList<String>)result.getSuggestions();
+		CompletionResult result = this.language.completeFragment(contentCompleteRequest.getCode(), cursorPosition);
+		sugestions = (ArrayList<String>) result.getSuggestions();
 		
-		return new ContentCompleteReply(sugestions, result != null ? result.getOffset() : 0, contentCompleteRequest.getCode().length(), new HashMap<String, String>(), Status.OK);
+		return new ContentCompleteReply(sugestions, result.getOffset(), contentCompleteRequest.getCode().length(), new HashMap<String, String>(), Status.OK);
 	}
 	
 	private static final String JAR_FILE_PREFIX = "jar:file:";

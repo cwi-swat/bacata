@@ -11,13 +11,12 @@ data CommandResult(list[Message] messages = [])
 data REPL(SalixMultiplexer visualization = noOp())
   =  repl( 
      	CommandResult (str line) handler,
-        Completion(str line, int cursor) completor
-  	  )
+        Completion(str line, int cursor) completor)
   | replization(
  	    &T (str program, &T config) newHandler,
  	    &T initConfig,
- 	    CommandResult (&T old, &T prev) printer
-  )
+ 	    CommandResult (&T old, &T prev) printer,
+ 	    Completion(str line, int cursor, &T config) tabcompletor)
   ;
   
 alias SalixConsumer

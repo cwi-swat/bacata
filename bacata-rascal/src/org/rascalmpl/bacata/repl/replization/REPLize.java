@@ -60,7 +60,7 @@ public final class REPLize implements ILanguageProtocol {
     private final ICallableValue printer;
     private final IValue initConfig;
     private final IEvaluatorContext ctx;
-//    private final ICallableValue completor;
+    private final ICallableValue completor;
     private final IValueFactory vf;
     
     
@@ -75,7 +75,7 @@ public final class REPLize implements ILanguageProtocol {
         this.printer = (ICallableValue) repl.get("printer");
         this.initConfig = (IValue) repl.get("initConfig");
         
-//        this.completor = (ICallableValue)repl.get("completor");
+        this.completor = (ICallableValue) repl.get("tabcompletor");
         
         this.graph = ValueGraphBuilder.directed().build();
         
@@ -242,21 +242,17 @@ public final class REPLize implements ILanguageProtocol {
 
     @Override
     public CompletionResult completeFragment(String line, int cursor) {
-        ITuple result = null;//(ITuple)call(completor, new Type[] { tf.stringType(), tf.integerType() },
-                        //new IValue[] { vf.string(line), vf.integer(cursor) }); 
+        ITuple result = (ITuple)call(completor, new Type[] { tf.stringType(), tf.integerType(), this.current.getConfig().getType() },
+                        new IValue[] { vf.string(line), vf.integer(cursor), this.current.getConfig() }); 
 
+        
         List<String> suggestions = new ArrayList<>();
-
-        for (IValue v: (IList)result.get(1)) {
+        int offset = ((IInteger) result.get(0)).intValue();
+        IList suggs = (IList) result.get(1); 
+        
+        for (IValue v: suggs) {
             suggestions.add(((IString)v).getValue());
         }
-
-        if (suggestions.isEmpty()) {
-            return null;
-        }
-
-        int offset = ((IInteger)result.get(0)).intValue();
-
         return new CompletionResult(offset, suggestions);
     }
 
