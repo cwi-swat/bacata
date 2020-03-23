@@ -1,8 +1,6 @@
 package bacata.dslNotebook;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -13,12 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.rascalmpl.bacata.repl.BacataREPL;
-import org.rascalmpl.bacata.repl.replization.REPLize;
+//import org.rascalmpl.bacata.repl.BacataREPL;
+//import org.rascalmpl.bacata.repl.replization.REPLize;
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
+import org.rascalmpl.interpreter.result.ICallableValue;
 import org.rascalmpl.interpreter.result.Result;
 import org.rascalmpl.interpreter.utils.RascalManifest;
 import org.rascalmpl.library.util.TermREPL;
@@ -26,9 +25,6 @@ import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
-
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
 
 import communication.Header;
 
@@ -55,6 +51,7 @@ import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
+import io.usethesource.vallang.IWithKeywordParameters;
 import server.JupyterServer;
 
 public class DSLNotebook extends JupyterServer {
@@ -81,7 +78,6 @@ public class DSLNotebook extends JupyterServer {
 		long start = System.currentTimeMillis();
 		this.language = makeInterpreter(source, replQualifiedName, salixPath);
 		System.out.println("MAKE INTERPRETER: " + (System.currentTimeMillis() -  start));
-		this.language.initialize(stdout, stderr);
 		
 		startServer();
 	}
@@ -151,7 +147,7 @@ public class DSLNotebook extends JupyterServer {
 	}
 	
 	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
-		InputStream input = data.get("text/html");
+		InputStream input = data.get("text/plain");
 		Map<String, String> res= new HashMap<>();
 		res.put("text/html", convertStreamToString(input));
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
@@ -236,7 +232,7 @@ public class DSLNotebook extends JupyterServer {
 		GlobalEnvironment heap = new GlobalEnvironment();
 		ModuleEnvironment root = heap.addModule(new ModuleEnvironment("$"+moduleName+"$", heap));
 		IValueFactory vf = ValueFactoryFactory.getValueFactory();
-		Evaluator eval = new Evaluator(vf, new PrintWriter(System.err), new PrintWriter(System.out), root, heap);
+		Evaluator eval = new Evaluator(vf, System.in, System.err, System.out, root, heap);
 		
 		eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
 		try {
@@ -265,8 +261,14 @@ public class DSLNotebook extends JupyterServer {
 		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
 		Result<IValue> var = module.getSimpleVariable(variableName);
 		IConstructor repl = (var != null ? (IConstructor) var.getValue() : (IConstructor) eval.call(variableName, new IValue[]{}));
+
+		IWithKeywordParameters<? extends IConstructor> repl2 = repl.asWithKeywordParameters();
 		
-		return new BacataREPL(vf, repl, eval);
+		ICallableValue handler = (ICallableValue) repl2.getParameter("handler");
+		ICallableValue completor = (ICallableValue) repl2.getParameter("completor");
+		
+		return new TermREPL.TheREPL(vf, vf.string("Bacatá"), vf.string("Welcome"), vf.string("IN"),  vf.string("quit"), vf.sourceLocation(""), handler, completor, completor, eval.getInput(), eval.getStdErr(), eval.getStdOut());
+		
 //		return new REPLize(vf, repl, eval);
 	}
 	
