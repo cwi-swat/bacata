@@ -2,6 +2,7 @@ package org.rascalmpl.notebook;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -65,7 +66,7 @@ public class RascalNotebook extends JupyterServer{
 		stdout = new StringWriter();
 		stderr = new StringWriter();
 		this.language = makeInterpreter(null, null, salixPath);
-		this.language.initialize(stdout, stderr);
+//		this.language.initialize(stdout, stderr);
 		startServer();
 	}
 
@@ -236,10 +237,10 @@ public class RascalNotebook extends JupyterServer{
 
 	@Override
 	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, final String... salixPath) throws IOException, URISyntaxException {
-		return new RascalInterpreterREPL(null, null, false, false, true, null) {
+		return new RascalInterpreterREPL(false, false, true, null) {
 			@Override
-			protected Evaluator constructEvaluator(Writer stdout, Writer stderr) {
-				Evaluator e = ShellEvaluatorFactory.getDefaultEvaluator(new PrintWriter(stdout), new PrintWriter(stderr));
+			protected Evaluator constructEvaluator(InputStream input, OutputStream stdout, OutputStream stderr) {
+				Evaluator e = ShellEvaluatorFactory.getDefaultEvaluator(input, stdout, stderr);
 				try {
 					e.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
 
