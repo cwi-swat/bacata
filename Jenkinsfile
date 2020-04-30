@@ -19,5 +19,4 @@ node {
 	}
    
 	build job: '../rascal-eclipse-libraries/master', wait: false
-	build job: '../rascal-core-plugin/master', wait: false
 }
