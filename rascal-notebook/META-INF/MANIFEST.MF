@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: rascal-notebook
 Bundle-SymbolicName: rascal-notebook;singleton:=true
 Bundle-Version: 0.0.1.qualifier
-Require-Bundle: rascal_eclipse
+Require-Bundle: rascal_eclipse;bundle-version="[0.0.0,0.19.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Main-Class: org.rascalmpl.notebook.RascalNotebook
 Bundle-ClassPath: ., 
