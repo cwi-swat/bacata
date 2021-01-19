@@ -11,14 +11,9 @@
 
 	<artifactId>bacata-rascal</artifactId>
 	<version>0.2.0-SNAPSHOT</version>
-	<packaging>eclipse-plugin</packaging>
+	<packaging>jar</packaging>
 
 	<dependencies>	
-		<dependency>
-  			<groupId>org.rascalmpl</groupId>
-  			<artifactId>impulse</artifactId>
-  			<version>0.3.2</version>
-		</dependency>
 		<dependency>
 			<groupId>org.rascalmpl</groupId>
 			<artifactId>bacata-core</artifactId>
@@ -47,47 +42,6 @@
 		</resources>
 		<!-- <pluginManagement> -->
 			<plugins>
-				<plugin>
-					<!-- Copy non-Eclipse plugins to target/dependency so that may be referenced for runtime use. -->
-					<artifactId>maven-dependency-plugin</artifactId>
-					<version>3.1.1</version>
-					<executions>
-						<execution>
-							<id>copy</id>
-							<phase>validate</phase>
-							<goals>
-								<goal>copy</goal>
-							</goals>
-							<configuration>
-								<artifactItems>
-									<artifactItem>
-										<groupId>org.rascalmpl</groupId>
-										<artifactId>bacata-core</artifactId>
-										<classifier>jar-with-dependencies</classifier>
-										<version>1.1-SNAPSHOT</version>
-										<type>jar</type>
-										<overWrite>true</overWrite>
-										<outputDirectory>${basedir}/lib</outputDirectory>
-										<destFileName>bacata-core.jar</destFileName>
-									</artifactItem>
-	
-								</artifactItems>
-							</configuration>
-						</execution>
-						<execution>
-							<id>classpath</id>
-							<goals>
-								<goal>build-classpath</goal>
-							</goals>
-							<configuration>
-								<fileSeparator>/</fileSeparator>
-								<prefix>lib</prefix>
-								<outputFile>${project.build.directory}/classPath.txt</outputFile>
-								<excludeTransitive>true</excludeTransitive>
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>

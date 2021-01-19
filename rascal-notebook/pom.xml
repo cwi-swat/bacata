@@ -10,7 +10,7 @@
 	</parent>
 
 	<artifactId>rascal-notebook</artifactId>
-	<packaging>eclipse-plugin</packaging>
+	<packaging>jar</packaging>
 
 	<dependencies>
 		<dependency>
