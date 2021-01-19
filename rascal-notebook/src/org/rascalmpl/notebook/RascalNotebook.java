@@ -1,11 +1,12 @@
 package org.rascalmpl.notebook;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
+
 import communication.Header;
 import entities.ContentExecuteInput;
 import entities.ContentStream;
@@ -48,25 +50,17 @@ import server.JupyterServer;
 
 public class RascalNotebook extends JupyterServer{
 
-	// -----------------------------------------------------------------
-	// Constants
-	// -----------------------------------------------------------------
 	private final static String STD_ERR_DIV = "output_stderr";
-
 	private final static String STD_OUT_DIV = "output_stdout";
-
 	public final static String MIME_TYPE_HTML = "text/html";
-
-	// -----------------------------------------------------------------
-	// Constructor
-	// -----------------------------------------------------------------
 
 	public RascalNotebook(String connectionFilePath, String... salixPath ) throws Exception {
 		super(connectionFilePath);
 		stdout = new StringWriter();
 		stderr = new StringWriter();
-		this.language = makeInterpreter(null, null, salixPath);
-//		this.language.initialize(stdout, stderr);
+
+		this.language = makeInterpreter("src", "", salixPath);
+		this.language.initialize(new ByteArrayInputStream(new byte[2048]), new StringWriterOutputStream(stdout), new StringWriterOutputStream(stderr));
 		startServer();
 	}
 

@@ -43,7 +43,7 @@ import entities.util.MessageType;
 import entities.util.Status;
 import server.JupyterServer;
 
-public class RascalKernel extends JupyterServer{
+public class RascalKernel extends JupyterServer {
 
 	// -----------------------------------------------------------------
 	// Fields
@@ -64,9 +64,9 @@ public class RascalKernel extends JupyterServer{
 	public RascalKernel(String connectionFilePath) throws Exception {
 		super(connectionFilePath);
 		executionNumber = 1;
-		stdout = new StringWriter();
+		stdout = new StringWriter(); // is this a memory leak?
 		stderr = new StringWriter();
-		this.language = makeInterpreter(null, null);
+		this.language = makeInterpreter(stdout, stderr);
 		this.language.initialize(stdout, stderr);
 		startServer();
 	}
