@@ -1,14 +1,15 @@
 package org.rascalmpl.notebook;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -16,6 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
+
+import org.apache.commons.io.output.WriterOutputStream;
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
 import org.rascalmpl.interpreter.utils.RascalManifest;
@@ -48,26 +53,42 @@ import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IValueFactory;
 import server.JupyterServer;
 
-public class RascalNotebook extends JupyterServer{
-
+public class RascalNotebook extends JupyterServer {
 	private final static String STD_ERR_DIV = "output_stderr";
 	private final static String STD_OUT_DIV = "output_stdout";
+	private final static Charset UTF8 = Charset.forName("UTF8");
 	public final static String MIME_TYPE_HTML = "text/html";
+	private static final String JAR_FILE_PREFIX = "jar:file:";
+	private final String[] searchPath;
 
 	public RascalNotebook(String connectionFilePath, String... salixPath ) throws Exception {
 		super(connectionFilePath);
-		stdout = new StringWriter();
-		stderr = new StringWriter();
-
-		this.language = makeInterpreter("src", "", salixPath);
-		this.language.initialize(new ByteArrayInputStream(new byte[2048]), new StringWriterOutputStream(stdout), new StringWriterOutputStream(stderr));
-		startServer();
+		this.searchPath = salixPath;
 	}
 
-	// -----------------------------------------------------------------
-	// Methods
-	// -----------------------------------------------------------------
-	
+	@Override
+	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException {
+		try {
+			registerRascalServer();
+			super.startServer();
+		}
+		catch (IOException | URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void registerRascalServer() throws IOException, URISyntaxException {
+		this.stdout = new StringWriter();
+		this.stderr = new StringWriter();
+
+		OutputStream output = new WriterOutputStream(stdout, UTF8, 4096, true);
+		OutputStream errors = new WriterOutputStream(stderr, Charset.forName("UTF8"), 4096, true);
+		InputStream input = new ByteArrayInputStream(new byte[4096]);
+
+		this.language = makeInterpreter(".", "", searchPath);
+		this.language.initialize(input, output, errors);
+	}
+
 	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
 		InputStream input = data.get("text/html");
 		Map<String, String> res = new HashMap<>();
@@ -75,6 +96,7 @@ public class RascalNotebook extends JupyterServer{
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
 		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
 	}
+
 	@Override
 	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
 		Header header, parentHeader = message.getHeader();
@@ -95,9 +117,9 @@ public class RascalNotebook extends JupyterServer{
 
 					processStreams(parentHeader, data, metadata, session); // stdout writing
 					
-					if(!data.isEmpty())
+					if(!data.isEmpty()) {
 						replyRequest(parentHeader, session, data, metadata); // // Returns the result
-
+					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -144,8 +166,9 @@ public class RascalNotebook extends JupyterServer{
 	}
 	
 	public void removeUnnecessaryData (Map<String, InputStream> data) {
-		if (data.get(MIME_TYPE_HTML) != null && data.get(MIME_TYPE_HTML).equals("ok\n"))
+		if (data.get(MIME_TYPE_HTML) != null && data.get(MIME_TYPE_HTML).equals("ok\n")) {
 			data.remove(MIME_TYPE_HTML);
+		}
 	}
 
 	public String createDiv(String clazz, String body){
@@ -163,6 +186,7 @@ public class RascalNotebook extends JupyterServer{
 	public void processHistoryRequest(Message message) {
 		// TODO This is only for clients to explicitly request history from a kernel
 	}
+	
 	@Override
 	public ContentKernelInfoReply processKernelInfoRequest(Message message) {
 //		Header parentHeader = message.getParentHeader();
@@ -176,7 +200,13 @@ public class RascalNotebook extends JupyterServer{
 		boolean restart = false;
 		if (contentShutdown.getRestart()){
 			restart = true;
-			// TODO: how can I restart rascal?
+			try {
+				registerRascalServer();
+			}
+			catch (IOException | URISyntaxException e) {
+				this.language.stop();
+				return new ContentShutdownReply(false);
+			}
 		} else {
 			this.language.stop();
 		}
@@ -227,7 +257,7 @@ public class RascalNotebook extends JupyterServer{
 		}
 	}
 
-	private static final String JAR_FILE_PREFIX = "jar:file:";
+	
 
 	@Override
 	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, final String... salixPath) throws IOException, URISyntaxException {
@@ -238,7 +268,7 @@ public class RascalNotebook extends JupyterServer{
 				try {
 					e.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
 
-					//
+					// TODO: use reusable code from Rascal for this?
 					IValueFactory vf = ValueFactoryFactory.getValueFactory();
 					Enumeration<URL> res = ClassLoader.getSystemClassLoader().getResources(RascalManifest.META_INF_RASCAL_MF);
 					RascalManifest mf = new RascalManifest();
@@ -254,10 +284,10 @@ public class RascalNotebook extends JupyterServer{
 							e.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, RascalManifest.DEFAULT_SRC));
 						}
 					}
-					if (salixPath.length >0 )
+					if (salixPath.length > 0) {
 						e.addRascalSearchPath(URIUtil.createFromURI((salixPath[0])));
+					}
 				} catch (URISyntaxException | IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				return e;
@@ -277,14 +307,13 @@ public class RascalNotebook extends JupyterServer{
 		return logs;
 	}
 
-	// -----------------------------------------------------------------
-	// Execution
-	// -----------------------------------------------------------------
-
-	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		try {
-			RascalNotebook a = args.length > 1 ? new RascalNotebook(args[0], args[1]) : new RascalNotebook(args[0]);
+			RascalNotebook a = args.length > 1 
+				? new RascalNotebook(args[0], args[1]) 
+				: new RascalNotebook(args[0]);
+
+			a.startServer();	
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
