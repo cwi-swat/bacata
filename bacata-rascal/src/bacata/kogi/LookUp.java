@@ -1,9 +1,10 @@
 package bacata.kogi;
 
 import org.rascalmpl.interpreter.IEvaluatorContext;
-import org.rascalmpl.interpreter.TypeReifier;
 import org.rascalmpl.interpreter.env.Environment;
 import org.rascalmpl.interpreter.staticErrors.UndeclaredType;
+import org.rascalmpl.types.TypeReifier;
+
 import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.IString;
 import io.usethesource.vallang.IValueFactory;

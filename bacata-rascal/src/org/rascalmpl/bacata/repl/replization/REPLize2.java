@@ -2,19 +2,16 @@ package org.rascalmpl.bacata.repl.replization;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Map;
-
-import org.rascalmpl.library.util.TermREPL.TheREPL;
-import org.rascalmpl.repl.CompletionResult;
 
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 
-import io.usethesource.vallang.IConstructor;
+import org.rascalmpl.library.util.TermREPL.TheREPL;
+import org.rascalmpl.values.functions.IFunction;
+
 import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IString;
-import io.usethesource.vallang.ITuple;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
 
@@ -28,7 +25,7 @@ public class REPLize2 extends TheREPL {
 	private GraphNode current;
 
 	public REPLize2(IValueFactory vf, IString title, IString welcome, IString prompt, IString quit, ISourceLocation history,
-			IValue handler, IValue completor, IValue stacktrace, IValue defaultConfig, IValue printer, InputStream input, OutputStream stderr, OutputStream stdout) {
+			IFunction handler, IFunction completor, IValue stacktrace, IValue defaultConfig, IValue printer, InputStream input, OutputStream stderr, OutputStream stdout) {
 		super(vf, title, welcome, prompt, quit, history, handler, completor, stacktrace, input, stderr,stdout);
 
 		this.initConfig = defaultConfig;
