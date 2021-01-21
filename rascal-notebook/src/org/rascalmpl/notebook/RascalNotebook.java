@@ -273,7 +273,9 @@ public class RascalNotebook extends JupyterServer {
 				Evaluator e = ShellEvaluatorFactory.getDefaultEvaluator(input, stdout, stderr);
 				try {
 					e.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
-
+					// for salix which is included in the fat jar:
+					e.addRascalSearchPath(URIUtil.correctLocation("lib",  "rascal-notebook", "src"));
+					
 					// TODO: use reusable code from Rascal for this?
 					IValueFactory vf = ValueFactoryFactory.getValueFactory();
 					Enumeration<URL> res = ClassLoader.getSystemClassLoader().getResources(RascalManifest.META_INF_RASCAL_MF);
