@@ -118,9 +118,6 @@ public abstract class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 			
-			// see if this wakes up the kernel sooner
-			heartbeatChannel();
-
 			while (!Thread.currentThread().isInterrupted()) {
 				poller.poll();
 				if (poller.pollin(0)) {

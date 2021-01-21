@@ -94,6 +94,12 @@ public class RascalNotebook extends JupyterServer {
 		Map<String, String> res = data.entrySet().stream()
 			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
+			// TODO remove debug prints
+		res.entrySet().stream().forEach(e -> {
+			System.err.print(e.getKey() + ": [");
+			System.err.println(e.getValue() + "]");
+		});
+
 		// "ok" is not nice in a notebook. The cell with simply be evaluated and the "*" will dissappear
 		if (res.get(MIME_TYPE_PLAIN).trim().equals("ok")) {
 			res.remove(MIME_TYPE_PLAIN);
