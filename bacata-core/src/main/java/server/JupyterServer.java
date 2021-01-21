@@ -175,9 +175,7 @@ public abstract class JupyterServer {
 		default:
 			break;
 		}
-		
 	}
-	
 	
 	public void processShellMessage(Message message) {
 		Content content, contentReply;

@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -16,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
@@ -58,6 +58,7 @@ public class RascalNotebook extends JupyterServer {
 	private final static String STD_OUT_DIV = "output_stdout";
 	private final static Charset UTF8 = Charset.forName("UTF8");
 	public final static String MIME_TYPE_HTML = "text/html";
+	public final static String MIME_TYPE_PLAIN = "text/plain";
 	private static final String JAR_FILE_PREFIX = "jar:file:";
 	private final String[] searchPath;
 
@@ -82,7 +83,7 @@ public class RascalNotebook extends JupyterServer {
 		this.stderr = new StringWriter();
 
 		OutputStream output = new WriterOutputStream(stdout, UTF8, 4096, true);
-		OutputStream errors = new WriterOutputStream(stderr, Charset.forName("UTF8"), 4096, true);
+		OutputStream errors = new WriterOutputStream(stderr, UTF8, 4096, true);
 		InputStream input = new ByteArrayInputStream(new byte[4096]);
 
 		this.language = makeInterpreter(".", "", searchPath);
@@ -90,9 +91,19 @@ public class RascalNotebook extends JupyterServer {
 	}
 
 	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
-		InputStream input = data.get("text/html");
-		Map<String, String> res = new HashMap<>();
-		res.put("text/html", convertStreamToString(input));
+		Map<String, String> res = data.entrySet().stream()
+			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
+
+		// "ok" is not nice in a notebook. The cell with simply be evaluated and the "*" will dissappear
+		if (res.get(MIME_TYPE_PLAIN).trim().equals("ok")) {
+			res.remove(MIME_TYPE_PLAIN);
+		}
+
+		// this means that text/html will contain an iframe
+		if (res.get(MIME_TYPE_PLAIN).trim().startsWith("Serving visual content at")) {
+			res.remove(MIME_TYPE_PLAIN);
+		}
+
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
 		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
 	}
@@ -110,8 +121,6 @@ public class RascalNotebook extends JupyterServer {
 				sendMessage(getCommunication().getIOPubSocket(), header, parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 				try {
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata); // Execute user's code
-					// Not sure about removing this.
-					removeUnnecessaryData(data);
 					
 					sendMessage(getCommunication().getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parentHeader), parentHeader, new ContentExecuteReplyOk(executionNumber));
 
@@ -161,16 +170,9 @@ public class RascalNotebook extends JupyterServer {
 		else {
 			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream(stream, stdout.toString()));
 		}
-		removeUnnecessaryData(data);	
 		flushStreams();
 	}
 	
-	public void removeUnnecessaryData (Map<String, InputStream> data) {
-		if (data.get(MIME_TYPE_HTML) != null && data.get(MIME_TYPE_HTML).equals("ok\n")) {
-			data.remove(MIME_TYPE_HTML);
-		}
-	}
-
 	public String createDiv(String clazz, String body){
 		return "<div class = \""+ clazz +"\">"+ (body.equals("")||body==null ? "</div>" : body+"</div>");
 	}
