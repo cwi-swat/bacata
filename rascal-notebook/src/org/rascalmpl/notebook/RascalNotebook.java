@@ -238,18 +238,20 @@ public class RascalNotebook extends JupyterServer {
 	@Override
 	public Content processCompleteRequest(ContentCompleteRequest content) {
 		int cursorStart = 0;
-		ArrayList<String> sugestions;
+		ArrayList<String> suggestions;
 		
 		if (content.getCode().startsWith("import "))
 			cursorStart=7;
 		
 		CompletionResult result =this.language.completeFragment(content.getCode(), content.getCursorPosition());
-		if (result != null)
-			sugestions = (ArrayList<String>)result.getSuggestions();
-		else 
-			sugestions = null;
+		if (result != null) {
+			suggestions = (ArrayList<String>)result.getSuggestions();
+		}
+		else {
+			suggestions = null;
+		}
 		
-		return new ContentCompleteReply(sugestions, cursorStart, content.getCode().length(), new HashMap<String, String>(), Status.OK);
+		return new ContentCompleteReply(suggestions, cursorStart, content.getCode().length(), new HashMap<String, String>(), Status.OK);
 	}
 
 	private static ISourceLocation createJarLocation(IValueFactory vf, URL u) throws URISyntaxException {
@@ -262,8 +264,6 @@ public class RascalNotebook extends JupyterServer {
 			return vf.sourceLocation(URIUtil.fromURL(u));
 		}
 	}
-
-	
 
 	@Override
 	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, final String... salixPath) throws IOException, URISyntaxException {
