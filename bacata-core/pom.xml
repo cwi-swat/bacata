@@ -79,15 +79,19 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<!-- dependency resolution configuration (usethesource) -->
-<!-- 	<repositories>
+        <repositories>
 		<repository>
-			<id>usethesource</id>
+			<id>usethesource-snapshots</id>
 			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
 		</repository>
-	</repositories> -->
+		<repository>
+			<id>usethesource-releases</id>
+			<url>http://nexus.usethesource.io/content/repositories/releases/</url>
+		</repository>
+	</repositories>
 	
 	<!-- deployment configuration (usethesource) -->
-<!-- 	<distributionManagement>
+ 	<distributionManagement>
 		<repository>
 			<id>usethesource-releases</id>
 			<url>http://nexus.usethesource.io/content/repositories/releases/</url>
@@ -96,5 +100,5 @@
 			<id>usethesource-snapshots</id>
 			<url>http://nexus.usethesource.io/content/repositories/snapshots/</url>
 		</snapshotRepository>
-	</distributionManagement> -->
+	</distributionManagement> 
 </project>
