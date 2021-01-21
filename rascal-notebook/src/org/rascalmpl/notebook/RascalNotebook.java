@@ -93,6 +93,12 @@ public class RascalNotebook extends JupyterServer {
 		Map<String, String> res = data.entrySet().stream()
 			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
+			// TODO remove debug print
+			System.err.println("Content of result:");
+		res.entrySet().stream().forEach(e -> {
+			System.err.println(e.getValue());
+		});
+
 		filterResults(res);
 
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
