@@ -5,14 +5,16 @@ Bundle-SymbolicName: rascal-notebook;singleton:=true
 Bundle-Version: 0.0.1.qualifier
 Require-Bundle: rascal_eclipse
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Main-Class: org.rascalmpl.notebook.RascalNotebook
+Main-Class: org.rascalmpl.notebook.RascalNB
 Bundle-ClassPath: ., 
  lib/bacata-core.jar
-Export-Package: org.rascalmpl.notebook,
+Export-Package: async.server,
  communication,
  entities,
+ org.rascalmpl.notebook,
  server
-Import-Package: communication,
+Import-Package: async.server,
+ communication,
  entities,
  org.rascalmpl.notebook,
  server

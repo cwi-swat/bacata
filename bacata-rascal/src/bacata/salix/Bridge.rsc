@@ -27,7 +27,6 @@ import util::Webserver;
 //alias SalixMultiplexer
 //  = tuple[SalixConsumer consumer, void() stop, loc http];
   
-SalixMultiplexer noOp() = <(SalixApp[value] x) {}, () {}, |http://localhost|>;
 
 SalixMultiplexer makeSalixMultiplexer(loc http, loc static) {
   map[str, SalixApp[void]] apps = ();

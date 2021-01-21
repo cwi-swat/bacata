@@ -18,7 +18,7 @@ import io.usethesource.vallang.ITuple;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
 
-public class REPLize2 extends TheREPL {
+public class REPLize2  {
 
 	private final IValue initConfig;
 	private final IValue printer;
@@ -29,7 +29,7 @@ public class REPLize2 extends TheREPL {
 
 	public REPLize2(IValueFactory vf, IString title, IString welcome, IString prompt, IString quit, ISourceLocation history,
 			IValue handler, IValue completor, IValue stacktrace, IValue defaultConfig, IValue printer, InputStream input, OutputStream stderr, OutputStream stdout) {
-		super(vf, title, welcome, prompt, quit, history, handler, completor, stacktrace, input, stderr,stdout);
+//		super(vf, title, welcome, prompt, quit, history, handler, completor, stacktrace, input, stderr,stdout);
 
 		this.initConfig = defaultConfig;
 		this.printer = printer;
@@ -42,7 +42,7 @@ public class REPLize2 extends TheREPL {
 		this.graph.addNode(this.current);
 	}
 
-	@Override
+//	@Override
 	public void handleInput(String line, Map<String, InputStream> output, Map<String,String> metadata) throws InterruptedException {
 		// The cell id comes as part of the meta-data to avoid having to change the ILanguageProtocol.
 		String cellId = metadata.get("cell_id"); // This is used as the value of the edge
@@ -56,7 +56,7 @@ public class REPLize2 extends TheREPL {
 			this.current = getNode(currentNode);
 		}
 
-		super.handleInput(line, output, metadata); // execute code
+//		super.handleInput(line, output, metadata); // execute code
 
 		processResult(line, output, metadata, cellId);
 	}

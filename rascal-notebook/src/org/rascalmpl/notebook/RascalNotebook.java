@@ -40,6 +40,7 @@ import entities.request.ContentExecuteRequest;
 import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
 import entities.util.Content;
+import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 import io.usethesource.vallang.ISourceLocation;
@@ -74,30 +75,30 @@ public class RascalNotebook extends JupyterServer{
 	// Methods
 	// -----------------------------------------------------------------
 	
-	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
+	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, HashMap<String, String> metadata) {
 		InputStream input = data.get("text/html");
 		Map<String, String> res = new HashMap<>();
 		res.put("text/html", convertStreamToString(input));
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
-		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
+		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content, metadata);
 	}
 	@Override
 	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
 		Header header, parentHeader = message.getHeader();
-		Map<String, String> metadata = message.getMetadata();
+		HashMap<String, String> metadata = message.getMetadata();
 		Map<String, InputStream> data = new HashMap<>();
 		String session = message.getHeader().getSession();
 		
 		if (!contentExecuteRequest.isSilent()) {
 			if (contentExecuteRequest.isStoreHistory()) {
 				header = new Header(MessageType.EXECUTE_INPUT, parentHeader);
-				sendMessage(getCommunication().getIOPubSocket(), header, parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				sendMessage(getCommunication().getIOPubSocket(), header, parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber), metadata);
 				try {
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata); // Execute user's code
 					// Not sure about removing this.
 					removeUnnecessaryData(data);
 					
-					sendMessage(getCommunication().getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parentHeader), parentHeader, new ContentExecuteReplyOk(executionNumber));
+					sendMessage(getCommunication().getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parentHeader), parentHeader, new ContentExecuteReplyOk(executionNumber), metadata);
 
 					processStreams(parentHeader, data, metadata, session); // stdout writing
 					
@@ -117,7 +118,7 @@ public class RascalNotebook extends JupyterServer{
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
 			header = new Header(MessageType.EXECUTE_REPLY, parentHeader);
-			sendMessage(getCommunication().getShellSocket(), header, parentHeader, new ContentExecuteReplyOk(executionNumber));
+			sendMessage(getCommunication().getShellSocket(), header, parentHeader, new ContentExecuteReplyOk(executionNumber), metadata);
 		}
 	}
 	
@@ -127,7 +128,7 @@ public class RascalNotebook extends JupyterServer{
 	    return s.hasNext() ? s.next() : "";
 	}
 
-	private void processStreams(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata, String session) {
+	private void processStreams(Header parentHeader, Map<String, InputStream> data, HashMap<String, String> metadata, String session) {
 		if (!stdout.toString().trim().equals("")) {
 			processStreamsReply(ContentStream.STD_OUT, parentHeader, data, metadata, session);
 		}
@@ -136,14 +137,14 @@ public class RascalNotebook extends JupyterServer{
 		}
 	}
 
-	public void processStreamsReply(String stream, Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata, String session) {
+	public void processStreamsReply(String stream, Header parentHeader, Map<String, InputStream> data, HashMap<String, String> metadata, String session) {
 		String logs = stream.equals(ContentStream.STD_OUT) ? stdout.toString() : stderr.toString();
 		if (logs.contains("http://")) {
 			metadata.put(MIME_TYPE_HTML, stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs)) : createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
-			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
+			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()), metadata);
 		}
 		else {
-			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream(stream, stdout.toString()));
+			sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream(stream, stdout.toString()), metadata);
 		}
 		removeUnnecessaryData(data);	
 		flushStreams();
@@ -170,11 +171,14 @@ public class RascalNotebook extends JupyterServer{
 		// TODO This is only for clients to explicitly request history from a kernel
 	}
 	@Override
-	public ContentKernelInfoReply processKernelInfoRequest(Message message) {
+	public Content processKernelInfoRequest(Message message) {
+		LanguageInfo langInf = new LanguageInfo("Rascal");
+		ContentKernelInfoReply content = new ContentKernelInfoReply(langInf, "ok");
+		return content;
 //		Header parentHeader = message.getParentHeader();
 //		Header header =createHeader(parentHeader.getSession(), MessageType.KERNEL_INFO_REPLY);
 //		sendMessage(getCommunication().getShellSocket(), header, parentHeader, message.getMetadata(), new ContentKernelInfoReply());
-		return new ContentKernelInfoReply();
+//		return new ContentKernelInfoReply();
 	}
 
 	@Override

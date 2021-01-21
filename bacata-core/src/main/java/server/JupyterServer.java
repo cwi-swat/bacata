@@ -137,7 +137,7 @@ public abstract class JupyterServer {
 						ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
 						Content contentReply = processShutdownRequest(content);
 						Header header = createHeader(message.getHeader().getSession(), MessageType.SHUTDOWN_REPLY);
-						sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply);
+						sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply, new HashMap<String, String>());
 					}
 				}
 				if (poller.pollin(2))
@@ -186,20 +186,20 @@ public abstract class JupyterServer {
 			case MessageType.KERNEL_INFO_REQUEST:
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
+				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply, new HashMap<String, String>());
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
 				header = new Header(MessageType.SHUTDOWN_REPLY, parentHeader);
 				content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
 				contentReply = (ContentShutdownReply) processShutdownRequest((ContentShutdownRequest) content);
 				closeAllSockets();
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
+				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply, new HashMap<String, String>());
 				break;
 			case MessageType.IS_COMPLETE_REQUEST:
 				header = createHeader(message.getHeader().getSession(), MessageType.IS_COMPLETE_REPLY);
 				content = parser.fromJson(message.getRawContent(), ContentIsCompleteRequest.class);
 				contentReply = processIsCompleteRequest((ContentIsCompleteRequest) content);
-				sendMessage(communication.getShellSocket(),header , parentHeader, contentReply);
+				sendMessage(communication.getShellSocket(),header , parentHeader, contentReply, new HashMap<String, String>());
 				break;
 			case MessageType.EXECUTE_REQUEST:
 				content = parser.fromJson(message.getRawContent(), ContentExecuteRequest.class);
@@ -212,7 +212,7 @@ public abstract class JupyterServer {
 				header = new Header(MessageType.COMPLETE_REPLY, parentHeader);
 				content = parser.fromJson(message.getRawContent(), ContentCompleteRequest.class);
 				contentReply = processCompleteRequest((ContentCompleteRequest) content);
-				sendMessage(getCommunication().getShellSocket(), header, parentHeader, contentReply);
+				sendMessage(getCommunication().getShellSocket(), header, parentHeader, contentReply, new HashMap<String, String>());
 				break;
 			case MessageType.INSPECT_REQUEST:
 				break;
@@ -247,8 +247,8 @@ public abstract class JupyterServer {
 		}
 	}
 
-	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
-		HashMap<String, String> metadata = new HashMap<String, String>();
+	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content, HashMap<String, String> metadata) {
+//		HashMap<String, String> metadata = new HashMap<String, String>();
 		sendMessage(socket, header, parent, metadata, content);
 	}
 	/**
@@ -304,7 +304,7 @@ public abstract class JupyterServer {
 	public void statusUpdate(Header parentHeader, String status) {
 		Header header = new Header(parentHeader.getSession(), MessageType.STATUS, parentHeader.getVersion(), parentHeader.getUsername());
 		ContentStatus content = new ContentStatus(status);
-		sendMessage(communication.getIOPubSocket(), header, parentHeader, content);
+		sendMessage(communication.getIOPubSocket(), header, parentHeader, content, new HashMap<String, String>());
 	}
 
 	// -----------------------------------------------------------------

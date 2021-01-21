@@ -144,13 +144,13 @@ void generateKernel(Kernel kernelInfo, bool debug, bool docker) {
 	kernelPath = kernelInfo.projectPath.parent + "kernel/<kernelInfo.languageName>/";
 	if(kernelInfo.logo != |tmp:///|)
 		copyLogoToKernel(kernelInfo.logo, kernelPath);
-	if(docker){
+	if (docker) {
 		kernelContent = dockerLanguageKernelContent(kernelInfo);
 		writeFile(kernelPath + "kernel.json", kernelContent);
 		content = dockerFileContent(last(split("/", kernelInfo.projectPath.parent.path)), kernelInfo.languageName);
 		writeFile(kernelInfo.projectPath.parent + "Dockerfile2", content);
 	}
-	else{
+	else {
 		kernelContent = kernelFileContent(kernelInfo, debug);
 		writeFile(kernelPath + "kernel.json", kernelContent);
 		installKernel(kernelPath);
@@ -158,7 +158,7 @@ void generateKernel(Kernel kernelInfo, bool debug, bool docker) {
 }
 
 void installKernel(loc kernelPath) {
-	try{
+	try {
 		 pid= createProcess(JUPYTER_HOME, args=["kernelspec", "install", resolveLocation(kernelPath).path]);
 	 	printErrTrace(pid);
 	 }
@@ -167,19 +167,16 @@ void installKernel(loc kernelPath) {
 }
 
 void printErrTrace(PID pid) {
-	//for (_ <- [1..10], line := readLineFromErr(pid), line != "") {
-	//	println("<line>");
- //   }
- 	line = readFromErr(pid);
-    while(line!= ""){
+ 	str line = readFromErr(pid);
+    while(line!= "") {
     	println("<line>");
     	line = readFromErr(pid);
     }
 }
 
 void printTrace(PID pid) {
-    line = readFrom(pid);
-    while(line!= ""){
+    str line = readFrom(pid);
+    while(line!= "") {
     	println("<line>");
     	line = readFrom(pid);
     }
@@ -189,18 +186,20 @@ void printTrace(PID pid) {
 * This function starts the jupyter server and returns the url in which the webserver is runing.
 */
 PID startJupyterServer() {
-	PID jupyterExecution = createProcess(JUPYTER_HOME, args =["notebook", "--no-browser"]);
+	PID pid = createProcess(JUPYTER_HOME, args =["notebook", "--no-browser"]);
 	bool guard = false;
-	for (_ <- [1..19], line := readLineFromErr(jupyterExecution), line != "") {
-		if(contains(line,"http://localhost:"))
-		{
+	
+	str line = readLineFromErr(pid);
+	while (line != "" && !guard) {
+		if (contains(line, "http://localhost:")) {
 			println("The notebook is running at: <|http://localhost:<split("localhost:", line)[1]>|>");
 			guard = true;
 		}
+		line = readLineFromErr(pid);
 	}
 	if(!guard)
 		throw "Error while starting the Jupyter server"; 
-	return jupyterExecution;
+	return pid;
 }
 /*
 * This function produces the content of the kernel.json file using the kernel information received as parameter.

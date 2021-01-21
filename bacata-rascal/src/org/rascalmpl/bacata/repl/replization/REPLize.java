@@ -30,6 +30,7 @@ import org.rascalmpl.bacata.repl.replization.ExecutionGraph.CustomEdge;
 import org.rascalmpl.bacata.repl.replization.ExecutionGraph.CustomNode;
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.result.ICallableValue;
+import org.rascalmpl.interpreter.result.RascalFunction;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 
@@ -41,6 +42,7 @@ import com.google.gson.Gson;
 import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.IInteger;
 import io.usethesource.vallang.IList;
+import io.usethesource.vallang.IMap;
 import io.usethesource.vallang.IString;
 import io.usethesource.vallang.ITuple;
 import io.usethesource.vallang.IValue;
@@ -56,10 +58,13 @@ public final class REPLize implements ILanguageProtocol {
     private OutputStream stdout;
     private OutputStream stderr;
     private String currentPrompt;
+    
+    private final ICallableValue parser;
     private final ICallableValue handler;
     private final ICallableValue printer;
     private final IValue initConfig;
     private final ICallableValue completor;
+    private final ICallableValue varWatcher;
     private final IValueFactory vf;
     
     
@@ -70,11 +75,16 @@ public final class REPLize implements ILanguageProtocol {
     public REPLize(IValueFactory vf, IConstructor repl, InputStream input, OutputStream stderr, OutputStream stdout) throws IOException, URISyntaxException {
         this.vf = vf;
         IWithKeywordParameters<? extends IConstructor> repl2 = repl.asWithKeywordParameters();
+        
+        this.parser = (ICallableValue) repl2.getParameter("parser");
+        
         this.handler = (ICallableValue) repl2.getParameter("newHandler");
         this.printer = (ICallableValue) repl2.getParameter("printer");
         this.initConfig = (IValue) repl2.getParameter("initConfig");
         
         this.completor = (ICallableValue) repl2.getParameter("tabcompletor");
+        
+        this.varWatcher = (ICallableValue) repl2.getParameter("varWatcher");
         
         this.graph = ValueGraphBuilder.directed().build();
         
@@ -101,27 +111,42 @@ public final class REPLize implements ILanguageProtocol {
     public String getPrompt() {
         return currentPrompt;
     }
-    
+    int c = 0;
     @Override
     public void handleInput(String code, Map<String, InputStream> output, Map<String, String> metadata)
         throws InterruptedException {
-        
+    	c++;
         // The cell id comes as part of the meta-data to avoid having to change the ILanguageProtocol.
         String cellId = metadata.get("cell_id"); // This is used as the value of the edge
         
-        // Front-end current node. In fact, this is the last executed node.
-        String currentNode = metadata.get("current_cell"); // Represents the context to use for the execution.
+        String currentNode;
+        // TODO: FIX. This is only to simulate
+    	if (cellId == null) {
+    		cellId = "cell-"+c;
+    		currentNode = "Root";
+    	}
+    	else {
+    		// Front-end current node. In fact, this is the last executed node.
+    		currentNode = metadata.get("current_cell"); // Represents the context to use for the execution.
+        
+    	}
         
         // If they are different means that the user wants to create a new path from a previous execution.
         // Result is a string representation of the config.
-        if (!current.getResult().equals("Root") && !currentNode.equals(current.hashCode() + "")) {
+        if (cellId != null && !current.getResult().equals("Root") && !currentNode.equals(current.hashCode() + "")) {
             this.current = getNode(currentNode);
         }
         
         // Execute the current cell (code) received as param.
-        IConstructor result = interpretCode(code);
+        IConstructor parseTee = parseCodeSnippet(code);
+        IValue result = interpretCode(parseTee);
         
-        processResult(code, result, output, metadata, cellId);
+        try {
+			processResult(code, result, output, metadata, cellId);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
     
     public GraphNode getNode(String result) {
@@ -143,17 +168,30 @@ public final class REPLize implements ILanguageProtocol {
             runPredecessors(predecessir);
             // context = result
         }
-        IConstructor result = interpretCode(currentNode.getSourceCode());            
+//        IConstructor result = interpretCode(currentNode.getSourceCode());            
         // do something with the result and return.
     }
     
-    public IConstructor interpretCode(String code) {
-        return (IConstructor) call(handler, new Type[] { tf.stringType(), initConfig.getType() }, new IValue[] { vf.string(code), (IValue) this.current.getConfig() });
+    public IConstructor parseCodeSnippet(String code) {
+        return (IConstructor) call(parser, new Type[] { tf.stringType()}, new IValue[] { vf.string(code)});
+    }
+    
+    public IValue interpretCode(IConstructor parseTee) {
+//    	if (this.current.getConfig() instanceof RascalFunction)
+    	return call(handler, new Type[] { parseTee.getType(), this.current.getConfig().getType() }, new IValue[] { parseTee, (IValue) this.current.getConfig() });
+//    	else {
+//    		RascalFunction c = (RascalFunction) this.current.getConfig();
+//    		return (IConstructor) call(handler, new Type[] { parseTee.getType(), c.getReturnType() }, new IValue[] { parseTee, (IValue) this.current.getConfig() });
+//    	}
     }
     
     //TODO
     public IConstructor printAnswer(IValue oldConfig, IValue newConfig) {
-        return (IConstructor) call(printer, new Type[] {initConfig.getType(), initConfig.getType() }, new IValue[] {oldConfig, newConfig});
+        return (IConstructor) call(printer, new Type[] {oldConfig.getType(), newConfig.getType() }, new IValue[] {oldConfig, newConfig});
+    }
+    
+    public IValue getVariableWatcher(IValue newConfig) {
+        return call(varWatcher, new Type[] { newConfig.getType() }, new IValue[] {newConfig});
     }
     
     /**
@@ -162,8 +200,10 @@ public final class REPLize implements ILanguageProtocol {
      * @param output 
      * @param metadata
      * @param cellId this is the cell number in the front-end.
+     * @throws Exception 
      */
-    public void processResult(String input, IConstructor newconfig, Map<String, InputStream> output, Map<String, String> metadata, String cellId) {
+    public void processResult(String input, IValue newconfig, Map<String, InputStream> output, Map<String, String> metadata, String cellId) throws Exception {
+//    		throw new Exception("hos");
         if (newconfig != null) {
             GraphNode tmp =  new GraphNode(input, newconfig.toString(), newconfig);
             graph.putEdgeValue(current, tmp, cellId);
@@ -174,6 +214,11 @@ public final class REPLize implements ILanguageProtocol {
             
             String content = response.get("content").toString();
             content = content.replace("\\", "").replace("\"", "");
+            
+            // used by the jupyterlab widget. 
+            IMap variableWatcher = (IMap) getVariableWatcher(newconfig);
+            metadata.put("config", variableWatcher.toString());
+            
             
           output.put("text/html", stringStream(content));
           addGraph2Metadata(metadata); 

@@ -1,6 +1,7 @@
 package bacata.dslNotebook;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -11,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.rascalmpl.bacata.repl.replization.REPLize;
+//import org.rascalmpl.bacata.repl.replization.REPLize2;
 //import org.rascalmpl.bacata.repl.BacataREPL;
 //import org.rascalmpl.bacata.repl.replization.REPLize;
 import org.rascalmpl.interpreter.Evaluator;
@@ -49,6 +52,8 @@ import entities.util.Status;
 
 import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.ISourceLocation;
+import io.usethesource.vallang.IString;
+import io.usethesource.vallang.ITuple;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
 import io.usethesource.vallang.IWithKeywordParameters;
@@ -90,20 +95,21 @@ public class DSLNotebook extends JupyterServer {
 	public void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
 		Header parentHeader = message.getParentHeader();
 		// TODO: Check whether the cellId comes as part of the metadata
-		Map<String, String> metadata = message.getMetadata();
+		HashMap<String, String> metadata = message.getMetadata();
 		Map<String, InputStream> data = new HashMap<>();
 		String session = message.getHeader().getSession();
 		
 		if (!contentExecuteRequest.isSilent()) {
 			if (contentExecuteRequest.isStoreHistory()) {
-				sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_INPUT), parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber), (HashMap<String, String>) metadata);
 				try {
-					
+					// add meta data info e.g., origin: salix-notebook
+					metadata.put("origin", "notebook");
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
-					sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
+					sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber), metadata);
 
 					if (!stdout.toString().trim().equals("")) {
-						sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stdout", stdout.toString()));
+						sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stdout", stdout.toString()), metadata);
 						stdout.getBuffer().setLength(0);
 						stdout.flush();
 					}
@@ -114,9 +120,9 @@ public class DSLNotebook extends JupyterServer {
 						if ( logs != null) {
 							metadata.remove("ERROR-LOG");
 							metadata.put("text/html", logs);
-							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
+							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()), (HashMap<String, String>) metadata);
 						} else {
-							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stderr", stderr.toString()));
+							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stderr", stderr.toString()), metadata);
 						}
 						stderr.getBuffer().setLength(0);
 						stderr.flush();
@@ -142,16 +148,16 @@ public class DSLNotebook extends JupyterServer {
 		else {
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
-			sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber));
+			sendMessage(getCommunication().getShellSocket(), createHeader(session, MessageType.EXECUTE_REPLY), parentHeader, new ContentExecuteReplyOk(executionNumber), metadata);
 		}
 	}
 	
-	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
-		InputStream input = data.get("text/plain");
+	public void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, HashMap<String, String> metadata) {
+		InputStream input = data.get("text/html");
 		Map<String, String> res= new HashMap<>();
 		res.put("text/html", convertStreamToString(input));
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
-		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
+		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content, metadata);
 	}
 
 	@SuppressWarnings("resource")
@@ -169,7 +175,7 @@ public class DSLNotebook extends JupyterServer {
 	@Override
 	public Content processKernelInfoRequest(Message message) {
 		LanguageInfo langInf = new LanguageInfo(languageName);
-		ContentKernelInfoReply content = new ContentKernelInfoReply(langInf);
+		ContentKernelInfoReply content = new ContentKernelInfoReply(langInf, "ok");
 		return content;
 	}
 
@@ -264,12 +270,30 @@ public class DSLNotebook extends JupyterServer {
 
 		IWithKeywordParameters<? extends IConstructor> repl2 = repl.asWithKeywordParameters();
 		
-		ICallableValue handler = (ICallableValue) repl2.getParameter("handler");
-		ICallableValue completor = (ICallableValue) repl2.getParameter("completor");
+		IValue handler = (ICallableValue) repl2.getParameter("newHandler");
+		IValue completor = (ICallableValue) repl2.getParameter("completor");
 		
-		return new TermREPL.TheREPL(vf, vf.string("Bacatá"), vf.string("Welcome"), vf.string("IN"),  vf.string("quit"), vf.sourceLocation(""), handler, completor, completor, eval.getInput(), eval.getStdErr(), eval.getStdOut());
+//		ICallableValue defaultConfig = (ICallableValue) repl2.getParameter("initConfig");
 		
-//		return new REPLize(vf, repl, eval);
+		// if printer ->
+//		ICallableValue printer = (ICallableValue) repl.get("printer");
+		
+		
+//		return new REPLize2(vf, vf.string("Bacatá"), vf.string("Welcome"), vf.string("IN"),  vf.string("quit"), vf.sourceLocation(""), handler, completor, completor, defaultConfig, printer, eval.getInput(), eval.getStdErr(), eval.getStdOut());
+		
+		IString title = vf.string("Bacata");
+		IString welcome = vf.string("Welcome");
+		IString prompt = vf.string("In");
+		IString quit = vf.string("quit");
+		ISourceLocation history = vf.sourceLocation("");
+		
+		InputStream inpu = eval.getInput();
+		OutputStream stderr= eval.getStdErr();
+		OutputStream stdout = eval.getStdOut();
+		
+		return new REPLize(vf, repl,  inpu, stderr, stdout);
+		
+//		return new TermREPL.TheREPL(vf, title , welcome, prompt, quit, history, handler, completor, completor, inpu, stderr, stdout);
 	}
 	
 	// -----------------------------------------------------------------

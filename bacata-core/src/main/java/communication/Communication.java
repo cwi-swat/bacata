@@ -80,5 +80,14 @@ public class Communication {
     public ZMQ.Socket getHeartbeatSocket() {
         return heartBeat;
     }
+    
+    public void closeAllSockets() {
+		this.control.close();
+		this.heartBeat.close();
+		this.IOPub.close();
+		this.shell.close();
+		this.stdin.close();
+		System.exit(-1);
+	}
 
 }

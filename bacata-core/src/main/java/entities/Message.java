@@ -60,7 +60,7 @@ public class Message {
 
     private String rawContent;
 
-    private Map<String,String> metadata;
+    private HashMap<String, String> metadata;
 
     // -----------------------------------------------------------------
     // Constructor
@@ -126,11 +126,11 @@ public class Message {
         this.rawContent = content;
     }
 
-    public Map<String, String> getMetadata() {
+    public HashMap<String, String> getMetadata() {
         return metadata;
     }
 
-    public void setMetadata(Map<String, String> metadata) {
+    public void setMetadata(HashMap<String, String> metadata) {
         this.metadata = metadata;
     }
 }

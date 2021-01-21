@@ -11,9 +11,9 @@ str JUPYTER_HOME = "";
 str BACATA_HOME = "";
 
 
-void generateRascalKernel(loc kernelDestPath = |tmp:///rascal-noteboook/|, loc salixPath = |tmp:///|){
+void generateRascalKernel(loc kernelDestPath = |tmp:///rascal-noteboook/|, loc salixPath = |tmp:///|, loc logo = |tmp:///|) {
 	verifyPreRequisites();
-	copyLogoToKernel();
+	copyLogoToKernel(logo, kernelDestPath);
 	writeFile(kernelDestPath + "kernel.json", rascalKernelContent(salixPath));
 	installKernel(kernelDestPath);
 }

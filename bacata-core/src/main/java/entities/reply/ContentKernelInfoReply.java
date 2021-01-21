@@ -43,25 +43,28 @@ public class ContentKernelInfoReply extends Content {
 	private String banner;
     
     private List<HelpLinks> helpLinks;
+    
+    private String status;
 
     // -----------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------
 
-    public ContentKernelInfoReply(String protocolVersion, String implementation, String implementationVersion, LanguageInfo languageInformation, String banner, List<HelpLinks> links) {
+    public ContentKernelInfoReply(String protocolVersion, String implementation, String implementationVersion, LanguageInfo languageInformation, String banner, List<HelpLinks> links, String status) {
         this.protocolVersion = protocolVersion;
         this.implementation = implementation;
         this.implementationVersion = implementationVersion;
         this.languageInfo = languageInformation;
         this.banner = banner;
         this.helpLinks = links;
+        this.status = status;
     }
 
     /**
      * Kernel information for the Rascal Language.
      * @param codemirror
      */
-    public ContentKernelInfoReply() {
+    public ContentKernelInfoReply(String status) {
         this.protocolVersion = PROTOCOL_VERSION;
         this.implementation = IMPLEMENTATION;
         this.implementationVersion = IMPLEMENTATION_VERSION;
@@ -72,13 +75,15 @@ public class ContentKernelInfoReply extends Content {
         this.helpLinks.add(new HelpLinks("Rascal documentation", "http://tutor.rascal-mpl.org/Rascal/Rascal.html"));
         this.helpLinks.add(new HelpLinks("Rascal recipes", "http://tutor.rascal-mpl.org/Rascal/Recipes.html"));
         this.helpLinks.add(new HelpLinks("Rascal StackOverflow", "http://stackoverflow.com/questions/tagged/rascal"));
+        this.status = status;
     }
     
-    public ContentKernelInfoReply(LanguageInfo language) {
+    public ContentKernelInfoReply(LanguageInfo language, String status) {
         this.protocolVersion = PROTOCOL_VERSION;
         this.implementation = IMPLEMENTATION;
         this.implementationVersion = IMPLEMENTATION_VERSION;
         this.languageInfo = language;
         this.banner = BANNER;
+        this.status = status;
     }
 }

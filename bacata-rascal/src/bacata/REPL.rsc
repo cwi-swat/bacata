@@ -6,7 +6,7 @@ import Message;
 
 import Content;
 
-extend util::REPL;
+//extend util::REPL;
 //extend Content;
 
 //data CommandResult(list[Message] messages = [])
@@ -24,6 +24,9 @@ extend util::REPL;
 // 	    CommandResult (&T old, &T prev) printer,
 // 	    Completion(str line, int cursor, &T config) tabcompletor)
 //  ;
+alias Completion
+ = tuple[int offset, list[str] suggestions];
+
   
   
   data REPL
@@ -42,7 +45,7 @@ extend util::REPL;
   
   
   data REPL
-  = repl2(
+  = repl22(
      str title = "", 
      str welcome = "", 
      str prompt = "\n\>",
@@ -51,6 +54,22 @@ extend util::REPL;
      &T initConfig = "", 
      &T (str command, &T config) newHandler = echo,
      Completion (str line, int cursor, &T ctx) completor = noSuggestions,
+     str () stacktrace = str () { return ""; },
+     Content (&T old, &T prev) printer = Content (str _, str _) {return text(old + p);}
+   );
+   
+data REPL
+  = repl2(
+     str title = "", 
+     str welcome = "", 
+     str prompt = "\n\>",
+     str quit = "", 
+     loc history = |home:///.term-repl-history|,
+     &T initConfig = "", 
+     &P (str input) parser = str (str _) { return "";},
+     &T (&P program, &T config) newHandler = echo,
+     Completion (str line, int cursor, &T ctx) completor = noSuggestions,
+     map[str, str] (&T config) varWatcher = map[str,str] (str _) { return (); },
      str () stacktrace = str () { return ""; },
      Content (&T old, &T prev) printer = Content (str _, str _) {return text(old + p);}
    );
