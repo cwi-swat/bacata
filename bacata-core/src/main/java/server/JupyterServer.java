@@ -113,6 +113,7 @@ public abstract class JupyterServer {
 			communication = new Communication(connection, context);
 			// Create the poll to deal with the 4 different sockets
 			poller = context.createPoller(4);
+			
 			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
