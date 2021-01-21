@@ -122,9 +122,7 @@ public abstract class JupyterServer {
 				poller.poll();
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
-//					if (message.getHeader().getMsgType().equals(MessageType.KERNEL_INFO_REQUEST)) {
-//						statusUpdate(message.getHeader(), Status.STARTING);
-//					}
+					
 					statusUpdate(message.getHeader(), Status.BUSY);
 					
 					processShellMessage(message);
@@ -145,7 +143,6 @@ public abstract class JupyterServer {
 				if (poller.pollin(3))
 					listenHeartbeatSocket();
 			}
-		
 		}
 	}
 
@@ -169,11 +166,11 @@ public abstract class JupyterServer {
 	
 	public void processControlMessage(Message message) {
 		switch (message.getHeader().getMsgType()) {
-		case "input_request":
-			System.out.println("input_request");
-			break;
-		default:
-			break;
+			case "input_request":
+				System.out.println("input_request");
+				break;
+			default:
+				break;
 		}
 	}
 	

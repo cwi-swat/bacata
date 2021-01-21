@@ -58,7 +58,6 @@ public class RascalNotebook extends JupyterServer {
 	private final static String STD_OUT_DIV = "output_stdout";
 	private final static Charset UTF8 = Charset.forName("UTF8");
 	public final static String MIME_TYPE_HTML = "text/html";
-	public final static String MIME_TYPE_PLAIN = "text/plain";
 	private static final String JAR_FILE_PREFIX = "jar:file:";
 	private final String[] searchPath;
 
@@ -94,24 +93,17 @@ public class RascalNotebook extends JupyterServer {
 		Map<String, String> res = data.entrySet().stream()
 			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
-			// TODO remove debug prints
-		res.entrySet().stream().forEach(e -> {
-			System.err.print(e.getKey() + ": [");
-			System.err.println(e.getValue() + "]");
-		});
-
-		// "ok" is not nice in a notebook. The cell with simply be evaluated and the "*" will dissappear
-		if (res.get(MIME_TYPE_PLAIN).trim().equals("ok")) {
-			res.remove(MIME_TYPE_PLAIN);
-		}
-
-		// this means that text/html will contain an iframe
-		if (res.get(MIME_TYPE_PLAIN).trim().startsWith("Serving visual content at")) {
-			res.remove(MIME_TYPE_PLAIN);
-		}
+		filterResults(res);
 
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
 		sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
+	}
+
+	private void filterResults(Map<String,String> res) {
+		String resultString = res.get(MIME_TYPE_HTML).trim();
+		if (resultString != null && resultString.trim().equals("ok")) {
+			res.remove(MIME_TYPE_HTML);
+		}
 	}
 
 	@Override
