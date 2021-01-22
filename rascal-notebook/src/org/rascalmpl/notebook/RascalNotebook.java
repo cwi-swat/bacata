@@ -93,12 +93,6 @@ public class RascalNotebook extends JupyterServer {
 		Map<String, String> res = data.entrySet().stream()
 			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
-			// TODO remove debug print
-			System.err.println("Content of result:");
-		res.entrySet().stream().forEach(e -> {
-			System.err.println(e.getValue());
-		});
-
 		filterResults(res);
 
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
@@ -107,8 +101,9 @@ public class RascalNotebook extends JupyterServer {
 
 	private void filterResults(Map<String,String> res) {
 		String resultString = res.get(MIME_TYPE_HTML).trim();
-		if (resultString != null && resultString.trim().equals("ok")) {
-			res.remove(MIME_TYPE_HTML);
+
+		if (resultString != null) {
+			res.put(MIME_TYPE_HTML, "<pre>" + res.get(MIME_TYPE_HTML) + "</pre>");
 		}
 	}
 
@@ -275,7 +270,7 @@ public class RascalNotebook extends JupyterServer {
 					e.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
 					// for salix which is included in the fat jar:
 					e.addRascalSearchPath(URIUtil.correctLocation("lib",  "rascal-notebook", "src"));
-					
+
 					// TODO: use reusable code from Rascal for this?
 					IValueFactory vf = ValueFactoryFactory.getValueFactory();
 					Enumeration<URL> res = ClassLoader.getSystemClassLoader().getResources(RascalManifest.META_INF_RASCAL_MF);

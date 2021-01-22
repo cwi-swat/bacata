@@ -9,7 +9,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. 
  *  
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
- */ 
+ */
 package org.rascalmpl.bacata.repl.replization;
 
 import java.io.ByteArrayInputStream;
@@ -26,17 +26,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.rascalmpl.bacata.repl.replization.ExecutionGraph.CustomEdge;
-import org.rascalmpl.bacata.repl.replization.ExecutionGraph.CustomNode;
-import org.rascalmpl.interpreter.Evaluator;
-import org.rascalmpl.interpreter.result.ICallableValue;
-import org.rascalmpl.repl.CompletionResult;
-import org.rascalmpl.repl.ILanguageProtocol;
-
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 import com.google.gson.Gson;
+
+import org.rascalmpl.bacata.repl.replization.ExecutionGraph.CustomEdge;
+import org.rascalmpl.bacata.repl.replization.ExecutionGraph.CustomNode;
+import org.rascalmpl.repl.CompletionResult;
+import org.rascalmpl.repl.ILanguageProtocol;
+import org.rascalmpl.values.functions.IFunction;
 
 import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.IInteger;
@@ -46,20 +45,16 @@ import io.usethesource.vallang.ITuple;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
 import io.usethesource.vallang.IWithKeywordParameters;
-import io.usethesource.vallang.type.Type;
-import io.usethesource.vallang.type.TypeFactory;
 
 public final class REPLize implements ILanguageProtocol {
-	
-	private final TypeFactory tf = TypeFactory.getInstance();
 	private InputStream input;
     private OutputStream stdout;
     private OutputStream stderr;
     private String currentPrompt;
-    private final ICallableValue handler;
-    private final ICallableValue printer;
+    private final IFunction handler;
+    private final IFunction printer;
     private final IValue initConfig;
-    private final ICallableValue completor;
+    private final IFunction completor;
     private final IValueFactory vf;
     
     
@@ -70,11 +65,11 @@ public final class REPLize implements ILanguageProtocol {
     public REPLize(IValueFactory vf, IConstructor repl, InputStream input, OutputStream stderr, OutputStream stdout) throws IOException, URISyntaxException {
         this.vf = vf;
         IWithKeywordParameters<? extends IConstructor> repl2 = repl.asWithKeywordParameters();
-        this.handler = (ICallableValue) repl2.getParameter("newHandler");
-        this.printer = (ICallableValue) repl2.getParameter("printer");
+        this.handler = (IFunction) repl2.getParameter("newHandler");
+        this.printer = (IFunction) repl2.getParameter("printer");
         this.initConfig = (IValue) repl2.getParameter("initConfig");
         
-        this.completor = (ICallableValue) repl2.getParameter("tabcompletor");
+        this.completor = (IFunction) repl2.getParameter("tabcompletor");
         
         this.graph = ValueGraphBuilder.directed().build();
         
@@ -144,16 +139,15 @@ public final class REPLize implements ILanguageProtocol {
             // context = result
         }
         IConstructor result = interpretCode(currentNode.getSourceCode());            
-        // do something with the result and return.
+        // TODO do something with the result and return.
     }
     
     public IConstructor interpretCode(String code) {
-        return (IConstructor) call(handler, new Type[] { tf.stringType(), initConfig.getType() }, new IValue[] { vf.string(code), (IValue) this.current.getConfig() });
+        return handler.call(vf.string(code), this.current.getConfig());
     }
     
-    //TODO
     public IConstructor printAnswer(IValue oldConfig, IValue newConfig) {
-        return (IConstructor) call(printer, new Type[] {initConfig.getType(), initConfig.getType() }, new IValue[] {oldConfig, newConfig});
+        return printer.call(oldConfig, newConfig);
     }
     
     /**
@@ -246,9 +240,7 @@ public final class REPLize implements ILanguageProtocol {
 
     @Override
     public CompletionResult completeFragment(String line, int cursor) {
-        ITuple result = (ITuple)call(completor, new Type[] { tf.stringType(), tf.integerType(), this.current.getConfig().getType() },
-                        new IValue[] { vf.string(line), vf.integer(cursor), this.current.getConfig() }); 
-
+        ITuple result = completor.call(vf.string(line), vf.integer(cursor), this.current.getConfig());
         
         List<String> suggestions = new ArrayList<>();
         int offset = ((IInteger) result.get(0)).intValue();
@@ -289,27 +281,27 @@ public final class REPLize implements ILanguageProtocol {
         
     }
     
-    private IValue call(ICallableValue f, Type[] types, IValue[] args) {
-        synchronized (f.getEval()) {
-            Evaluator eval = (Evaluator) f.getEval();
-            OutputStream prevErr = eval.getStdErr();
-            OutputStream prevOut = eval.getStdOut();
-            try {
-                eval.overrideDefaultWriters(input, stdout, stderr);
-                return f.call(types, args, null).getValue();
-            }
-            finally {
-                try {
-                    stdout.flush();
-                    stderr.flush();
-                    eval.overrideDefaultWriters(eval.getInput(), prevOut, prevErr);
-                }
-                catch (IOException e) {
-                    // ignore
-                }
-            }
-        }
-    }
+    // private IValue call(IFunction f, Type[] types, IValue[] args) {
+    //     synchronized (f.getEval()) {
+    //         Evaluator eval = (Evaluator) f.getEval();
+    //         OutputStream prevErr = eval.getStdErr();
+    //         OutputStream prevOut = eval.getStdOut();
+    //         try {
+    //             eval.overrideDefaultWriters(input, stdout, stderr);
+    //             return f.call(types, args, null).getValue();
+    //         }
+    //         finally {
+    //             try {
+    //                 stdout.flush();
+    //                 stderr.flush();
+    //                 eval.overrideDefaultWriters(eval.getInput(), prevOut, prevErr);
+    //             }
+    //             catch (IOException e) {
+    //                 // ignore
+    //             }
+    //         }
+    //     }
+    // }
     
 }
 

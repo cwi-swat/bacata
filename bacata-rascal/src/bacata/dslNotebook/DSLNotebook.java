@@ -1,4 +1,5 @@
 package bacata.dslNotebook;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -17,7 +18,6 @@ import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
-import org.rascalmpl.interpreter.result.ICallableValue;
 import org.rascalmpl.interpreter.result.Result;
 import org.rascalmpl.interpreter.utils.RascalManifest;
 import org.rascalmpl.library.util.TermREPL;
@@ -25,9 +25,9 @@ import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
+import org.rascalmpl.values.functions.IFunction;
 
 import communication.Header;
-
 import entities.ContentExecuteInput;
 import entities.ContentStream;
 import entities.Message;
@@ -46,7 +46,6 @@ import entities.util.Content;
 import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
-
 import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IValue;
@@ -264,8 +263,8 @@ public class DSLNotebook extends JupyterServer {
 
 		IWithKeywordParameters<? extends IConstructor> repl2 = repl.asWithKeywordParameters();
 		
-		ICallableValue handler = (ICallableValue) repl2.getParameter("handler");
-		ICallableValue completor = (ICallableValue) repl2.getParameter("completor");
+		IFunction handler = (IFunction) repl2.getParameter("handler");
+		IFunction completor = (IFunction) repl2.getParameter("completor");
 		
 		return new TermREPL.TheREPL(vf, vf.string("Bacatá"), vf.string("Welcome"), vf.string("IN"),  vf.string("quit"), vf.sourceLocation(""), handler, completor, completor, eval.getInput(), eval.getStdErr(), eval.getStdOut());
 		
