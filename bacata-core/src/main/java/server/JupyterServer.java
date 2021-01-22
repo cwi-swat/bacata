@@ -347,5 +347,5 @@ public abstract class JupyterServer {
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	public abstract ILanguageProtocol makeInterpreter(String source, String replQualifiedName, String... salixPath) throws IOException, URISyntaxException, Exception;
+	public abstract ILanguageProtocol makeInterpreter(String source, String replQualifiedName) throws IOException, URISyntaxException, Exception;
 }

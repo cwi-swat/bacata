@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,8 +44,6 @@ import entities.request.ContentShutdownRequest;
 import entities.util.Content;
 import entities.util.MessageType;
 import entities.util.Status;
-import io.usethesource.vallang.ISourceLocation;
-import io.usethesource.vallang.IValueFactory;
 import server.JupyterServer;
 
 public class RascalNotebook extends JupyterServer {
@@ -54,12 +51,9 @@ public class RascalNotebook extends JupyterServer {
 	private final static String STD_OUT_DIV = "output_stdout";
 	private final static Charset UTF8 = Charset.forName("UTF8");
 	public final static String MIME_TYPE_HTML = "text/html";
-	private static final String JAR_FILE_PREFIX = "jar:file:";
-	private final String[] searchPath;
 
-	public RascalNotebook(String connectionFilePath, String... salixPath ) throws Exception {
+	public RascalNotebook(String connectionFilePath) throws Exception {
 		super(connectionFilePath);
-		this.searchPath = salixPath;
 	}
 
 	@Override
@@ -81,7 +75,7 @@ public class RascalNotebook extends JupyterServer {
 		OutputStream errors = new WriterOutputStream(stderr, UTF8, 4096, true);
 		InputStream input = new ByteArrayInputStream(new byte[4096]);
 
-		this.language = makeInterpreter(".", "", searchPath);
+		this.language = makeInterpreter(".", "");
 		this.language.initialize(input, output, errors);
 	}
 
@@ -132,9 +126,7 @@ public class RascalNotebook extends JupyterServer {
 					e.printStackTrace();
 				}
 			}
-			else {
-				// TODO evaluate user code 
-			}
+			
 			executionNumber ++;
 		}
 		else {
@@ -249,19 +241,7 @@ public class RascalNotebook extends JupyterServer {
 		return new ContentCompleteReply(suggestions, cursorStart, content.getCode().length(), new HashMap<String, String>(), Status.OK);
 	}
 
-	private static ISourceLocation createJarLocation(IValueFactory vf, URL u) throws URISyntaxException {
-		String full = u.toString();
-		if (full.startsWith(JAR_FILE_PREFIX)) {
-			full = full.substring(JAR_FILE_PREFIX.length());
-			return vf.sourceLocation("jar", null, full);
-		}
-		else {
-			return vf.sourceLocation(URIUtil.fromURL(u));
-		}
-	}
-
-	@Override
-	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, final String... salixPath) throws IOException, URISyntaxException {
+	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName) throws IOException, URISyntaxException {
 		return new RascalInterpreterREPL(false, false, true, null) {
 			@Override
 			protected Evaluator constructEvaluator(InputStream input, OutputStream stdout, OutputStream stderr) {
@@ -292,14 +272,9 @@ public class RascalNotebook extends JupyterServer {
 
 	public static void main(String[] args) {
 		try {
-			RascalNotebook a = args.length > 1 
-				? new RascalNotebook(args[0], args[1]) 
-				: new RascalNotebook(args[0]);
-
-			a.startServer();	
+			new RascalNotebook(args[0]).startServer();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
 }
