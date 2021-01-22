@@ -4,11 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -19,7 +16,6 @@ import org.rascalmpl.interpreter.env.GlobalEnvironment;
 import org.rascalmpl.interpreter.env.ModuleEnvironment;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
 import org.rascalmpl.interpreter.result.Result;
-import org.rascalmpl.interpreter.utils.RascalManifest;
 import org.rascalmpl.library.util.TermREPL;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
@@ -47,7 +43,6 @@ import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 import io.usethesource.vallang.IConstructor;
-import io.usethesource.vallang.ISourceLocation;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
 import io.usethesource.vallang.IWithKeywordParameters;
@@ -68,17 +63,15 @@ public class DSLNotebook extends JupyterServer {
 	// Constructor
 	// -----------------------------------------------------------------
 
-	public DSLNotebook(String connectionDetails, String source, String replQualifiedName, String pLanguageName, String... salixPath) throws Exception {
+	public DSLNotebook(String connectionDetails, String source, String replQualifiedName, String pLanguageName) throws Exception {
 		super(connectionDetails);
 		System.out.println("Connection: " + (System.currentTimeMillis() -  a));
 		languageName = pLanguageName;
 		stdout = new StringWriter();
 		stderr = new StringWriter();
 		long start = System.currentTimeMillis();
-		this.language = makeInterpreter(source, replQualifiedName, salixPath);
+		this.language = makeInterpreter(source, replQualifiedName);
 		System.out.println("MAKE INTERPRETER: " + (System.currentTimeMillis() -  start));
-		
-		startServer();
 	}
 	
 	// -----------------------------------------------------------------
@@ -211,20 +204,8 @@ public class DSLNotebook extends JupyterServer {
 		return new ContentCompleteReply(sugestions, result.getOffset(), contentCompleteRequest.getCode().length(), new HashMap<String, String>(), Status.OK);
 	}
 	
-	private static final String JAR_FILE_PREFIX = "jar:file:";
-	
-	private static ISourceLocation createJarLocation(IValueFactory vf, URL u) throws URISyntaxException {
-		String full = u.toString();
-		if (full.startsWith(JAR_FILE_PREFIX)) {
-			full = full.substring(JAR_FILE_PREFIX.length());
-			return vf.sourceLocation("jar", null, full);
-		} else {
-			return vf.sourceLocation(URIUtil.fromURL(u));
-		}
-	}
-		
 	@Override
-	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName, String... salixPath) throws IOException, URISyntaxException {
+	public ILanguageProtocol makeInterpreter(String source, String replQualifiedName) throws IOException, URISyntaxException {
 		String[] tmp = replQualifiedName.split("::");
 		String variableName = tmp[tmp.length-1];
 		String moduleName = replQualifiedName.replaceFirst("::"+variableName, "");
@@ -233,28 +214,12 @@ public class DSLNotebook extends JupyterServer {
 		IValueFactory vf = ValueFactoryFactory.getValueFactory();
 		Evaluator eval = new Evaluator(vf, System.in, System.err, System.out, root, heap);
 		
+		// for the standard library
 		eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
-		try {
-			Enumeration<URL> res = ClassLoader.getSystemClassLoader().getResources(RascalManifest.META_INF_RASCAL_MF);
-			RascalManifest mf = new RascalManifest();
-			while (res.hasMoreElements()) {
-				URL next = res.nextElement();
-				List<String> roots = mf.getManifestSourceRoots(next.openStream());
-				if (roots != null) {
-					ISourceLocation currentRoot = createJarLocation(vf, next);
-					currentRoot = URIUtil.getParentLocation(URIUtil.getParentLocation(currentRoot));
-					for (String r: roots) {
-						eval.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, r));
-					}
-					eval.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, RascalManifest.DEFAULT_SRC));
-				}
-			}
-			if (salixPath!=null && salixPath.length!=0)
-				eval.addRascalSearchPath(URIUtil.createFromURI((salixPath[0])));
-			eval.addRascalSearchPath(URIUtil.createFromURI(source));
-		} catch (URISyntaxException | IOException e1) {
-			throw new RuntimeException(e1);
-		} 
+
+		// for salix which is included in the fat jar:
+		eval.addRascalSearchPath(URIUtil.correctLocation("lib",  "rascal-notebook", "src"));
+
 		eval.doImport(null, moduleName);
 		
 		ModuleEnvironment module = eval.getHeap().getModule(moduleName);
@@ -267,8 +232,6 @@ public class DSLNotebook extends JupyterServer {
 		IFunction completor = (IFunction) repl2.getParameter("completor");
 		
 		return new TermREPL.TheREPL(vf, vf.string("Bacatá"), vf.string("Welcome"), vf.string("IN"),  vf.string("quit"), vf.sourceLocation(""), handler, completor, completor, eval.getInput(), eval.getStdErr(), eval.getStdOut());
-		
-//		return new REPLize(vf, repl, eval);
 	}
 	
 	// -----------------------------------------------------------------
@@ -277,10 +240,7 @@ public class DSLNotebook extends JupyterServer {
 
 	public static void main(String[] args) {
 		try {
-			if (args.length == 5)
-				new DSLNotebook(args[0], args[1], args[2], args[3], args[4]);
-			else 
-				new DSLNotebook(args[0], args[1], args[2], args[3], args[4], args[5]);
+			new DSLNotebook(args[0], args[1], args[2], args[3]).startServer();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
