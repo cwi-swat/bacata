@@ -10,9 +10,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -23,13 +21,11 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.io.output.WriterOutputStream;
 import org.rascalmpl.interpreter.Evaluator;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
-import org.rascalmpl.interpreter.utils.RascalManifest;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.rascalmpl.uri.URIUtil;
-import org.rascalmpl.values.ValueFactoryFactory;
 
 import communication.Header;
 import entities.ContentExecuteInput;
@@ -103,8 +99,12 @@ public class RascalNotebook extends JupyterServer {
 		String resultString = res.get(MIME_TYPE_HTML).trim();
 
 		if (resultString != null) {
-			res.put(MIME_TYPE_HTML, "<pre>" + res.get(MIME_TYPE_HTML) + "</pre>");
+			res.put(MIME_TYPE_HTML, pre(res.get(MIME_TYPE_HTML)));
 		}
+	}
+
+	private String pre(String body) {
+		return "<pre>\n" + body + "\n<pre>";
 	}
 
 	@Override
@@ -265,35 +265,15 @@ public class RascalNotebook extends JupyterServer {
 		return new RascalInterpreterREPL(false, false, true, null) {
 			@Override
 			protected Evaluator constructEvaluator(InputStream input, OutputStream stdout, OutputStream stderr) {
-				Evaluator e = ShellEvaluatorFactory.getDefaultEvaluator(input, stdout, stderr);
-				try {
-					e.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
-					// for salix which is included in the fat jar:
-					e.addRascalSearchPath(URIUtil.correctLocation("lib",  "rascal-notebook", "src"));
+				Evaluator eval = ShellEvaluatorFactory.getDefaultEvaluator(input, stdout, stderr);
+				
+				// for the standard library
+				eval.addRascalSearchPathContributor(StandardLibraryContributor.getInstance());
 
-					// TODO: use reusable code from Rascal for this?
-					IValueFactory vf = ValueFactoryFactory.getValueFactory();
-					Enumeration<URL> res = ClassLoader.getSystemClassLoader().getResources(RascalManifest.META_INF_RASCAL_MF);
-					RascalManifest mf = new RascalManifest();
-					while (res.hasMoreElements()) {
-						URL next = res.nextElement();
-						List<String> roots = mf.getManifestSourceRoots(next.openStream());
-						if (roots != null) {
-							ISourceLocation currentRoot = createJarLocation(vf, next);
-							currentRoot = URIUtil.getParentLocation(URIUtil.getParentLocation(currentRoot));
-							for (String r: roots) {
-								e.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, r));
-							}
-							e.addRascalSearchPath(URIUtil.getChildLocation(currentRoot, RascalManifest.DEFAULT_SRC));
-						}
-					}
-					if (salixPath.length > 0) {
-						e.addRascalSearchPath(URIUtil.createFromURI((salixPath[0])));
-					}
-				} catch (URISyntaxException | IOException e1) {
-					e1.printStackTrace();
-				}
-				return e;
+				// for salix which is included in the fat jar:
+				eval.addRascalSearchPath(URIUtil.correctLocation("lib",  "rascal-notebook", "src"));
+
+				return eval;
 			}
 		};
 	}
