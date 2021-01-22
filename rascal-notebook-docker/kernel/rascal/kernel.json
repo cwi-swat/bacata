@@ -3,8 +3,7 @@
 		"java",
 		"-jar",
 		"/root/bacata/bacata-rascal/target/bacata-rascal.jar",
-		"{connection_file}",
-		"home:///salix/src"
+		"{connection_file}"
 	],
 	"display_name": "Rascal",
 	"language": "Rascal"
