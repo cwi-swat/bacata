@@ -50,7 +50,6 @@ import server.JupyterServer;
 
 public class DSLNotebook extends JupyterServer {
 
-
 	// -----------------------------------------------------------------
 	// Fields
 	// -----------------------------------------------------------------
@@ -107,7 +106,8 @@ public class DSLNotebook extends JupyterServer {
 							metadata.remove("ERROR-LOG");
 							metadata.put("text/html", logs);
 							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
-						} else {
+						} 
+						else {
 							sendMessage(getCommunication().getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream("stderr", stderr.toString()));
 						}
 						stderr.getBuffer().setLength(0);
