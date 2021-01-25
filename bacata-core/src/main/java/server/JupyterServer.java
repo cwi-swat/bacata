@@ -264,18 +264,20 @@ public abstract class JupyterServer {
 	/**
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
-	public synchronized void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
+	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
 		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
 		String signedMessage = signMessage(message.getBytes());
 		
 		// Send the message
-		socket.sendMore(header.getSession().getBytes());
-		socket.sendMore(DELIMITER.getBytes());
-		socket.sendMore(signedMessage.getBytes());
-		socket.sendMore(parser.toJson(header).getBytes());
-		socket.sendMore(parser.toJson(parent));
-		socket.sendMore(parser.toJson(metadata));
-		socket.send(parser.toJson(content), 0);
+		synchronized (socket) {
+			socket.sendMore(header.getSession().getBytes());
+			socket.sendMore(DELIMITER.getBytes());
+			socket.sendMore(signedMessage.getBytes());
+			socket.sendMore(parser.toJson(header).getBytes());
+			socket.sendMore(parser.toJson(parent));
+			socket.sendMore(parser.toJson(metadata));
+			socket.send(parser.toJson(content), 0);
+		}
 	}
 	
 	public void sendShellMessage(Header header, Content content ) {
@@ -283,7 +285,9 @@ public abstract class JupyterServer {
 	}
 
 	public void heartbeatChannel() {
-		communication.getHeartbeatSocket().send(HEARTBEAT_MESSAGE);
+		synchronized(communication.getHeartbeatSocket()) {
+			communication.getHeartbeatSocket().send(HEARTBEAT_MESSAGE);
+		}
 	}
 	
 	public Header createHeader(String pSession, String pMessageType) {
