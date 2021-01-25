@@ -40,6 +40,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 
 /**
@@ -175,45 +176,58 @@ public abstract class JupyterServer {
 		}
 	}
 	
-	public void processShellMessage(Message message) {
+	private void processShellMessage(Message message) {
 		Content content, contentReply;
 		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
 		switch (parentHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
-				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
-				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
+				CompletableFuture.runAsync(() -> {
+					Content contentReply2 = (ContentKernelInfoReply) processKernelInfoRequest(message);
+					Header header2 =  new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
+					sendMessage(communication.getShellSocket(), header2, parentHeader, contentReply2);
+				});
+				
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
-				header = new Header(MessageType.SHUTDOWN_REPLY, parentHeader);
-				content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
-				contentReply = (ContentShutdownReply) processShutdownRequest((ContentShutdownRequest) content);
-				closeAllSockets();
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
+				CompletableFuture.runAsync(() -> {
+					Header header3 = new Header(MessageType.SHUTDOWN_REPLY, parentHeader);
+					Content content3 = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
+					Content contentReply3 = (ContentShutdownReply) processShutdownRequest((ContentShutdownRequest) content3);
+					closeAllSockets();
+					sendMessage(communication.getShellSocket(), header3, parentHeader, contentReply3);
+				});
 				break;
 			case MessageType.IS_COMPLETE_REQUEST:
-				header = createHeader(message.getHeader().getSession(), MessageType.IS_COMPLETE_REPLY);
-				content = parser.fromJson(message.getRawContent(), ContentIsCompleteRequest.class);
-				contentReply = processIsCompleteRequest((ContentIsCompleteRequest) content);
-				sendMessage(communication.getShellSocket(),header , parentHeader, contentReply);
+				CompletableFuture.runAsync(() -> {
+					Header header4 = createHeader(message.getHeader().getSession(), MessageType.IS_COMPLETE_REPLY);
+					Content content4 = parser.fromJson(message.getRawContent(), ContentIsCompleteRequest.class);
+					Content contentReply4 = processIsCompleteRequest((ContentIsCompleteRequest) content4);
+					sendMessage(communication.getShellSocket(),header4 , parentHeader, contentReply4);
+				});
 				break;
 			case MessageType.EXECUTE_REQUEST:
-				content = parser.fromJson(message.getRawContent(), ContentExecuteRequest.class);
-				processExecuteRequest((ContentExecuteRequest) content, message);
+				CompletableFuture.runAsync(() -> {
+					Content content5 = parser.fromJson(message.getRawContent(), ContentExecuteRequest.class);
+					processExecuteRequest((ContentExecuteRequest) content5, message);
+				});
 				break;
 			case MessageType.HISTORY_REQUEST:
-				processHistoryRequest(message);
+				CompletableFuture.runAsync(() -> {
+					processHistoryRequest(message);
+				});
 				break;
 			case MessageType.COMPLETE_REQUEST:
-				header = new Header(MessageType.COMPLETE_REPLY, parentHeader);
-				content = parser.fromJson(message.getRawContent(), ContentCompleteRequest.class);
-				contentReply = processCompleteRequest((ContentCompleteRequest) content);
-				sendMessage(getCommunication().getShellSocket(), header, parentHeader, contentReply);
+				CompletableFuture.runAsync(() -> {
+					Header header7 = new Header(MessageType.COMPLETE_REPLY, parentHeader);
+					Content content7 = parser.fromJson(message.getRawContent(), ContentCompleteRequest.class);
+					Content contentReply7 = processCompleteRequest((ContentCompleteRequest) content7);
+					sendMessage(getCommunication().getShellSocket(), header7, parentHeader, contentReply7);
+				});
 				break;
 			case MessageType.INSPECT_REQUEST:
 				break;
 			case MessageType.CONNECT_REQUEST:
-				System.out.println();
+				System.out.println("CONNECT_REQUEST");
 				break;
 			case MessageType.COMM_INFO_REQUEST:
 				System.out.println("COMM_INFO_REQUEST");
@@ -250,7 +264,7 @@ public abstract class JupyterServer {
 	/**
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
-	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
+	public synchronized void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
 		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
 		String signedMessage = signMessage(message.getBytes());
 		
