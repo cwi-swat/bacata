@@ -1,15 +1,52 @@
 package server;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.output.WriterOutputStream;
+import org.rascalmpl.repl.CompletionResult;
+import org.rascalmpl.repl.ILanguageProtocol;
+import org.zeromq.ZContext;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
+
 import communication.Communication;
 import communication.Connection;
 import communication.Header;
+import entities.ContentDisplayData;
+import entities.ContentExecuteInput;
+import entities.ContentStream;
 import entities.Message;
+import entities.reply.ContentCompleteReply;
+import entities.reply.ContentExecuteReplyOk;
+import entities.reply.ContentExecuteResult;
+import entities.reply.ContentIsCompleteReply;
 import entities.reply.ContentKernelInfoReply;
 import entities.reply.ContentShutdownReply;
 import entities.request.ContentCompleteRequest;
@@ -21,94 +58,50 @@ import entities.util.ContentStatus;
 import entities.util.MessageType;
 import entities.util.Status;
 
-import org.apache.commons.codec.binary.Hex;
-import org.rascalmpl.repl.ILanguageProtocol;
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.net.URISyntaxException;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.UUID;
-
 
 /**
  * Created by Mauricio on 17/01/2017.
  */
-public abstract class JupyterServer {
+public class JupyterServer {
+	private final static String DELIMITER = "<IDS|MSG>";
+	private final static String HEARTBEAT_MESSAGE = "ping";
+	private final static String ENCODE_CHARSET = "UTF-8";
+	private final static String HASH_ALGORITHM = "HmacSHA256";
 
-	// -----------------------------------------------------------------
-	// Constants
-	// -----------------------------------------------------------------
-
-	public final static String DELIMITER = "<IDS|MSG>";
-
-	public final static String HEARTBEAT_MESSAGE = "ping";
-
-	public final static String ENCODE_CHARSET = "UTF-8";
-
-	public final static String HASH_ALGORITHM = "HmacSHA256";
-	
-	public final static String SHELL = "Shell";
-	
-	public final static String CONTROL = "Control";
-	
-	public final static String PUBLISH = "Publish";
-	
-	public final static String HEART_BEAT = "Heartbeat"; 
-
-	// -----------------------------------------------------------------
-	// Fields
-	// -----------------------------------------------------------------
+	private final static String STD_ERR_DIV = "output_stderr";
+	private final static String STD_OUT_DIV = "output_stdout";
+	private final static Charset UTF8 = Charset.forName("UTF8");
+	public final static String MIME_TYPE_HTML = "text/html";
 
 	private Connection connection;
-
 	private Gson parser;
-
 	private Communication communication;
-
 	private ZMQ.Poller poller;
 	
-	protected ILanguageProtocol language;
+	private final ILanguageProtocol language;
 	
-	protected StringWriter stdout;
-
-	protected StringWriter stderr;
+	// TODO: figure out if we can do without the StringWriters
+	private final StringWriter stdout = new StringWriter();
+	private final StringWriter stderr = new StringWriter();
+	private final OutputStream outStream = new WriterOutputStream(stdout, UTF8, 4096, true); 
+	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true); 
 	
-	protected int executionNumber;
+	private int executionNumber;
 	
 	private Mac sha256;
 	
-	// -----------------------------------------------------------------
-	// Constructor
-	// -----------------------------------------------------------------
-
-	public JupyterServer(String connectionFilePath) throws Exception {
+	public JupyterServer(String connectionFilePath, ILanguageProtocol language) throws Exception {
 		parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 		connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
 		sha256 = Mac.getInstance(HASH_ALGORITHM);
 		SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
 		sha256.init(secretKey);
+		this.language = language;
+		this.language.initialize(new ByteArrayInputStream(new byte[0]), outStream, errStream);
 		executionNumber = 1;
 	}
 
-
-	// -----------------------------------------------------------------
-	// Methods
-	// -----------------------------------------------------------------
-
 	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException {
-		
 		try (ZContext context = new ZContext()) {
 			communication = new Communication(connection, context);
 			// Create the poll to deal with the 4 different sockets
@@ -127,6 +120,7 @@ public abstract class JupyterServer {
 					processShellMessage(message);
 					statusUpdate(message.getHeader(), Status.IDLE);
 				}
+
 				if (poller.pollin(1)) {
 					Message message = getMessage(communication.getControlSocket());					
 					processControlMessage(message);
@@ -137,10 +131,14 @@ public abstract class JupyterServer {
 						sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply);
 					}
 				}
-				if (poller.pollin(2))
+
+				if (poller.pollin(2)) {
 					getMessage(communication.getIOPubSocket());
-				if (poller.pollin(3))
+				}
+
+				if (poller.pollin(3)) {
 					listenHeartbeatSocket();
+				}
 			}
 		}
 	}
@@ -150,7 +148,7 @@ public abstract class JupyterServer {
 	 * @param socket
 	 * @return Message with the information of the received data.
 	 */
-	public Message getMessage(ZMQ.Socket socket) throws RuntimeException {
+	private Message getMessage(ZMQ.Socket socket) throws RuntimeException {
 		ZMsg zmsg = ZMsg.recvMsg(socket, false); // Non-blocking recv
 		
 		ZFrame[] zFrames = new ZFrame[zmsg.size()];
@@ -163,7 +161,7 @@ public abstract class JupyterServer {
 		return new Message(zFrames);
 	}
 	
-	public void processControlMessage(Message message) {
+	private void processControlMessage(Message message) {
 		switch (message.getHeader().getMsgType()) {
 			case "input_request":
 				System.out.println("input_request");
@@ -173,7 +171,7 @@ public abstract class JupyterServer {
 		}
 	}
 	
-	public void processShellMessage(Message message) {
+	private void processShellMessage(Message message) {
 		Content content, contentReply;
 		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
 		switch (parentHeader.getMsgType()) {
@@ -206,7 +204,7 @@ public abstract class JupyterServer {
 				header = new Header(MessageType.COMPLETE_REPLY, parentHeader);
 				content = parser.fromJson(message.getRawContent(), ContentCompleteRequest.class);
 				contentReply = processCompleteRequest((ContentCompleteRequest) content);
-				sendMessage(getCommunication().getShellSocket(), header, parentHeader, contentReply);
+				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
 				break;
 			case MessageType.INSPECT_REQUEST:
 				break;
@@ -224,7 +222,7 @@ public abstract class JupyterServer {
 		}
 	}
 
-	public void closeAllSockets() {
+	private void closeAllSockets() {
 		communication.getControlSocket().close();
 		communication.getHeartbeatSocket().close();
 		communication.getIOPubSocket().close();
@@ -233,7 +231,7 @@ public abstract class JupyterServer {
 		System.exit(-1);
 	}
 	
-	public void listenHeartbeatSocket() {
+	private void listenHeartbeatSocket() {
 		@SuppressWarnings("unused")
 		byte[] ping;
 		while ((ping = communication.getHeartbeatSocket().recv(ZMQ.DONTWAIT)) != null) {
@@ -241,14 +239,14 @@ public abstract class JupyterServer {
 		}
 	}
 
-	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
+	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
 		HashMap<String, String> metadata = new HashMap<String, String>();
 		sendMessage(socket, header, parent, metadata, content);
 	}
 	/**
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
-	public void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
+	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
 		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
 		String signedMessage = signMessage(message.getBytes());
 		
@@ -262,88 +260,168 @@ public abstract class JupyterServer {
 		socket.send(parser.toJson(content), 0);
 	}
 	
-	public void sendShellMessage(Header header, Content content ) {
-		
-	}
-
-	public void heartbeatChannel() {
+	private void heartbeatChannel() {
 		communication.getHeartbeatSocket().send(HEARTBEAT_MESSAGE);
 	}
 	
-	public Header createHeader(String pSession, String pMessageType) {
+	private Header createHeader(String pSession, String pMessageType) {
 		String timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
 		String msgid = String.valueOf(UUID.randomUUID());
 		return new Header(pSession, pMessageType, Header.VERSION, Header.USERNAME, timestamp, msgid);
 	}
 
-	public String signMessage(byte[] message) {
+	private String signMessage(byte[] message) {
 		return new String(Hex.encodeHex(sha256.doFinal(message)));
 	}
 
-	public Connection getConnection() {
-		return connection;
-	}
-
-	public Communication getCommunication() {
-		return communication;
-	}
-
-	public Gson getParser() {
-		return parser;
-	}
-	
-	/**
-	 * This method updates the kernel status with the value received as a parameter.
-	 */
-	public void statusUpdate(Header parentHeader, String status) {
+	private void statusUpdate(Header parentHeader, String status) {
 		Header header = new Header(parentHeader.getSession(), MessageType.STATUS, parentHeader.getVersion(), parentHeader.getUsername());
 		ContentStatus content = new ContentStatus(status);
 		sendMessage(communication.getIOPubSocket(), header, parentHeader, content);
 	}
 
-	// -----------------------------------------------------------------
-	// Abstract methods
-	// -----------------------------------------------------------------
+	private void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
+		Map<String, String> res = data.entrySet().stream()
+			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
+
+		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
+		sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
+	}
+
+	private void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
+		Header header, parentHeader = message.getHeader();
+		Map<String, String> metadata = message.getMetadata();
+		Map<String, InputStream> data = new HashMap<>();
+		String session = message.getHeader().getSession();
+		
+		if (!contentExecuteRequest.isSilent()) {
+			if (contentExecuteRequest.isStoreHistory()) {
+				header = new Header(MessageType.EXECUTE_INPUT, parentHeader);
+				sendMessage(communication.getIOPubSocket(), header, parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				try {
+					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata); // Execute user's code
+					
+					sendMessage(communication.getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parentHeader), parentHeader, new ContentExecuteReplyOk(executionNumber));
+
+					processStreams(parentHeader, data, metadata, session); // stdout writing
+					
+					if(!data.isEmpty()) {
+						replyRequest(parentHeader, session, data, metadata); // // Returns the result
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			
+			executionNumber ++;
+		}
+		else {
+			// No broadcast output on the IOPUB channel.
+			// Don't have an execute_result.
+			header = new Header(MessageType.EXECUTE_REPLY, parentHeader);
+			sendMessage(communication.getShellSocket(), header, parentHeader, new ContentExecuteReplyOk(executionNumber));
+		}
+	}
 	
-	/**
-	 * This method processes the execute_request message and replies with a execute_reply message.
-	 */
-	public abstract void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message);
+	@SuppressWarnings("resource")
+	private String convertStreamToString(java.io.InputStream inputStream) {
+	    Scanner s = new Scanner(inputStream, "UTF-8").useDelimiter("\\A");
+	    return s.hasNext() ? s.next() : "";
+	}
+
+	private void processStreams(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata, String session) {
+		if (!stdout.toString().trim().equals("")) {
+			processStreamsReply(ContentStream.STD_OUT, parentHeader, data, metadata, session);
+		}
+		if (!stderr.toString().trim().equals("")) {
+			processStreamsReply(ContentStream.STD_ERR, parentHeader, data, metadata, session);
+		}
+	}
+
+	private void processStreamsReply(String stream, Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata, String session) {
+		String logs = stream.equals(ContentStream.STD_OUT) ? stdout.toString() : stderr.toString();
+		if (logs.contains("http://")) {
+			metadata.put(MIME_TYPE_HTML, stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs)) : createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
+			sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
+		}
+		else {
+			sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream(stream, stdout.toString()));
+		}
+		flushStreams();
+	}
+
+	private String replaceLocs2html(String logs){
+		String pattern = "(?s)(.*)(\\|)(.+)(\\|)(.*$)";
+		if (logs.matches(pattern)){
+			logs = logs.replaceAll("\n", "<br>");
+			String prefix = logs.replaceAll(pattern,"$1");
+			String url = logs.replaceAll(pattern,"$3");
+			String suffix = logs.replaceAll(pattern,"$5");
+			return prefix + "<a href=\""+ url +"\" target=\"_blank\">"+url+"</a>" + suffix;
+		}
+		return logs;
+	}
+	
+	private String createDiv(String clazz, String body){
+		return "<div class = \""+ clazz +"\">"+ (body.equals("")||body==null ? "</div>" : body+"</div>");
+	}
+
+	private void flushStreams() {
+		stdout.getBuffer().setLength(0);
+		stdout.flush();
+		stderr.getBuffer().setLength(0);
+		stderr.flush();
+	}
+
+	private void processHistoryRequest(Message message) {
+		// TODO This is only for clients to explicitly request history from a kernel
+		// TODO add history to ILanguageProtocol or implement a generic version here
+	}
+	
+	private ContentKernelInfoReply processKernelInfoRequest(Message message) {
+		return new ContentKernelInfoReply();
+	}
+
+	private ContentShutdownReply processShutdownRequest(ContentShutdownRequest contentShutdown) {
+		boolean restart = false;
+		if (contentShutdown.getRestart()) {
+			restart = true;
+		} else {
+			this.language.stop();
+		}
+		return new ContentShutdownReply(restart);
+	}
 
 	/**
-	 * This method processes the complete_request message and replies with a complete_reply message.
+	 * This method is executed when the kernel receives a is_complete_request message.
 	 */
-	public abstract Content processCompleteRequest(ContentCompleteRequest contentCompleteRequest);
+	private Content processIsCompleteRequest(ContentIsCompleteRequest request) {
+		//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
+		String status, indent="";
+		if (this.language.isStatementComplete(request.getCode())) {
+			status = Status.COMPLETE;
+		} else {
+			status = Status.INCOMPLETE;
+			indent = "??????";
+		}
+		return new ContentIsCompleteReply(status, indent);
+	}
 
-	/**
-	 * This method processes the history_request message and replies with a history_reply message.
-	 */
-	public abstract void processHistoryRequest(Message message);
-
-	/**
-	 * This method processes the kernel_info_request message and replies with a kernel_info_reply message.
-	 */
-	public abstract Content processKernelInfoRequest(Message message);
-
-	/**
-	 * This method processes the shutdown_request message and replies with a shutdown_reply message.
-	 */
-	public abstract Content processShutdownRequest(ContentShutdownRequest contentShutdownRequest);
-
-	/**
-	 * This method processes the is_complete_request message and replies with a is_complete_reply message.
-	 * @param header
-	 * @param content
-	 */
-	public abstract Content processIsCompleteRequest(ContentIsCompleteRequest contentIsCompleteRequest);
-
-	/**
-	 * This method creates the interpreter to be used as a REPL
-	 * @param source
-	 * @param replQualifiedName
-	 * @return
-	 * @throws IOException
-	 * @throws URISyntaxException
-	 */
-	public abstract ILanguageProtocol makeInterpreter(String source, String replQualifiedName) throws IOException, URISyntaxException, Exception;
+	private Content processCompleteRequest(ContentCompleteRequest content) {
+		int cursorStart = 0;
+		ArrayList<String> suggestions;
+		
+		if (content.getCode().startsWith("import "))
+			cursorStart=7;
+		
+		CompletionResult result =this.language.completeFragment(content.getCode(), content.getCursorPosition());
+		if (result != null) {
+			suggestions = (ArrayList<String>)result.getSuggestions();
+		}
+		else {
+			suggestions = null;
+		}
+		
+		return new ContentCompleteReply(suggestions, cursorStart, content.getCode().length(), new HashMap<String, String>(), Status.OK);
+	}
 }

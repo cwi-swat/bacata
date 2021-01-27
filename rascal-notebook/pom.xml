@@ -19,11 +19,6 @@
 			<version>1.1-SNAPSHOT</version>
 			<classifier>jar-with-dependencies</classifier>
 		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.6</version>
-		</dependency>
  		<dependency>
 			<artifactId>salix</artifactId>
 			<groupId>org.rascalmpl</groupId>
