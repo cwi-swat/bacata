@@ -1,6 +1,8 @@
 {
 	"argv": [
 		"java",
+                "-Xmx4Gb",
+                "-Xss80mb",
         "-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n",
 		"-jar",
 		"/home/guest/bacata/rascal-notebook/target/rascal-notebook-0.0.1-SNAPSHOT.jar",

@@ -123,9 +123,7 @@ public abstract class JupyterServer {
 				poller.poll();
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
-					
 					statusUpdate(message.getHeader(), Status.BUSY);
-					
 					processShellMessage(message);
 					statusUpdate(message.getHeader(), Status.IDLE);
 				}
