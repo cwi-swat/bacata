@@ -18,7 +18,7 @@ public class RascalNotebook  {
 
 	public static void main(String[] args) {
 		try {
-			JupyterServer bacata = new JupyterServer(".", makeInterpreter());
+			JupyterServer bacata = new JupyterServer(args[0], makeInterpreter());
 			bacata.startServer();
 		} catch (Exception e) {
 			e.printStackTrace();
