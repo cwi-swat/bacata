@@ -283,7 +283,7 @@ public class JupyterServer {
 			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
-		sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
+		sendMessage(communication.getShellSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
 	}
 
 	private void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
