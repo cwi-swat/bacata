@@ -1,7 +1,7 @@
 {
 	"argv": [
 		"java",
-                "-Xmx4Gb",
+                "-Xmx2048M",
                 "-Xss80mb",
         "-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n",
 		"-jar",
