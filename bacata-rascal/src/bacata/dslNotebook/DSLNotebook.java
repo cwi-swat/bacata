@@ -1,13 +1,7 @@
 package bacata.dslNotebook;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
 
 //import org.rascalmpl.bacata.repl.BacataREPL;
 //import org.rascalmpl.bacata.repl.replization.REPLize;
@@ -17,31 +11,11 @@ import org.rascalmpl.interpreter.env.ModuleEnvironment;
 import org.rascalmpl.interpreter.load.StandardLibraryContributor;
 import org.rascalmpl.interpreter.result.Result;
 import org.rascalmpl.library.util.TermREPL;
-import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
 import org.rascalmpl.values.functions.IFunction;
 
-import communication.Header;
-import entities.ContentExecuteInput;
-import entities.ContentStream;
-import entities.Message;
-import entities.reply.ContentCompleteReply;
-import entities.reply.ContentDisplayData;
-import entities.reply.ContentExecuteReplyOk;
-import entities.reply.ContentExecuteResult;
-import entities.reply.ContentIsCompleteReply;
-import entities.reply.ContentKernelInfoReply;
-import entities.reply.ContentShutdownReply;
-import entities.request.ContentCompleteRequest;
-import entities.request.ContentExecuteRequest;
-import entities.request.ContentIsCompleteRequest;
-import entities.request.ContentShutdownRequest;
-import entities.util.Content;
-import entities.util.LanguageInfo;
-import entities.util.MessageType;
-import entities.util.Status;
 import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
@@ -87,5 +61,4 @@ public class DSLNotebook {
 		
 		return new TermREPL.TheREPL(vf, vf.string("Bacatá"), vf.string("Welcome"), vf.string("IN"),  vf.string("quit"), vf.sourceLocation(""), handler, completor, completor, eval.getInput(), eval.getStdErr(), eval.getStdOut());
 	}
-	
 }
