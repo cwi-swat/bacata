@@ -110,7 +110,7 @@ public class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 			
-			statusUpdate(createHeader("?", MessageType.STATUS), Status.STARTING);
+			statusUpdate(createHeader(connection.getKey(), MessageType.STATUS), Status.STARTING);
 
 			while (!Thread.currentThread().isInterrupted()) {
 				poller.poll();
