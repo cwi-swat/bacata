@@ -118,13 +118,12 @@ public class JupyterServer {
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
 					System.err.println("received: " + message);
-					statusUpdate(message.getHeader(), Status.BUSY);
 					processShellMessage(message);
-					statusUpdate(message.getHeader(), Status.IDLE);
 				}
 
 				if (poller.pollin(1)) {
 					Message message = getMessage(communication.getControlSocket());					
+					System.err.println("received: " + message);
 					processControlMessage(message);
 					if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
 						ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
@@ -135,10 +134,12 @@ public class JupyterServer {
 				}
 
 				if (poller.pollin(2)) {
-					getMessage(communication.getIOPubSocket());
+					System.err.println("received: " + getMessage(communication.getIOPubSocket()));
+					;
 				}
 
 				if (poller.pollin(3)) {
+					System.err.println("heartbeat received");
 					listenHeartbeatSocket();
 				}
 			}
@@ -191,8 +192,10 @@ public class JupyterServer {
 				sendMessage(communication.getShellSocket(),header , parentHeader, contentReply);
 				break;
 			case MessageType.EXECUTE_REQUEST:
+				statusUpdate(message.getHeader(), Status.BUSY);
 				content = parser.fromJson(message.getRawContent(), ContentExecuteRequest.class);
 				processExecuteRequest((ContentExecuteRequest) content, message);
+				statusUpdate(message.getHeader(), Status.IDLE);
 				break;
 			case MessageType.HISTORY_REQUEST:
 				processHistoryRequest(message);
@@ -259,6 +262,7 @@ public class JupyterServer {
 	}
 	
 	private void heartbeatChannel() {
+		System.err.println("replying heartbeat");
 		communication.getHeartbeatSocket().send(HEARTBEAT_MESSAGE);
 	}
 	
