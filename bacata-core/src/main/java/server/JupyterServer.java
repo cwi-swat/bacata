@@ -117,29 +117,23 @@ public class JupyterServer {
 				poller.poll();
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
-					System.err.println("received: " + message);
+					System.err.println("received shell: " + message);
 					processShellMessage(message);
 				}
 
 				if (poller.pollin(1)) {
 					Message message = getMessage(communication.getControlSocket());					
-					System.err.println("received: " + message);
+					System.err.println("received control: " + message);
 					processControlMessage(message);
-					if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
-						ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
-						Content contentReply = processShutdownRequest(content);
-						Header header = createHeader(message.getHeader().getSession(), MessageType.SHUTDOWN_REPLY);
-						sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply);
-					}
 				}
 
 				if (poller.pollin(2)) {
-					System.err.println("received: " + getMessage(communication.getIOPubSocket()));
-					;
+					Message message = getMessage(communication.getIOPubSocket());
+					System.err.println("received IO: " + message);
 				}
 
 				if (poller.pollin(3)) {
-					System.err.println("heartbeat received");
+					System.err.println("received heartbeat");
 					listenHeartbeatSocket();
 				}
 			}
@@ -166,7 +160,12 @@ public class JupyterServer {
 	
 	private void processControlMessage(Message message) {
 		// TODO?
-		System.err.println("Control message: " + message);
+		if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
+			ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
+			Content contentReply = processShutdownRequest(content);
+			Header header = createHeader(message.getHeader().getSession(), MessageType.SHUTDOWN_REPLY);
+			sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply);
+		}
 	}
 	
 	private void processShellMessage(Message message) {
