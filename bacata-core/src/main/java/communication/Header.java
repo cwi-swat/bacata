@@ -10,9 +10,9 @@ public class Header {
     // Constants
     // -----------------------------------------------------------------
 
-    public final static String VERSION = "5.3";
+    public final static String VERSION = "5.2";
 
-    public final static String USERNAME = "Bacata";
+    public final static String USERNAME = "guest";
 
     // -----------------------------------------------------------------
     // Fields
