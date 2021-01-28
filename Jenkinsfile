@@ -8,15 +8,13 @@ node {
 
   	withMaven(maven: 'M3', jdk: 'jdk-oracle-8', options: [artifactsPublisher(disabled: true)] ) {
   
-  		stage('Packaging') {
+	    stage('Packaging') {
     		sh "mvn clean package"
-  	 	}
+  	    }
 
-     	stage('Deploy') {
+     	    stage('Deploy') {
         	sh "mvn -DskipTests deploy"
         	sh "mvn -DskipTests install"
-     	}
+     	    }
 	}
-   
-	build job: '../rascal-eclipse-libraries/master', wait: false
 }
