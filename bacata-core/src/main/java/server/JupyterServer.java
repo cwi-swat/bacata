@@ -175,7 +175,6 @@ public class JupyterServer {
 		switch (parentHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
-				header = createHeader("", MessageType.KERNEL_INFO_REPLY);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
 				
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);

@@ -12,9 +12,9 @@ public class LanguageInfo {
 
     public static final String LANGUAGE_NAME = "Rascal";
 
-    public static final String LANGUAGE_VERSION = "1.8.0_77";
+    public static final String LANGUAGE_VERSION = "0.19.3-SNAPSHOT";
 
-    public static final String LANGUAGE_MIMETYPE = "text/x-rascal";
+    public static final String LANGUAGE_MIMETYPE = "text/plain";
 
     public static final String LANGUAGE_EXTENSION = ".rsc";
 
