@@ -244,7 +244,7 @@ public class JupyterServer {
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
 	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
-		System.err.println("sending message with header: " + header);
+		System.err.println("sending message with header: " + header) + " and content: " + content);
 		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
 		String signedMessage = signMessage(message.getBytes());
 		
