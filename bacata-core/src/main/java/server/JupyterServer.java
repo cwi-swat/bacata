@@ -117,6 +117,7 @@ public class JupyterServer {
 				poller.poll();
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
+					System.err.println("received: " + message);
 					statusUpdate(message.getHeader(), Status.BUSY);
 					processShellMessage(message);
 					statusUpdate(message.getHeader(), Status.IDLE);
@@ -163,13 +164,8 @@ public class JupyterServer {
 	}
 	
 	private void processControlMessage(Message message) {
-		switch (message.getHeader().getMsgType()) {
-			case "input_request":
-				System.out.println("input_request");
-				break;
-			default:
-				break;
-		}
+		// TODO?
+		System.err.println("Control message: " + message);
 	}
 	
 	private void processShellMessage(Message message) {
@@ -248,6 +244,7 @@ public class JupyterServer {
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
 	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
+		System.err.println("sending message with header: " + header);
 		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
 		String signedMessage = signMessage(message.getBytes());
 		
