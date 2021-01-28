@@ -15,7 +15,7 @@ public class ContentKernelInfoReply extends Content {
     // Constants
     // -----------------------------------------------------------------
 
-    public final static String PROTOCOL_VERSION = "5.2";
+    public final static String PROTOCOL_VERSION = "5.3";
 
     public final static String IMPLEMENTATION = "Java kernel";
 
