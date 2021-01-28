@@ -10,7 +10,7 @@ public class LanguageInfo {
     // Constants
     // -----------------------------------------------------------------
 
-    public static final String LANGUAGE_NAME = "Rascal";
+    public static final String LANGUAGE_NAME = "rascal";
 
     public static final String LANGUAGE_VERSION = "0.19.3-SNAPSHOT";
 

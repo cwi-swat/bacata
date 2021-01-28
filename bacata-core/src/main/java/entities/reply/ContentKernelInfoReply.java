@@ -17,11 +17,11 @@ public class ContentKernelInfoReply extends Content {
 
     public final static String PROTOCOL_VERSION = "5.3";
 
-    public final static String IMPLEMENTATION = "Java kernel";
+    public final static String IMPLEMENTATION = "bacata";
 
     public final static String IMPLEMENTATION_VERSION = "0.1";
 
-    public final static String BANNER = "Java Kernel Banner";
+    public final static String BANNER = "Bacatá language-parametric Jupyter Kernel";
 
     // -----------------------------------------------------------------
     // Fields
