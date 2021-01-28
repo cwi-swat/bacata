@@ -133,4 +133,9 @@ public class Message {
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
+
+    @Override
+    public String toString() {
+       return "Message[header=" + header + ", content=" + rawContent.substring(0, 16) + "]";
+    }
 }

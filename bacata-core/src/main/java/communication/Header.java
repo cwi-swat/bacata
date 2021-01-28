@@ -94,4 +94,9 @@ public class Header {
     public String getMsgId() {
         return msgId;
     }
+
+    @Override
+    public String toString() {
+       return "Header[" + "session=" + session + ", type=" + msgType + ", version=" + version + ", username=" + username + ", date=" + date + ", msgId=" + msgId + "]";
+    }
 }
