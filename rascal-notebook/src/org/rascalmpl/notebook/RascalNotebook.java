@@ -26,7 +26,7 @@ public class RascalNotebook  {
 	}
 
 	private static ILanguageProtocol makeInterpreter() throws IOException, URISyntaxException {
-		return new RascalInterpreterREPL(false, false, true, null) {
+		return new RascalInterpreterREPL(false, false, null) {
 			@Override
 			protected Evaluator constructEvaluator(InputStream input, OutputStream stdout, OutputStream stderr) {
 				Evaluator eval = ShellEvaluatorFactory.getDefaultEvaluator(input, stdout, stderr);
