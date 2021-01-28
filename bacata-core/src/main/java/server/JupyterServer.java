@@ -85,6 +85,7 @@ public class JupyterServer {
 	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true); 
 	
 	private int executionNumber;
+	private boolean initialized = false;
 	
 	private Mac sha256;
 	
@@ -110,8 +111,8 @@ public class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 			
-			statusUpdate(createHeader(connection.getKey(), MessageType.STATUS), Status.STARTING);
-			statusUpdate(createHeader(connection.getKey(), MessageType.STATUS), Status.IDLE);
+			// statusUpdate(createHeader(connection.getKey(), MessageType.STATUS), Status.STARTING);
+			// statusUpdate(createHeader(connection.getKey(), MessageType.STATUS), Status.IDLE);
 
 			while (!Thread.currentThread().isInterrupted()) {
 				poller.poll();
@@ -175,7 +176,15 @@ public class JupyterServer {
 			case MessageType.KERNEL_INFO_REQUEST:
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
+				
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
+				
+				if (!initialized) {
+					statusUpdate(createHeader(header.getSession(), MessageType.STATUS), Status.STARTING);	
+					statusUpdate(createHeader(header.getSession(), MessageType.STATUS), Status.IDLE);	
+					initialized = true;
+				}
+				
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
 				header = new Header(MessageType.SHUTDOWN_REPLY, parentHeader);
