@@ -136,6 +136,6 @@ public class Message {
 
     @Override
     public String toString() {
-       return "Message[header=" + header + ", content=" + rawContent.substring(0, 16) + "]";
+       return "Message[header=" + header + ", content=" + rawContent.substring(0, Math.min(16, rawContent.length())) + "]";
     }
 }
