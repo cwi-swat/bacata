@@ -53,6 +53,7 @@ import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
 import entities.util.Content;
 import entities.util.ContentStatus;
+import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 
@@ -77,6 +78,7 @@ public class JupyterServer {
 	private ZMQ.Poller poller;
 	
 	private final ILanguageProtocol language;
+	private final LanguageInfo info;
 	
 	// TODO: figure out if we can do without the StringWriters
 	private final StringWriter stdout = new StringWriter();
@@ -85,17 +87,17 @@ public class JupyterServer {
 	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true); 
 	
 	private int executionNumber;
-	private boolean initialized = false;
 	
 	private Mac sha256;
 	
-	public JupyterServer(String connectionFilePath, ILanguageProtocol language) throws Exception {
+	public JupyterServer(String connectionFilePath, ILanguageProtocol language, LanguageInfo info) throws Exception {
 		parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 		connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
 		sha256 = Mac.getInstance(HASH_ALGORITHM);
 		SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
 		sha256.init(secretKey);
 		this.language = language;
+		this.info = info;
 		this.language.initialize(new ByteArrayInputStream(new byte[0]), outStream, errStream);
 		executionNumber = 1;
 	}
@@ -111,10 +113,7 @@ public class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 			
-			// statusUpdate(createHeader(connection.getKey(), MessageType.STATUS), Status.STARTING);
-			// statusUpdate(createHeader(connection.getKey(), MessageType.STATUS), Status.IDLE);
-
-			while (!Thread.currentThread().isInterrupted()) {
+			while (true) {
 				poller.poll();
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
@@ -176,14 +175,7 @@ public class JupyterServer {
 			case MessageType.KERNEL_INFO_REQUEST:
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
-				
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
-				
-				if (!initialized) {
-					statusUpdate(createHeader(header.getSession(), MessageType.STATUS), Status.STARTING);	
-					statusUpdate(createHeader(header.getSession(), MessageType.STATUS), Status.IDLE);	
-					initialized = true;
-				}
 				
 				break;
 			case MessageType.SHUTDOWN_REQUEST:

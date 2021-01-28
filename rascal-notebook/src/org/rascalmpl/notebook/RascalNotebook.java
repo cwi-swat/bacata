@@ -12,13 +12,14 @@ import org.rascalmpl.repl.RascalInterpreterREPL;
 import org.rascalmpl.shell.ShellEvaluatorFactory;
 import org.rascalmpl.uri.URIUtil;
 
+import entities.util.LanguageInfo;
 import server.JupyterServer;
 
 public class RascalNotebook  {
 
 	public static void main(String[] args) {
 		try {
-			JupyterServer bacata = new JupyterServer(args[0], makeInterpreter());
+			JupyterServer bacata = new JupyterServer(args[0], makeInterpreter(), new LanguageInfo("rascal, "0.19.3-SNAPSHOT", "text/plain", ".rsc"));
 			bacata.startServer();
 		} catch (Exception e) {
 			e.printStackTrace();

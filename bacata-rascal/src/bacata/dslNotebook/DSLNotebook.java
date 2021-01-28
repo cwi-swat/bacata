@@ -16,6 +16,7 @@ import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.values.ValueFactoryFactory;
 import org.rascalmpl.values.functions.IFunction;
 
+import entities.util.LanguageInfo;
 import io.usethesource.vallang.IConstructor;
 import io.usethesource.vallang.IValue;
 import io.usethesource.vallang.IValueFactory;
@@ -26,7 +27,9 @@ public class DSLNotebook {
 
 	public static void main(String[] args) {
 		try {
-			JupyterServer server = new JupyterServer(args[0], makeInterpreter(args[1], args[2]));
+			ILanguageProtocol lang = makeInterpreter(args[1], args[2]);
+			LanguageInfo info = new LanguageInfo(args[2], "0.0", "text/plain", ".trm");
+			JupyterServer server = new JupyterServer(args[0], lang, info);
 			server.startServer();
 		} catch (Exception e) {
 			e.printStackTrace();
