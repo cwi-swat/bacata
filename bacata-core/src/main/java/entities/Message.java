@@ -70,12 +70,7 @@ public class Message {
 
     }
 
-    public Message(Header header, Header parentHeader, String content, Map<String,String> metadata) {
-        this.UUID = java.util.UUID.randomUUID().toString();
-        this.header = header;
-        this.parentHeader = parentHeader;
-        this.rawContent = content;
-        this.metadata = metadata;
+    public Message(String zmqIdentity, String hmacSignature, Header header, Header parentHeader, Content content, String metadata) {
     }
     
     @SuppressWarnings("unchecked")
