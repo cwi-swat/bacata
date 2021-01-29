@@ -1,6 +1,6 @@
 FROM maven:3.6.0-jdk-8 as mavenBuild
 
-ARG notebookVersion=6.1.3
+ARG notebookVersion=6.1.2
 ARG RASCAL_USER=guest
 ARG RASCAL_UID=1000
 ENV USER ${RASCAL_USER}
@@ -43,6 +43,8 @@ RUN pip3 install notebook==${notebookVersion}
 USER guest
 WORKDIR $HOME
 
+ADD https://nexus.usethesource.io/content/repositories/snapshots/org/rascalmpl/rascal/0.19.3-SNAPSHOT/maven-metadata.xml lastRascalBuild.xml
+ADD https://api.github.com/repos/cwi-swat/bacata/git/refs/heads/master version.json
 RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
 
 WORKDIR bacata
@@ -69,8 +71,11 @@ RUN mkdir workspace
 
 WORKDIR workspace
 
+COPY ./Example.ipynb .
+
 EXPOSE 8888
 EXPOSE 3434
 EXPOSE 9050-10050
+EXPOSE 8000
 
-CMD ["jupyter", "notebook", "--ip","0.0.0.0"]
+CMD ["jupyter", "notebook", "--ip","0.0.0.0", "--debug", "--no-browser"]
