@@ -176,7 +176,6 @@ public class JupyterServer {
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
-				
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
 				header = new Header(MessageType.SHUTDOWN_REPLY, parentHeader);
@@ -258,7 +257,7 @@ public class JupyterServer {
 		socket.sendMore(parser.toJson(header).getBytes());
 		socket.sendMore(parser.toJson(parent));
 		socket.sendMore(parser.toJson(metadata));
-		socket.send(parser.toJson(content), 0);
+		socket.send(parser.toJson(content), ZMQ.DONTWAIT);
 	}
 	
 	private void heartbeatChannel() {
@@ -381,7 +380,7 @@ public class JupyterServer {
 	}
 	
 	private ContentKernelInfoReply processKernelInfoRequest(Message message) {
-		return new ContentKernelInfoReply();
+		return new ContentKernelInfoReply(info);
 	}
 
 	private ContentShutdownReply processShutdownRequest(ContentShutdownRequest contentShutdown) {
