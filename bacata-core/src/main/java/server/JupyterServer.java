@@ -250,14 +250,29 @@ public class JupyterServer {
 		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
 		String signedMessage = signMessage(message.getBytes());
 		
+		// {
+		// 	"header" : {
+		// 		"msg_id": "...",
+		// 		"msg_type": "...",
+		// 		...
+		// 	},
+		// 	"parent_header": {},
+		// 	"metadata": {},
+		// 	"content": {},
+		// 	"buffers": [],
+		// }
+
+		Message msg = new Message(header, parent, parser.toJson(content), metadata);
+		
+		socket.send(parser.toJson(msg));
 		// Send the message
-		socket.sendMore(header.getSession().getBytes());
-		socket.sendMore(DELIMITER.getBytes());
-		socket.sendMore(signedMessage.getBytes());
-		socket.sendMore(parser.toJson(header).getBytes());
-		socket.sendMore(parser.toJson(parent));
-		socket.sendMore(parser.toJson(metadata));
-		socket.send(parser.toJson(content), ZMQ.DONTWAIT);
+		// socket.sendMore(header.getSession().getBytes());
+		// socket.sendMore(DELIMITER.getBytes());
+		// socket.sendMore(signedMessage.getBytes());
+		// socket.sendMore(parser.toJson(header).getBytes());
+		// socket.sendMore(parser.toJson(parent));
+		// socket.sendMore(parser.toJson(metadata));
+		// socket.send(parser.toJson(content), 0);
 	}
 	
 	private void heartbeatChannel() {
