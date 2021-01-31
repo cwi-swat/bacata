@@ -46,7 +46,7 @@ public class LanguageInfo {
         this.version = LANGUAGE_VERSION;
         this.mimetype = LANGUAGE_MIMETYPE;
         this.fileExtension = LANGUAGE_EXTENSION;
-        this.pygmentsLexer = null;
+        this.pygmentsLexer = "";
         this.codemirrorMode = new CodeMirrorMode(codemirrorName);
         this.nbconvertExporter = null;
     }

@@ -211,7 +211,7 @@ public class JupyterServer {
 			case MessageType.INSPECT_REQUEST:
 				break;
 			case MessageType.CONNECT_REQUEST:
-				System.out.println();
+				System.out.println("Deprecated message");
 				break;
 			case MessageType.COMM_INFO_REQUEST:
 				System.out.println("COMM_INFO_REQUEST");
