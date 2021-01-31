@@ -115,6 +115,17 @@ public class JupyterServer {
 			
 			while (true) {
 				poller.poll();
+				int count = 0;
+				
+				while (count <5) {
+					if (poller.pollin(2)) {
+						Message message = getMessage(communication.getIOPubSocket());
+						System.err.println("received IO: " + message);
+					}
+					Thread.sleep(2000);
+					count++;
+				}
+				
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
 					System.err.println("received shell: " + message);
@@ -127,16 +138,14 @@ public class JupyterServer {
 					processControlMessage(message);
 				}
 
-				if (poller.pollin(2)) {
-					Message message = getMessage(communication.getIOPubSocket());
-					System.err.println("received IO: " + message);
-				}
-
 				if (poller.pollin(3)) {
 					System.err.println("received heartbeat");
 					listenHeartbeatSocket();
 				}
 			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
