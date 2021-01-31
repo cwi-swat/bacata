@@ -115,16 +115,6 @@ public class JupyterServer {
 			
 			while (true) {
 				poller.poll();
-				int count = 0;
-				
-				while (count <5) {
-					if (poller.pollin(2)) {
-						Message message = getMessage(communication.getIOPubSocket());
-						System.err.println("received IO: " + message);
-					}
-					Thread.sleep(2000);
-					count++;
-				}
 				
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
@@ -137,15 +127,17 @@ public class JupyterServer {
 					System.err.println("received control: " + message);
 					processControlMessage(message);
 				}
+				
+				if (poller.pollin(2)) {
+					Message message = getMessage(communication.getIOPubSocket());
+					System.err.println("received IO: " + message);
+				}
 
 				if (poller.pollin(3)) {
 					System.err.println("received heartbeat");
 					listenHeartbeatSocket();
 				}
 			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 
@@ -182,8 +174,10 @@ public class JupyterServer {
 		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
 		switch (parentHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
+				statusUpdate(message.getHeader(), Status.STARTING);
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
+				statusUpdate(message.getHeader(), Status.IDLE);
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
