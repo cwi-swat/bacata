@@ -85,8 +85,6 @@ public class JupyterServer {
 	private final OutputStream outStream = new WriterOutputStream(stdout, UTF8, 4096, true);
 	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true);
 
-	private boolean initialized = false;
-
 	private int executionNumber;
 
 	private Mac sha256;
@@ -113,6 +111,9 @@ public class JupyterServer {
 			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
+
+			statusUpdate(new Header(), Status.STARTING);	
+			statusUpdate(new Header(), Status.IDLE);	
 
 			while (true) {
 				poller.poll();
