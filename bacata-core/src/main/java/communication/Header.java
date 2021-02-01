@@ -71,6 +71,9 @@ public class Header {
     // Methods
     // -----------------------------------------------------------------
 
+    public void setMsgId(String msgId) {
+        this.msgId = msgId;
+    }
     public String getSession() {
         return session;
     }

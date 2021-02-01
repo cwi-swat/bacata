@@ -183,6 +183,8 @@ public class JupyterServer {
 			case MessageType.KERNEL_INFO_REQUEST:
 				statusUpdate(message.getHeader(), Status.BUSY);
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
+				header.setMsgId(parentHeader.getMsgId());
+				
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
 				statusUpdate(message.getHeader(), Status.IDLE);
