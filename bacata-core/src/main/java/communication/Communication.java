@@ -44,7 +44,7 @@ public class Communication {
     public Communication(Connection connection, ZContext context) {
     	// Create sockets in the context received as parameter.
         this.IOPub = context.createSocket(SocketType.PUB);
-        this.shell = context.createSocket(SocketType.DEALER);
+        this.shell = context.createSocket(SocketType.ROUTER);
         this.control = context.createSocket(SocketType.ROUTER);
         this.stdin = context.createSocket(SocketType.ROUTER);
         this.heartBeat = context.createSocket(SocketType.REP);
