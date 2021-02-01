@@ -127,11 +127,12 @@ public class JupyterServer {
 			while (true) {
 				poller.poll();
 				
+				if (!initialized) {
+					statusUpdate(new Header(), Status.STARTING);	
+					initialized = true;
+				}
+
 				if (poller.pollin(0)) {
-					if (!initialized) {
-						statusUpdate(new Header(), Status.STARTING);	
-						initialized = true;
-					}
 					Message message = getMessage(communication.getShellSocket());
 					System.err.println("received shell: " + message);
 					processShellMessage(message);
