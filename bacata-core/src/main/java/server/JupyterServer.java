@@ -89,6 +89,8 @@ public class JupyterServer {
 
 	private Mac sha256;
 
+	private boolean initialized = false;
+
 	public JupyterServer(String connectionFilePath, ILanguageProtocol language, LanguageInfo info) throws Exception {
 		parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 		connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
@@ -126,8 +128,11 @@ public class JupyterServer {
 				poller.poll();
 				
 				if (poller.pollin(0)) {
-					statusUpdate(new Header(), Status.STARTING);	
-					statusUpdate(new Header(), Status.IDLE);
+					if (!initialized) {
+						statusUpdate(new Header(), Status.STARTING);	
+						statusUpdate(new Header(), Status.IDLE);
+						initialized = true;
+					}
 					Message message = getMessage(communication.getShellSocket());
 					System.err.println("received shell: " + message);
 					processShellMessage(message);
