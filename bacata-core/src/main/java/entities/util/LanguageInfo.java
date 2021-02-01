@@ -30,12 +30,12 @@ public class LanguageInfo {
 
     private String fileExtension;
 
-    private String pygmentsLexer;
+    // private String pygmentsLexer;
 
     @SuppressWarnings("unused")
 	private CodeMirrorMode codemirrorMode;
 
-    private String nbconvertExporter;
+    // private String nbconvertExporter;
 
     // -----------------------------------------------------------------
     // Constructor
@@ -46,9 +46,9 @@ public class LanguageInfo {
         this.version = LANGUAGE_VERSION;
         this.mimetype = LANGUAGE_MIMETYPE;
         this.fileExtension = LANGUAGE_EXTENSION;
-        this.pygmentsLexer = "";
+        // this.pygmentsLexer = "";
         this.codemirrorMode = new CodeMirrorMode(codemirrorName);
-        this.nbconvertExporter = null;
+        // this.nbconvertExporter = null;
     }
 
     public LanguageInfo(String name, String version, String mimetype, String file_extension) {
@@ -56,9 +56,9 @@ public class LanguageInfo {
         this.version = version;
         this.mimetype = mimetype;
         this.fileExtension = file_extension;
-        this.pygmentsLexer = null;
+        // this.pygmentsLexer = null;
         this.codemirrorMode = null;
-        this.nbconvertExporter = null;
+        // this.nbconvertExporter = null;
     }
 
     // -----------------------------------------------------------------
@@ -81,19 +81,19 @@ public class LanguageInfo {
         return fileExtension;
     }
 
-    public String getPygmentsLexer() {
-        return pygmentsLexer;
-    }
+    // public String getPygmentsLexer() {
+    //     return pygmentsLexer;
+    // }
 
-    public String getNbconvertExporter() {
-        return nbconvertExporter;
-    }
+    // public String getNbconvertExporter() {
+    //     return nbconvertExporter;
+    // }
 
-    public void setPygmentsLexer(String pygmentsLexer) {
-        this.pygmentsLexer = pygmentsLexer;
-    }
+    // public void setPygmentsLexer(String pygmentsLexer) {
+    //     this.pygmentsLexer = pygmentsLexer;
+    // }
 
-    public void setNbconvertExporter(String nbconvertExporter) {
-        this.nbconvertExporter = nbconvertExporter;
-    }
+    // public void setNbconvertExporter(String nbconvertExporter) {
+    //     this.nbconvertExporter = nbconvertExporter;
+    // }
 }
