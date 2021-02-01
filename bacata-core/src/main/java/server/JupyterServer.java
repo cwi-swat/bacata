@@ -85,6 +85,8 @@ public class JupyterServer {
 	private final OutputStream outStream = new WriterOutputStream(stdout, UTF8, 4096, true);
 	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true);
 
+	private boolean initialized = false;
+
 	private int executionNumber;
 
 	private Mac sha256;
@@ -116,7 +118,7 @@ public class JupyterServer {
 			// this avoids a bug in the client which would result
 			// in kernel_info_reply messages to be ignored by the client
 			try { Thread.sleep(3000); } catch (InterruptedException e) { }
-			
+
 			while (true) {
 				poller.poll();
 				
@@ -178,6 +180,11 @@ public class JupyterServer {
 		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
 		switch (parentHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
+				if (!initialized) {
+					statusUpdate(message.getHeader(), Status.STARTING);	
+					statusUpdate(message.getHeader(), Status.IDLE);	
+					initialized = true;
+				}
 				statusUpdate(message.getHeader(), Status.BUSY);
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
