@@ -130,7 +130,6 @@ public class JupyterServer {
 				if (poller.pollin(0)) {
 					if (!initialized) {
 						statusUpdate(new Header(), Status.STARTING);	
-						statusUpdate(new Header(), Status.IDLE);
 						initialized = true;
 					}
 					Message message = getMessage(communication.getShellSocket());
