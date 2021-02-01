@@ -57,7 +57,6 @@ import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 
-
 /**
  * Created by Mauricio on 17/01/2017.
  */
@@ -76,20 +75,20 @@ public class JupyterServer {
 	private Gson parser;
 	private Communication communication;
 	private ZMQ.Poller poller;
-	
+
 	private final ILanguageProtocol language;
 	private final LanguageInfo info;
-	
+
 	// TODO: figure out if we can do without the StringWriters
 	private final StringWriter stdout = new StringWriter();
 	private final StringWriter stderr = new StringWriter();
-	private final OutputStream outStream = new WriterOutputStream(stdout, UTF8, 4096, true); 
-	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true); 
-	
+	private final OutputStream outStream = new WriterOutputStream(stdout, UTF8, 4096, true);
+	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true);
+
 	private int executionNumber;
-	
+
 	private Mac sha256;
-	
+
 	public JupyterServer(String connectionFilePath, ILanguageProtocol language, LanguageInfo info) throws Exception {
 		parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 		connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
@@ -107,11 +106,16 @@ public class JupyterServer {
 			communication = new Communication(connection, context);
 			// Create the poll to deal with the 4 different sockets
 			poller = context.createPoller(4);
-			
+
 			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
+
+			// give the client some time to connect all sockets
+			// this avoids a bug in the client which would result
+			// in kernel_info_reply messages to be ignored by the client
+			try { Thread.sleep(3000); } catch (InterruptedException e) { }
 			
 			while (true) {
 				poller.poll();
