@@ -22,9 +22,9 @@ public class Header {
 
     private String msgType = "";
 
-    private String version = "";
+    private String version = VERSION;
 
-    private String username = "";
+    private String username = USERNAME;
 
     private String date = "";
 
