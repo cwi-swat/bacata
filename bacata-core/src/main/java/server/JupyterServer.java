@@ -114,11 +114,6 @@ public class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 
-			// give the client some time to connect all sockets
-			// this avoids a bug in the client which would result
-			// in kernel_info_reply messages to be ignored by the client
-			try { Thread.sleep(3000); } catch (InterruptedException e) { }
-
 			while (true) {
 				poller.poll();
 				
@@ -180,11 +175,6 @@ public class JupyterServer {
 		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
 		switch (parentHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
-				if (!initialized) {
-					statusUpdate(message.getHeader(), Status.STARTING);	
-					statusUpdate(message.getHeader(), Status.IDLE);	
-					initialized = true;
-				}
 				statusUpdate(message.getHeader(), Status.BUSY);
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);

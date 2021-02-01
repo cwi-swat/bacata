@@ -18,17 +18,17 @@ public class Header {
     // Fields
     // -----------------------------------------------------------------
 
-    private String session;
+    private String session = "";
 
-    private String msgType;
+    private String msgType = "";
 
-    private String version;
+    private String version = "";
 
-    private String username;
+    private String username = "";
 
-    private String date;
+    private String date = "";
 
-    private String msgId;
+    private String msgId = "";
 
     // -----------------------------------------------------------------
     // Constructor
