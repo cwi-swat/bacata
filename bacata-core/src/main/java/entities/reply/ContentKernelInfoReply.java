@@ -37,7 +37,10 @@ public class ContentKernelInfoReply extends Content {
 	private String implementationVersion;
 
     @SuppressWarnings("unused")
-	private LanguageInfo languageInfo;
+    private LanguageInfo languageInfo;
+    
+    @SuppressWarnings("unused")
+    private String status = "ok";
 
     @SuppressWarnings("unused")
 	private String banner;
