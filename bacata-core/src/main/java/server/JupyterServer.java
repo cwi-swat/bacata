@@ -94,6 +94,7 @@ public class JupyterServer {
 	public JupyterServer(String connectionFilePath, ILanguageProtocol language, LanguageInfo info) throws Exception {
 		parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 		connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
+		connection.printConnectionSettings();
 		sha256 = Mac.getInstance(HASH_ALGORITHM);
 		SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
 		sha256.init(secretKey);
