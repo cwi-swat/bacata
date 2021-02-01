@@ -114,15 +114,7 @@ public class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 
-			// try {
-			// 	Thread.sleep(3000);
-			// 	statusUpdate(new Header(), Status.STARTING);	
-			// 	statusUpdate(new Header(), Status.IDLE);	
-
-			// } catch (InterruptedException e) {
-			// 	// TODO Auto-generated catch block
-			// 	e.printStackTrace();
-			// }
+			communication.notifyAll();
 			
 			while (true) {
 				poller.poll();
