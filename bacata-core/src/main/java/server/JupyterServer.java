@@ -114,8 +114,6 @@ public class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 
-			communication.notifyAll();
-			
 			while (true) {
 				poller.poll();
 				
