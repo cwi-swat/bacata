@@ -105,15 +105,15 @@ public class JupyterServer {
 	}
 
 	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException {
-		try (ZContext context = new ZContext()) {
+		try (ZContext context = new ZContext(3)) {
 			communication = new Communication(connection, context);
 			// Create the poll to deal with the 4 different sockets
 			poller = context.createPoller(4);
 
-			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN | ZMQ.Poller.POLLOUT);
+			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN | ZMQ.Poller.POLLOUT);
+			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN | ZMQ.Poller.POLLOUT);
+			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN | ZMQ.Poller.POLLOUT);
 
 			while (true) {
 				poller.poll();
