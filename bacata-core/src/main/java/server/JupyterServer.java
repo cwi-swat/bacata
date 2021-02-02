@@ -33,6 +33,7 @@ import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
+import org.zeromq.ZMQ.Socket;
 
 import communication.Communication;
 import communication.Connection;
@@ -181,13 +182,11 @@ public class JupyterServer {
 		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
 		switch (parentHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
-				statusUpdate(message.getHeader(), Status.BUSY);
+				statusUpdate(communication.getShellSocket(), message.getHeader(), Status.BUSY);
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
-				// header.setMsgId(parentHeader.getMsgId());
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
-				// sendMessage(communication.getIOPubSocket(), header, parentHeader, contentReply);
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
-				statusUpdate(message.getHeader(), Status.IDLE);
+				statusUpdate(communication.getShellSocket(), message.getHeader(), Status.IDLE);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
 				header = new Header(MessageType.SHUTDOWN_REPLY, parentHeader);
@@ -288,9 +287,13 @@ public class JupyterServer {
 	}
 
 	private void statusUpdate(Header parentHeader, String status) {
+		statusUpdate(communication.getIOPubSocket(), parentHeader, status);
+	}
+
+	private void statusUpdate(Socket socket, Header parentHeader, String status) {
 		Header header = new Header(parentHeader.getSession(), MessageType.STATUS, parentHeader.getVersion(), parentHeader.getUsername());
 		ContentStatus content = new ContentStatus(status);
-		sendMessage(communication.getIOPubSocket(), header, parentHeader, content);
+		sendMessage(socket, header, parentHeader, content);
 	}
 
 	private void replyExecuteRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
