@@ -105,15 +105,15 @@ public class JupyterServer {
 	}
 
 	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException {
-		try (ZContext context = new ZContext(3)) {
+		try (ZContext context = new ZContext(2)) {
 			communication = new Communication(connection, context);
 			// Create the poll to deal with the 4 different sockets
 			poller = context.createPoller(4);
 
-			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN | ZMQ.Poller.POLLOUT);
-			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN | ZMQ.Poller.POLLOUT);
-			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN | ZMQ.Poller.POLLOUT);
-			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN | ZMQ.Poller.POLLOUT);
+			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
+			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 
 			while (true) {
 				poller.poll();
@@ -154,7 +154,7 @@ public class JupyterServer {
 	 * @return Message with the information of the received data.
 	 */
 	private Message getMessage(ZMQ.Socket socket) throws RuntimeException {
-		ZMsg zmsg = ZMsg.recvMsg(socket, false); // Non-blocking recv
+		ZMsg zmsg = ZMsg.recvMsg(socket, true); // Non-blocking recv
 		
 		ZFrame[] zFrames = new ZFrame[zmsg.size()];
 		zmsg.toArray(zFrames);
