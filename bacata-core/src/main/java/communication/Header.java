@@ -59,7 +59,7 @@ public class Header {
     
     public Header(String msgType, Header parentHeader) {
 		this.session = parentHeader.getSession();
-		this.msgType = msgType;
+		this.msgType = parentHeader.msgType;
         this.version = parentHeader.getVersion();
         this.username = parentHeader.getUsername();
         
