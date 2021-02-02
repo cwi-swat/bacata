@@ -118,9 +118,9 @@ public class JupyterServer {
 
 			while (true) {
 				poller.poll();
-				
+
 				if (!initialized) {
-					statusUpdate(new Header(), Status.STARTING);	
+					statusUpdate(new Header(), Status.STARTING);
 					initialized = true;
 				}
 
@@ -131,11 +131,11 @@ public class JupyterServer {
 				}
 
 				if (poller.pollin(1)) {
-					Message message = getMessage(communication.getControlSocket());					
+					Message message = getMessage(communication.getControlSocket());
 					System.err.println("received control: " + message);
 					processControlMessage(message);
 				}
-				
+
 				if (poller.pollin(2)) {
 					Message message = getMessage(communication.getIOPubSocket());
 					System.err.println("received IO: " + message);
@@ -150,23 +150,26 @@ public class JupyterServer {
 	}
 
 	/**
-	 * This method reads the data received from the socket given as parameter and encapsulates it into a Message object.
+	 * This method reads the data received from the socket given as parameter and
+	 * encapsulates it into a Message object.
+	 * 
 	 * @param socket
 	 * @return Message with the information of the received data.
 	 */
 	private Message getMessage(ZMQ.Socket socket) throws RuntimeException {
 		ZMsg zmsg = ZMsg.recvMsg(socket, false); // Non-blocking recv
-		
+
 		ZFrame[] zFrames = new ZFrame[zmsg.size()];
 		zmsg.toArray(zFrames);
-		
-		// Jupyter description says that the client should always send at least 7 chunks of information.
+
+		// Jupyter description says that the client should always send at least 7 chunks
+		// of information.
 		if (zmsg.size() < 7) {
 			throw new RuntimeException("Missing information from the Jupyter client");
 		}
 		return new Message(zFrames);
 	}
-	
+
 	private void processControlMessage(Message message) {
 		// TODO?
 		if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
@@ -176,7 +179,7 @@ public class JupyterServer {
 			sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply);
 		}
 	}
-	
+
 	private void processShellMessage(Message message) {
 		Content content, contentReply;
 		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
@@ -185,6 +188,12 @@ public class JupyterServer {
 				statusUpdate(message.getHeader(), Status.BUSY);
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					System.err.println("sleep interrupted");
+					e.printStackTrace();
+				}
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
 				statusUpdate(message.getHeader(), Status.IDLE);
 				break;
