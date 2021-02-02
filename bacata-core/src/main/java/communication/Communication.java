@@ -55,8 +55,6 @@ public class Communication {
         this.control.bind(connection.getControlURI());
         this.stdin.bind(connection.getStdinURI());
         this.heartBeat.bind(connection.getHbURI());
-
-        this.shell.setImmediate(false);
     }
 
     // -----------------------------------------------------------------
