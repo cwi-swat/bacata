@@ -186,6 +186,7 @@ public class JupyterServer {
 				header.setMsgId(parentHeader.getMsgId());
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
 				sendMessage(communication.getIOPubSocket(), header, parentHeader, contentReply);
+				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
 				statusUpdate(message.getHeader(), Status.IDLE);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
