@@ -186,15 +186,9 @@ public class JupyterServer {
 		switch (parentHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
 				statusUpdate(message.getHeader(), Status.BUSY);
-				try {
-					Thread.sleep(3000);
-				} catch (InterruptedException e) {
-					System.err.println("sleep interrupted");
-					e.printStackTrace();
-				}
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
+				header.setMsgId(parentHeader.getMsgId());
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
-				
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
 				statusUpdate(message.getHeader(), Status.IDLE);
 				break;
