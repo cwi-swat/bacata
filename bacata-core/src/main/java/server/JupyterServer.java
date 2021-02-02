@@ -154,7 +154,7 @@ public class JupyterServer {
 	 * @return Message with the information of the received data.
 	 */
 	private Message getMessage(ZMQ.Socket socket) throws RuntimeException {
-		ZMsg zmsg = ZMsg.recvMsg(socket, true); // Non-blocking recv
+		ZMsg zmsg = ZMsg.recvMsg(socket, false); // Non-blocking recv
 		
 		ZFrame[] zFrames = new ZFrame[zmsg.size()];
 		zmsg.toArray(zFrames);
@@ -269,7 +269,7 @@ public class JupyterServer {
 		socket.sendMore(parser.toJson(header).getBytes());
 		socket.sendMore(parser.toJson(parent));
 		socket.sendMore(parser.toJson(metadata));
-		socket.send(parser.toJson(content), ZMQ.DONTWAIT);
+		socket.send(parser.toJson(content), 0 /* ZMQ.DONTWAIT*/);
 	}
 	
 	private void heartbeatChannel() {
