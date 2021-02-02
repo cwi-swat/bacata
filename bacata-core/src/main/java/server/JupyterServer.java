@@ -183,13 +183,9 @@ public class JupyterServer {
 			case MessageType.KERNEL_INFO_REQUEST:
 				statusUpdate(message.getHeader(), Status.BUSY);
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
-				System.err.println("INFO REQUEST: " + message.getRawContent());
 				header.setMsgId(parentHeader.getMsgId());
-
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
+				sendMessage(communication.getIOPubSocket(), header, parentHeader, contentReply);
 				statusUpdate(message.getHeader(), Status.IDLE);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
@@ -296,7 +292,7 @@ public class JupyterServer {
 		sendMessage(communication.getIOPubSocket(), header, parentHeader, content);
 	}
 
-	private void replyRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
+	private void replyExecuteRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
 		Map<String, String> res = data.entrySet().stream()
 			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
@@ -322,7 +318,7 @@ public class JupyterServer {
 					processStreams(parentHeader, data, metadata, session); // stdout writing
 					
 					if(!data.isEmpty()) {
-						replyRequest(parentHeader, session, data, metadata); // // Returns the result
+						replyExecuteRequest(parentHeader, session, data, metadata); // // Returns the result
 					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
