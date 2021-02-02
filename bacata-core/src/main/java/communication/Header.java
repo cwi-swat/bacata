@@ -59,12 +59,12 @@ public class Header {
     
     public Header(String msgType, Header parentHeader) {
 		this.session = parentHeader.getSession();
-		this.msgType = parentHeader.msgType;
+		this.msgType = msgType;
         this.version = parentHeader.getVersion();
         this.username = parentHeader.getUsername();
         
         this.date = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
-        this.msgId = String.valueOf(UUID.randomUUID());
+        this.msgId = parentHeader.getMsgId();
     }
 
     // -----------------------------------------------------------------
