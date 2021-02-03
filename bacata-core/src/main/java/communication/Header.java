@@ -64,16 +64,13 @@ public class Header {
         this.username = parentHeader.getUsername();
         
         this.date = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
-        this.msgId = parentHeader.getMsgId();
+        this.msgId = String.valueOf(UUID.randomUUID());
     }
 
     // -----------------------------------------------------------------
     // Methods
     // -----------------------------------------------------------------
 
-    public void setMsgId(String msgId) {
-        this.msgId = msgId;
-    }
     public String getSession() {
         return session;
     }
