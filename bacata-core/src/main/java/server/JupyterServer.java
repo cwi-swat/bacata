@@ -120,7 +120,7 @@ public class JupyterServer {
 				poller.poll();
 
 				if (!initialized) {
-					statusUpdate(new Header(), Status.STARTING);
+					statusUpdate(Status.STARTING);
 					initialized = true;
 				}
 
@@ -185,11 +185,11 @@ public class JupyterServer {
 		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
 		switch (parentHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
-				statusUpdate(message.getHeader(), Status.BUSY);
+				statusUpdate(Status.BUSY);
 				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
 				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
 				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
-				statusUpdate(message.getHeader(), Status.IDLE);
+				statusUpdate(Status.IDLE);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
 				header = new Header(MessageType.SHUTDOWN_REPLY, parentHeader);
@@ -205,10 +205,10 @@ public class JupyterServer {
 				sendMessage(communication.getShellSocket(),header , parentHeader, contentReply);
 				break;
 			case MessageType.EXECUTE_REQUEST:
-				statusUpdate(message.getHeader(), Status.BUSY);
+				statusUpdate(Status.BUSY);
 				content = parser.fromJson(message.getRawContent(), ContentExecuteRequest.class);
 				processExecuteRequest((ContentExecuteRequest) content, message);
-				statusUpdate(message.getHeader(), Status.IDLE);
+				statusUpdate(Status.IDLE);
 				break;
 			case MessageType.HISTORY_REQUEST:
 				processHistoryRequest(message);
@@ -289,12 +289,12 @@ public class JupyterServer {
 		return new String(Hex.encodeHex(sha256.doFinal(message)));
 	}
 
-	private void statusUpdate(Header parentHeader, String status) {
-		statusUpdate(communication.getIOPubSocket(), parentHeader, status);
+	private void statusUpdate(String status) {
+		statusUpdate(communication.getIOPubSocket(), status);
 	}
 
-	private void statusUpdate(Socket socket, Header parentHeader, String status) {
-		Header header = new Header(parentHeader.getSession(), MessageType.STATUS, parentHeader.getVersion(), parentHeader.getUsername());
+	private void statusUpdate(Socket socket, String status) {
+		Header header = new Header();
 		ContentStatus content = new ContentStatus(status);
 		sendMessage(socket, header, new Object(), content);
 	}
