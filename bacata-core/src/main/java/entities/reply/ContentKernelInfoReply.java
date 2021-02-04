@@ -28,6 +28,9 @@ public class ContentKernelInfoReply extends Content {
     // -----------------------------------------------------------------
 
     @SuppressWarnings("unused")
+    private String status = "ok";
+
+    @SuppressWarnings("unused")
 	private String protocolVersion;
 
     @SuppressWarnings("unused")
@@ -39,9 +42,6 @@ public class ContentKernelInfoReply extends Content {
     @SuppressWarnings("unused")
     private LanguageInfo languageInfo;
     
-    @SuppressWarnings("unused")
-    private String status = "ok";
-
     @SuppressWarnings("unused")
 	private String banner;
     
