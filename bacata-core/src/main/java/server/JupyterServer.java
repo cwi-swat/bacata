@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -32,8 +34,8 @@ import org.rascalmpl.repl.ILanguageProtocol;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZMsg;
 
 import communication.Communication;
 import communication.Connection;
@@ -88,17 +90,13 @@ public class JupyterServer {
 
 	private int executionNumber;
 
-	private Mac sha256;
-
-	private boolean initialized = false;
+	private SecretKeySpec secret;
 
 	public JupyterServer(String connectionFilePath, ILanguageProtocol language, LanguageInfo info) throws Exception {
 		parser = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 		connection = parser.fromJson(new FileReader(connectionFilePath), Connection.class);
 		connection.printConnectionSettings();
-		sha256 = Mac.getInstance(HASH_ALGORITHM);
-		SecretKeySpec secretKey = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
-		sha256.init(secretKey);
+		SecretKeySpec secret = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
 		this.language = language;
 		this.info = info;
 		this.language.initialize(new ByteArrayInputStream(new byte[0]), outStream, errStream);
@@ -116,14 +114,10 @@ public class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 
-			while (true) {
-				System.err.println("polling..." + System.currentTimeMillis());
-				poller.poll();
+			statusUpdate(new Header(), Status.STARTING);
 
-				if (!initialized) {
-					statusUpdate(new Header(), Status.STARTING);
-					initialized = true;
-				}
+			while (true) {
+				poller.poll();
 
 				if (poller.pollin(0)) {
 					Message message = getMessage(communication.getShellSocket());
@@ -158,7 +152,7 @@ public class JupyterServer {
 	 * @return Message with the information of the received data.
 	 */
 	private Message getMessage(ZMQ.Socket socket) throws RuntimeException {
-		ZMsg zmsg = ZMsg.recvMsg(socket, false); // Non-blocking recv
+		ZMsg zmsg = ZMsg.recvMsg(socket, true /* was false */); // Non-blocking recv
 
 		ZFrame[] zFrames = new ZFrame[zmsg.size()];
 		zmsg.toArray(zFrames);
@@ -183,42 +177,48 @@ public class JupyterServer {
 
 	private void processShellMessage(Message message) {
 		Content content, contentReply;
-		Header header, parentHeader = message.getHeader(); // Parent header for the reply.
-		switch (parentHeader.getMsgType()) {
+		Header replyHeader;
+		Header requestHeader = message.getHeader(); // Parent header for the reply.
+		switch (requestHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
-				statusUpdate(parentHeader, Status.BUSY);
-				header = new Header(MessageType.KERNEL_INFO_REPLY, parentHeader);
-				contentReply = (ContentKernelInfoReply) processKernelInfoRequest(message);
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
-				statusUpdate(parentHeader, Status.IDLE);
+				statusUpdate(requestHeader, Status.BUSY);
+				replyHeader = new Header(MessageType.KERNEL_INFO_REPLY, requestHeader);
+				contentReply = new ContentKernelInfoReply(info);
+				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, contentReply);
+				statusUpdate(requestHeader, Status.IDLE);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
-				header = new Header(MessageType.SHUTDOWN_REPLY, parentHeader);
+				replyHeader = new Header(MessageType.SHUTDOWN_REPLY, requestHeader);
 				content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
 				contentReply = (ContentShutdownReply) processShutdownRequest((ContentShutdownRequest) content);
-				closeAllSockets();
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
+				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, contentReply);
+
+				if (!((ContentShutdownRequest) content).getRestart()) {
+					closeAllSockets();
+					System.exit(0);
+				}
+
 				break;
 			case MessageType.IS_COMPLETE_REQUEST:
-				header = createHeader(message.getHeader().getSession(), MessageType.IS_COMPLETE_REPLY);
+				replyHeader = createHeader(message.getHeader().getSession(), MessageType.IS_COMPLETE_REPLY);
 				content = parser.fromJson(message.getRawContent(), ContentIsCompleteRequest.class);
 				contentReply = processIsCompleteRequest((ContentIsCompleteRequest) content);
-				sendMessage(communication.getShellSocket(),header , parentHeader, contentReply);
+				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, contentReply);
 				break;
 			case MessageType.EXECUTE_REQUEST:
-				statusUpdate(parentHeader, Status.BUSY);
+				statusUpdate(requestHeader, Status.BUSY);
 				content = parser.fromJson(message.getRawContent(), ContentExecuteRequest.class);
 				processExecuteRequest((ContentExecuteRequest) content, message);
-				statusUpdate(parentHeader, Status.IDLE);
+				statusUpdate(requestHeader, Status.IDLE);
 				break;
 			case MessageType.HISTORY_REQUEST:
 				processHistoryRequest(message);
 				break;
 			case MessageType.COMPLETE_REQUEST:
-				header = new Header(MessageType.COMPLETE_REPLY, parentHeader);
+				replyHeader = new Header(MessageType.COMPLETE_REPLY, requestHeader);
 				content = parser.fromJson(message.getRawContent(), ContentCompleteRequest.class);
 				contentReply = processCompleteRequest((ContentCompleteRequest) content);
-				sendMessage(communication.getShellSocket(), header, parentHeader, contentReply);
+				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, contentReply);
 				break;
 			case MessageType.INSPECT_REQUEST:
 				break;
@@ -242,9 +242,8 @@ public class JupyterServer {
 		communication.getIOPubSocket().close();
 		communication.getShellSocket().close();
 		communication.getStdinSocket().close();
-		System.exit(-1);
 	}
-	
+
 	private void listenHeartbeatSocket() {
 		@SuppressWarnings("unused")
 		byte[] ping;
@@ -257,37 +256,58 @@ public class JupyterServer {
 		HashMap<String, String> metadata = new HashMap<String, String>();
 		sendMessage(socket, header, parent, metadata, content);
 	}
+
 	/**
-	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
+	 * This method sends a message according to the Wire Protocol through the socket
+	 * received as parameter.
 	 */
-	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
-		System.err.println("sending message with header: " + header + " and content: " +  parser.toJson(content));
-		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
-		String signedMessage = signMessage(message.getBytes());
+	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata,
+			Content content) {
 		
-		// Send the message
-		socket.sendMore(header.getSession().getBytes());
-		socket.sendMore(DELIMITER.getBytes());
-		socket.sendMore(signedMessage.getBytes());
-		socket.sendMore(parser.toJson(header).getBytes());
-		socket.sendMore(parser.toJson(parent));
-		socket.sendMore(parser.toJson(metadata));
-		socket.send(parser.toJson(content), 0 /* ZMQ.DONTWAIT*/);
+
+		try {
+			// Serialize the message as JSON
+			String jsonHeader = parser.toJson(header);
+			String jsonParent = parser.toJson(parent);
+			String jsonMetaData = parser.toJson(metadata);
+			String jsonContent = parser.toJson(content);
+
+			System.err.println("sending message..." 
+				+ "\n\theader: " + jsonHeader 
+				+ "\n\tparent: " + jsonParent 
+				+ "\n\tcontent: " + jsonContent);
+
+			// Sign the message
+			Mac encoder = Mac.getInstance(HASH_ALGORITHM);
+			encoder.init(secret);
+			encoder.update(jsonHeader.getBytes());
+			encoder.update(jsonParent.getBytes());
+			encoder.update(jsonMetaData.getBytes());
+			encoder.update(jsonContent.getBytes());
+			String signedMessage = new String(Hex.encodeHex(encoder.doFinal()));
+
+			// Send the message
+			socket.sendMore(header.getSession().getBytes());
+			socket.sendMore(DELIMITER.getBytes());
+			socket.sendMore(signedMessage.getBytes());
+			socket.sendMore(jsonHeader.getBytes());
+			socket.sendMore(jsonParent);
+			socket.sendMore(jsonMetaData);
+			socket.send(jsonContent, ZMQ.DONTWAIT);
+		} catch (NoSuchAlgorithmException | InvalidKeyException e) {
+			throw new RuntimeException("this should never happen", e);
+		} 
 	}
-	
+
 	private void heartbeatChannel() {
 		System.err.println("replying heartbeat");
 		communication.getHeartbeatSocket().send(HEARTBEAT_MESSAGE);
 	}
-	
+
 	private Header createHeader(String pSession, String pMessageType) {
 		String timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
 		String msgid = String.valueOf(UUID.randomUUID());
 		return new Header(pSession, pMessageType, Header.VERSION, Header.USERNAME, timestamp, msgid);
-	}
-
-	private String signMessage(byte[] message) {
-		return new String(Hex.encodeHex(sha256.doFinal(message)));
 	}
 
 	private void statusUpdate(Header parentHeader, String status) {
@@ -295,17 +315,20 @@ public class JupyterServer {
 	}
 
 	private void statusUpdate(Socket socket, Header parentHeader, String status) {
-		Header header = new Header(parentHeader.getSession(), MessageType.STATUS, parentHeader.getVersion(), parentHeader.getUsername());
+		Header header = new Header(parentHeader.getSession(), MessageType.STATUS, parentHeader.getVersion(),
+				parentHeader.getUsername());
 		ContentStatus content = new ContentStatus(status);
 		sendMessage(socket, header, parentHeader, content);
 	}
 
-	private void replyExecuteRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
+	private void replyExecuteRequest(Header parentHeader, String session, Map<String, InputStream> data,
+			Map<String, String> metadata) {
 		Map<String, String> res = data.entrySet().stream()
-			.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
+				.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
-		sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader, content);
+		sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader,
+				content);
 	}
 
 	private void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Message message) {
@@ -313,43 +336,46 @@ public class JupyterServer {
 		Map<String, String> metadata = message.getMetadata();
 		Map<String, InputStream> data = new HashMap<>();
 		String session = message.getHeader().getSession();
-		
+
 		if (!contentExecuteRequest.isSilent()) {
 			if (contentExecuteRequest.isStoreHistory()) {
 				header = new Header(MessageType.EXECUTE_INPUT, parentHeader);
-				sendMessage(communication.getIOPubSocket(), header, parentHeader, new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				sendMessage(communication.getIOPubSocket(), header, parentHeader,
+						new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 				try {
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata); // Execute user's code
-					
-					sendMessage(communication.getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parentHeader), parentHeader, new ContentExecuteReplyOk(executionNumber));
+
+					sendMessage(communication.getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parentHeader),
+							parentHeader, new ContentExecuteReplyOk(executionNumber));
 
 					processStreams(parentHeader, data, metadata, session); // stdout writing
-					
-					if(!data.isEmpty()) {
+
+					if (!data.isEmpty()) {
 						replyExecuteRequest(parentHeader, session, data, metadata); // // Returns the result
 					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
-			
-			executionNumber ++;
-		}
-		else {
+
+			executionNumber++;
+		} else {
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
 			header = new Header(MessageType.EXECUTE_REPLY, parentHeader);
-			sendMessage(communication.getShellSocket(), header, parentHeader, new ContentExecuteReplyOk(executionNumber));
+			sendMessage(communication.getShellSocket(), header, parentHeader,
+					new ContentExecuteReplyOk(executionNumber));
 		}
 	}
-	
+
 	@SuppressWarnings("resource")
 	private String convertStreamToString(java.io.InputStream inputStream) {
-	    Scanner s = new Scanner(inputStream, "UTF-8").useDelimiter("\\A");
-	    return s.hasNext() ? s.next() : "";
+		Scanner s = new Scanner(inputStream, "UTF-8").useDelimiter("\\A");
+		return s.hasNext() ? s.next() : "";
 	}
 
-	private void processStreams(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata, String session) {
+	private void processStreams(Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata,
+			String session) {
 		if (!stdout.toString().trim().equals("")) {
 			processStreamsReply(ContentStream.STD_OUT, parentHeader, data, metadata, session);
 		}
@@ -358,32 +384,36 @@ public class JupyterServer {
 		}
 	}
 
-	private void processStreamsReply(String stream, Header parentHeader, Map<String, InputStream> data, Map<String, String> metadata, String session) {
+	private void processStreamsReply(String stream, Header parentHeader, Map<String, InputStream> data,
+			Map<String, String> metadata, String session) {
 		String logs = stream.equals(ContentStream.STD_OUT) ? stdout.toString() : stderr.toString();
 		if (logs.contains("http://")) {
-			metadata.put(MIME_TYPE_HTML, stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs)) : createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
-			sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader, new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
-		}
-		else {
-			sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader, new ContentStream(stream, stdout.toString()));
+			metadata.put(MIME_TYPE_HTML,
+					stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs))
+							: createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
+			sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader,
+					new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
+		} else {
+			sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader,
+					new ContentStream(stream, stdout.toString()));
 		}
 		flushStreams();
 	}
 
-	private String replaceLocs2html(String logs){
+	private String replaceLocs2html(String logs) {
 		String pattern = "(?s)(.*)(\\|)(.+)(\\|)(.*$)";
-		if (logs.matches(pattern)){
+		if (logs.matches(pattern)) {
 			logs = logs.replaceAll("\n", "<br>");
-			String prefix = logs.replaceAll(pattern,"$1");
-			String url = logs.replaceAll(pattern,"$3");
-			String suffix = logs.replaceAll(pattern,"$5");
-			return prefix + "<a href=\""+ url +"\" target=\"_blank\">"+url+"</a>" + suffix;
+			String prefix = logs.replaceAll(pattern, "$1");
+			String url = logs.replaceAll(pattern, "$3");
+			String suffix = logs.replaceAll(pattern, "$5");
+			return prefix + "<a href=\"" + url + "\" target=\"_blank\">" + url + "</a>" + suffix;
 		}
 		return logs;
 	}
-	
-	private String createDiv(String clazz, String body){
-		return "<div class = \""+ clazz +"\">"+ (body.equals("")||body==null ? "</div>" : body+"</div>");
+
+	private String createDiv(String clazz, String body) {
+		return "<div class = \"" + clazz + "\">" + (body.equals("") || body == null ? "</div>" : body + "</div>");
 	}
 
 	private void flushStreams() {
@@ -396,10 +426,6 @@ public class JupyterServer {
 	private void processHistoryRequest(Message message) {
 		// TODO This is only for clients to explicitly request history from a kernel
 		// TODO add history to ILanguageProtocol or implement a generic version here
-	}
-	
-	private ContentKernelInfoReply processKernelInfoRequest(Message message) {
-		return new ContentKernelInfoReply(info);
 	}
 
 	private ContentShutdownReply processShutdownRequest(ContentShutdownRequest contentShutdown) {
