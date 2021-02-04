@@ -101,7 +101,7 @@ public class JupyterServer {
 		this.info = info;
 		this.language.initialize(new ByteArrayInputStream(new byte[0]), outStream, errStream);
 		executionNumber = 1;
-	}
+	} 
 
 	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException {
 		try (ZContext context = new ZContext(2)) {
@@ -152,7 +152,7 @@ public class JupyterServer {
 	 * @return Message with the information of the received data.
 	 */
 	private Message getMessage(ZMQ.Socket socket) throws RuntimeException {
-		ZMsg zmsg = ZMsg.recvMsg(socket, true /* was false */); // Non-blocking recv
+		ZMsg zmsg = ZMsg.recvMsg(socket, false); // Non-blocking recv
 
 		ZFrame[] zFrames = new ZFrame[zmsg.size()];
 		zmsg.toArray(zFrames);
@@ -261,10 +261,7 @@ public class JupyterServer {
 	 * This method sends a message according to the Wire Protocol through the socket
 	 * received as parameter.
 	 */
-	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata,
-			Content content) {
-		
-
+	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
 		try {
 			// Serialize the message as JSON
 			String jsonHeader = parser.toJson(header);
