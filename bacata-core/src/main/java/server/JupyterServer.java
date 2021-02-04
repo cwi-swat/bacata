@@ -252,14 +252,14 @@ public class JupyterServer {
 		}
 	}
 
-	private void sendMessage(ZMQ.Socket socket, Header header, Object parent, Content content) {
+	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
 		HashMap<String, String> metadata = new HashMap<String, String>();
 		sendMessage(socket, header, parent, metadata, content);
 	}
 	/**
 	 * This method sends a message according to the Wire Protocol through the socket received as parameter.
 	 */
-	private void sendMessage(ZMQ.Socket socket, Header header, Object parent, HashMap<String, String> metadata, Content content) {
+	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
 		System.err.println("sending message with header: " + header + " and content: " +  parser.toJson(content));
 		String message = parser.toJson(header) + parser.toJson(parent) + parser.toJson(metadata) + parser.toJson(content);
 		String signedMessage = signMessage(message.getBytes());
@@ -296,7 +296,7 @@ public class JupyterServer {
 	private void statusUpdate(Socket socket, Header parentHeader, String status) {
 		Header header = new Header(parentHeader.getSession(), MessageType.STATUS, parentHeader.getVersion(), parentHeader.getUsername());
 		ContentStatus content = new ContentStatus(status);
-		sendMessage(socket, header, new Object(), content);
+		sendMessage(socket, header, parentHeader, content);
 	}
 
 	private void replyExecuteRequest(Header parentHeader, String session, Map<String, InputStream> data, Map<String, String> metadata) {
