@@ -9,7 +9,6 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -198,35 +197,35 @@ public class JupyterServer {
 		}
 	}
 
-	private void processKernelInfoRequest(Header requestHeader) {
-		sendStatus(requestHeader, Status.BUSY);
+	private void processKernelInfoRequest(Header parent) {
+		sendStatus(parent, Status.BUSY);
 		sendMessage(
 			communication.getShellSocket(), 
-			new Header(MessageType.KERNEL_INFO_REPLY, requestHeader), 
-			requestHeader, 
+			new Header(MessageType.KERNEL_INFO_REPLY, parent), 
+			parent, 
 			new ContentKernelInfoReply(info));
-		sendStatus(requestHeader, Status.IDLE);
+		sendStatus(parent, Status.IDLE);
 	}
 
-	private void processIsCompleteRequest(ContentIsCompleteRequest content, Header requestHeader) {
+	private void processIsCompleteRequest(ContentIsCompleteRequest content, Header parent) {
 		boolean isComplete = language.isStatementComplete(content.getCode());
 
 		sendMessage(
 			communication.getShellSocket(), 
-			new Header(MessageType.IS_COMPLETE_REPLY, requestHeader), 
-			requestHeader, 
+			new Header(MessageType.IS_COMPLETE_REPLY, parent), 
+			parent, 
 			new ContentIsCompleteReply(isComplete ? Status.COMPLETE : Status.INCOMPLETE, isComplete ? "" : "??????"));
 	}
 
-	private void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Header parentHeader) {
-		sendStatus(parentHeader, Status.BUSY);
+	private void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Header parent) {
+		sendStatus(parent, Status.BUSY);
 
 		if (!contentExecuteRequest.isSilent()) {
 			if (contentExecuteRequest.isStoreHistory()) { // why this condition?
 				sendMessage(
 					communication.getIOPubSocket(), 
-					new Header(MessageType.EXECUTE_INPUT, parentHeader), 
-					parentHeader,
+					new Header(MessageType.EXECUTE_INPUT, parent), 
+					parent,
 					new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 
 				try {
@@ -235,7 +234,7 @@ public class JupyterServer {
 			
 					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata); 
 
-					sendStreamData(parentHeader); 
+					sendStreamData(parent); 
 
 					if (!data.isEmpty()) {
 						Map<String, String> output = data.entrySet().stream()
@@ -243,15 +242,15 @@ public class JupyterServer {
 
 						sendMessage(
 							communication.getIOPubSocket(), 
-							new Header(MessageType.EXECUTE_RESULT, parentHeader), 
-							parentHeader, 
+							new Header(MessageType.EXECUTE_RESULT, parent), 
+							parent, 
 							new ContentExecuteResult(executionNumber, output, metadata));
 					}
 
 					sendMessage(
 						communication.getShellSocket(), 
-						new Header(MessageType.EXECUTE_REPLY, parentHeader),
-						parentHeader, 
+						new Header(MessageType.EXECUTE_REPLY, parent),
+						parent, 
 						new ContentExecuteReplyOk(executionNumber));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -264,15 +263,15 @@ public class JupyterServer {
 			// Don't have an execute_result.
 			sendMessage(
 				communication.getShellSocket(), 
-				new Header(MessageType.EXECUTE_REPLY, parentHeader), 
-				parentHeader,
+				new Header(MessageType.EXECUTE_REPLY, parent), 
+				parent,
 				new ContentExecuteReplyOk(executionNumber));
 		}
 
-		sendStatus(parentHeader, Status.IDLE);
+		sendStatus(parent, Status.IDLE);
 	}
 
-	private void processShutdownRequest(Socket socket, ContentShutdownRequest shutdown, Header requestHeader) {
+	private void processShutdownRequest(Socket socket, ContentShutdownRequest shutdown, Header parent) {
 		boolean restart = shutdown.getRestart();
 
 		if (!restart) {
@@ -281,8 +280,8 @@ public class JupyterServer {
 				
 		sendMessage(
 			socket, 
-			new Header(MessageType.SHUTDOWN_REPLY, requestHeader), 
-			requestHeader, 
+			new Header(MessageType.SHUTDOWN_REPLY, parent), 
+			parent, 
 			new ContentShutdownReply(restart));
 
 		if (!restart) {
