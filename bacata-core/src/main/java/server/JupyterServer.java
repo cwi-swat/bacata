@@ -62,7 +62,7 @@ import entities.util.Status;
  * Created by Mauricio on 17/01/2017.
  */
 public class JupyterServer {
-	private static final HashMap<String, String> EMPTY_MAP = (HashMap<String, String>) Collections.EMPTY_MAP;
+	private static final Map<String, String> EMPTY_MAP = (Map<String, String>) Collections.EMPTY_MAP;
 	private static final String DELIMITER = "<IDS|MSG>";
 	private static final String HEARTBEAT_MESSAGE = "ping";
 	private static final String ENCODE_CHARSET = "UTF-8";
@@ -252,7 +252,7 @@ public class JupyterServer {
 	}
 
 	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
-		HashMap<String, String> metadata = EMPTY_MAP;
+		Map<String, String> metadata = EMPTY_MAP;
 		sendMessage(socket, header, parent, metadata, content);
 	}
 
@@ -260,7 +260,7 @@ public class JupyterServer {
 	 * This method sends a message according to the Wire Protocol through the socket
 	 * received as parameter.
 	 */
-	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, HashMap<String, String> metadata, Content content) {
+	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Map<String, String> metadata, Content content) {
 		try {
 			// Serialize the message as JSON
 			String jsonHeader = parser.toJson(header);
