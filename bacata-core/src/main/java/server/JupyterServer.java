@@ -9,13 +9,11 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -64,15 +62,16 @@ import entities.util.Status;
  * Created by Mauricio on 17/01/2017.
  */
 public class JupyterServer {
-	private final static String DELIMITER = "<IDS|MSG>";
-	private final static String HEARTBEAT_MESSAGE = "ping";
-	private final static String ENCODE_CHARSET = "UTF-8";
-	private final static String HASH_ALGORITHM = "HmacSHA256";
+	private static final HashMap<String, String> EMPTY_MAP = (HashMap<String, String>) Collections.EMPTY_MAP;
+	private static final String DELIMITER = "<IDS|MSG>";
+	private static final String HEARTBEAT_MESSAGE = "ping";
+	private static final String ENCODE_CHARSET = "UTF-8";
+	private static final String HASH_ALGORITHM = "HmacSHA256";
 
-	private final static String STD_ERR_DIV = "output_stderr";
-	private final static String STD_OUT_DIV = "output_stdout";
-	private final static Charset UTF8 = Charset.forName("UTF8");
-	public final static String MIME_TYPE_HTML = "text/html";
+	private static final String STD_ERR_DIV = "output_stderr";
+	private static final String STD_OUT_DIV = "output_stdout";
+	private static final Charset UTF8 = Charset.forName("UTF8");
+	private static final String MIME_TYPE_HTML = "text/html";
 
 	private Connection connection;
 	private Gson parser;
@@ -170,28 +169,28 @@ public class JupyterServer {
 		if (message.getHeader().getMsgType().equals(MessageType.SHUTDOWN_REQUEST)) {
 			ContentShutdownRequest content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
 			Content contentReply = processShutdownRequest(content);
-			Header header = createHeader(message.getHeader().getSession(), MessageType.SHUTDOWN_REPLY);
+			Header header = new Header(MessageType.SHUTDOWN_REPLY, message.getHeader());
 			sendMessage(communication.getControlSocket(), header, message.getHeader(), contentReply);
 		}
 	}
 
 	private void processShellMessage(Message message) {
-		Content content, contentReply;
+		Content content, replyContent;
 		Header replyHeader;
 		Header requestHeader = message.getHeader(); // Parent header for the reply.
 		switch (requestHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
 				statusUpdate(requestHeader, Status.BUSY);
 				replyHeader = new Header(MessageType.KERNEL_INFO_REPLY, requestHeader);
-				contentReply = new ContentKernelInfoReply(info);
-				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, contentReply);
+				replyContent = new ContentKernelInfoReply(info);
+				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, replyContent);
 				statusUpdate(requestHeader, Status.IDLE);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
 				replyHeader = new Header(MessageType.SHUTDOWN_REPLY, requestHeader);
 				content = parser.fromJson(message.getRawContent(), ContentShutdownRequest.class);
-				contentReply = (ContentShutdownReply) processShutdownRequest((ContentShutdownRequest) content);
-				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, contentReply);
+				replyContent = (ContentShutdownReply) processShutdownRequest((ContentShutdownRequest) content);
+				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, replyContent);
 
 				if (!((ContentShutdownRequest) content).getRestart()) {
 					closeAllSockets();
@@ -200,10 +199,10 @@ public class JupyterServer {
 
 				break;
 			case MessageType.IS_COMPLETE_REQUEST:
-				replyHeader = createHeader(message.getHeader().getSession(), MessageType.IS_COMPLETE_REPLY);
+				replyHeader = new Header(MessageType.IS_COMPLETE_REPLY, message.getHeader());
 				content = parser.fromJson(message.getRawContent(), ContentIsCompleteRequest.class);
-				contentReply = processIsCompleteRequest((ContentIsCompleteRequest) content);
-				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, contentReply);
+				replyContent = processIsCompleteRequest((ContentIsCompleteRequest) content);
+				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, replyContent);
 				break;
 			case MessageType.EXECUTE_REQUEST:
 				statusUpdate(requestHeader, Status.BUSY);
@@ -217,8 +216,8 @@ public class JupyterServer {
 			case MessageType.COMPLETE_REQUEST:
 				replyHeader = new Header(MessageType.COMPLETE_REPLY, requestHeader);
 				content = parser.fromJson(message.getRawContent(), ContentCompleteRequest.class);
-				contentReply = processCompleteRequest((ContentCompleteRequest) content);
-				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, contentReply);
+				replyContent = processCompleteRequest((ContentCompleteRequest) content);
+				sendMessage(communication.getShellSocket(), replyHeader, requestHeader, replyContent);
 				break;
 			case MessageType.INSPECT_REQUEST:
 				break;
@@ -253,7 +252,7 @@ public class JupyterServer {
 	}
 
 	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
-		HashMap<String, String> metadata = new HashMap<String, String>();
+		HashMap<String, String> metadata = EMPTY_MAP;
 		sendMessage(socket, header, parent, metadata, content);
 	}
 
@@ -301,19 +300,12 @@ public class JupyterServer {
 		communication.getHeartbeatSocket().send(HEARTBEAT_MESSAGE);
 	}
 
-	private Header createHeader(String pSession, String pMessageType) {
-		String timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
-		String msgid = String.valueOf(UUID.randomUUID());
-		return new Header(pSession, pMessageType, Header.VERSION, Header.USERNAME, timestamp, msgid);
-	}
-
 	private void statusUpdate(Header parentHeader, String status) {
 		statusUpdate(communication.getIOPubSocket(), parentHeader, status);
 	}
 
 	private void statusUpdate(Socket socket, Header parentHeader, String status) {
-		Header header = new Header(parentHeader.getSession(), MessageType.STATUS, parentHeader.getVersion(),
-				parentHeader.getUsername());
+		Header header = new Header(MessageType.STATUS, parentHeader);
 		ContentStatus content = new ContentStatus(status);
 		sendMessage(socket, header, parentHeader, content);
 	}
@@ -324,7 +316,7 @@ public class JupyterServer {
 				.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
 		ContentExecuteResult content = new ContentExecuteResult(executionNumber, res, metadata);
-		sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.EXECUTE_RESULT), parentHeader,
+		sendMessage(communication.getIOPubSocket(), new Header(MessageType.EXECUTE_RESULT, parentHeader), parentHeader,
 				content);
 	}
 
@@ -388,10 +380,10 @@ public class JupyterServer {
 			metadata.put(MIME_TYPE_HTML,
 					stream.equals(ContentStream.STD_OUT) ? createDiv(STD_OUT_DIV, replaceLocs2html(logs))
 							: createDiv(STD_ERR_DIV, replaceLocs2html(logs)));
-			sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.DISPLAY_DATA), parentHeader,
+			sendMessage(communication.getIOPubSocket(), new Header(MessageType.DISPLAY_DATA, parentHeader), parentHeader,
 					new ContentDisplayData(metadata, metadata, new HashMap<String, String>()));
 		} else {
-			sendMessage(communication.getIOPubSocket(), createHeader(session, MessageType.STREAM), parentHeader,
+			sendMessage(communication.getIOPubSocket(), new Header(MessageType.STREAM, parentHeader), parentHeader,
 					new ContentStream(stream, stdout.toString()));
 		}
 		flushStreams();
@@ -439,7 +431,6 @@ public class JupyterServer {
 	 * This method is executed when the kernel receives a is_complete_request message.
 	 */
 	private Content processIsCompleteRequest(ContentIsCompleteRequest request) {
-		//TODO: Rascal supports different statuses? (e.g. complete, incomplete, invalid or unknown?
 		String status, indent="";
 		if (this.language.isStatementComplete(request.getCode())) {
 			status = Status.COMPLETE;
