@@ -49,12 +49,17 @@ public class Communication {
         this.stdin = context.createSocket(SocketType.ROUTER);
         this.heartBeat = context.createSocket(SocketType.REP);
         
+        // Configuration
+        this.shell.setRouterMandatory(true);
+
         // Bind each socket to their corresponding URI.
         this.IOPub.bind(connection.getIOPubURI());
         this.shell.bind(connection.getShellURI());
         this.control.bind(connection.getControlURI());
         this.stdin.bind(connection.getStdinURI());
         this.heartBeat.bind(connection.getHbURI());
+
+        
     }
 
     // -----------------------------------------------------------------
