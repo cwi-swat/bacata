@@ -50,7 +50,7 @@ public class Communication {
         this.heartBeat = context.createSocket(SocketType.REP);
         
         // Configuration
-        this.shell.setRouterMandatory(true);
+        // this.shell.setRouterMandatory(true);
 
         // Bind each socket to their corresponding URI.
         this.IOPub.bind(connection.getIOPubURI());
