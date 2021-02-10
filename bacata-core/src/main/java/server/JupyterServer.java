@@ -291,22 +291,29 @@ public class JupyterServer {
 	}
 
 	private void processCompleteRequest(ContentCompleteRequest content, Header parent) {
-		int cursorStart = 0;
-		List<String> suggestions = Collections.emptyList();
-		
+		Content reply;
+
 		CompletionResult result = this.language.completeFragment(content.getCode(), content.getCursorPosition());
+		
 		if (result != null) {
-			suggestions = result.getSuggestions().stream().collect(Collectors.toList());
+			reply = new ContentCompleteReply(
+				result.getSuggestions().stream().collect(Collectors.toList()), 
+				result.getOffset(), 
+				Math.max(content.getCursorPosition(), result.getOffset()), 
+				EMPTY_MAP, 
+				Status.OK
+			);
+		}
+		else {
+			reply = new ContentCompleteReply(
+				Collections.emptyList(), 
+				content.getCursorPosition(),
+				content.getCursorPosition(), 
+				Collections.emptyMap(), 
+				Status.OK);
 		}
 		
-		Content reply = new ContentCompleteReply(
-			suggestions, 
-			result.getOffset(), 
-			Math.max(content.getCursorPosition(), result.getOffset()), 
-			EMPTY_MAP, 
-			Status.OK
-		);
-
+		
 		sendMessage(
 			communication.getShellSocket(), 
 			new Header(MessageType.COMPLETE_REPLY, parent), 
