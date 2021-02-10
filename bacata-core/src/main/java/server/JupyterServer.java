@@ -411,10 +411,12 @@ public class JupyterServer {
 	}
 
 	private void sendStreamData(Header parentHeader) {
+		stdout.flush();
 		if (!stdout.toString().trim().equals("")) {
 			sendOutputStream(ContentStream.STD_OUT, parentHeader);
 		}
 
+		stderr.flush();
 		if (!stderr.toString().trim().equals("")) {
 			sendOutputStream(ContentStream.STD_ERR, parentHeader);
 		}
@@ -425,7 +427,7 @@ public class JupyterServer {
 		String output = isStdOut ? stdout.toString() : stderr.toString();
 		
 		if (output.contains("http://")) {
-			output = div(isStdOut? STD_OUT_DIV : STD_ERR_DIV, replaceLocs2html(output));
+			output = replaceLocs2html(output);
 		}
 			
 		sendMessage(
@@ -453,10 +455,6 @@ public class JupyterServer {
 			return prefix + "<a href=\"" + url + "\" target=\"_blank\">" + url + "</a>" + suffix;
 		}
 		return logs;
-	}
-
-	private String div(String clazz, String body) {
-		return "<div class = \"" + clazz + "\">" + (body.equals("") || body == null ? "</div>" : body + "</div>");
 	}
 
 	private void flushStreams() {
