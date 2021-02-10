@@ -427,6 +427,7 @@ public class JupyterServer {
 		String output = isStdOut ? stdout.toString() : stderr.toString();
 		
 		if (output.contains("http://")) {
+			System.err.println("output: [[[" + output + "]]]");
 			output = replaceLocs2html(output);
 		}
 			
