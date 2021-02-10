@@ -299,7 +299,7 @@ public class JupyterServer {
 			suggestions = result.getSuggestions().stream().collect(Collectors.toList());
 		}
 		
-		Content reply = new ContentCompleteReply(suggestions, content.getCursorPosition() - 1, content.getCursorPosition() - 1, new HashMap<String, String>(), Status.OK);
+		Content reply = new ContentCompleteReply(suggestions, content.getCursorPosition(), content.getCursorPosition(), new HashMap<String, String>(), Status.OK);
 
 		sendMessage(
 			communication.getShellSocket(), 
