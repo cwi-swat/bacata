@@ -427,7 +427,6 @@ public class JupyterServer {
 		String output = isStdOut ? stdout.toString() : stderr.toString();
 		
 		if (output.contains("http://")) {
-			System.err.println("output: [[[" + output + "]]]");
 			output = replaceLocs2html(output);
 		}
 			
@@ -435,7 +434,7 @@ public class JupyterServer {
 			communication.getIOPubSocket(), 
 			new Header(MessageType.DISPLAY_DATA, parentHeader), 
 			parentHeader,
-			new ContentDisplayData(Collections.singletonMap(MIME_TYPE_PLAIN, output), EMPTY_MAP, EMPTY_MAP));
+			new ContentDisplayData(Collections.singletonMap(isStdOut ? MIME_TYPE_PLAIN : MIME_TYPE_HTML, output), EMPTY_MAP, EMPTY_MAP));
 
 		flushStreams();
 	}
