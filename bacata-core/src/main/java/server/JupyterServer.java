@@ -80,6 +80,7 @@ public class JupyterServer {
 	private static final String STD_OUT_DIV = "output_stdout";
 	private static final Charset UTF8 = Charset.forName("UTF8");
 	private static final String MIME_TYPE_HTML = "text/html";
+	private static final String MIME_TYPE_PLAIN = "text/plain";
 
 	private Connection connection;
 	private Gson gson;
@@ -431,7 +432,7 @@ public class JupyterServer {
 			communication.getIOPubSocket(), 
 			new Header(MessageType.DISPLAY_DATA, parentHeader), 
 			parentHeader,
-			new ContentDisplayData(Collections.singletonMap(MIME_TYPE_HTML, output), EMPTY_MAP, EMPTY_MAP));
+			new ContentDisplayData(Collections.singletonMap(MIME_TYPE_PLAIN, output), EMPTY_MAP, EMPTY_MAP));
 
 		flushStreams();
 	}
