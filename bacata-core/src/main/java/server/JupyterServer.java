@@ -448,7 +448,6 @@ public class JupyterServer {
 	private String replaceLocs2html(String logs) {
 		String pattern = "(?s)(.*)(\\|)(.+)(\\|)(.*$)";
 		if (logs.matches(pattern)) {
-			logs = logs.replaceAll("\n", "<br>");
 			String prefix = logs.replaceAll(pattern, "$1");
 			String url = logs.replaceAll(pattern, "$3");
 			String suffix = logs.replaceAll(pattern, "$5");
