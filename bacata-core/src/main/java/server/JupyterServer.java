@@ -198,8 +198,14 @@ public class JupyterServer {
 
 	private void processKernelInfoRequest(Header parent) {
 		sendStatus(parent, Status.BUSY);
-		sendMessage(communication.getShellSocket(), new Header(MessageType.KERNEL_INFO_REPLY, parent), parent,
-				new ContentKernelInfoReply(info));
+
+		sendMessage(
+			communication.getShellSocket(), 
+			new Header(MessageType.KERNEL_INFO_REPLY, parent), 
+			parent,
+			new ContentKernelInfoReply(info))
+		;
+		
 		sendStatus(parent, Status.IDLE);
 	}
 
