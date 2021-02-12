@@ -42,6 +42,7 @@ import entities.ContentExecuteInput;
 import entities.ContentStream;
 import entities.Message;
 import entities.reply.ContentCompleteReply;
+import entities.reply.ContentExecuteReplyError;
 import entities.reply.ContentExecuteReplyOk;
 import entities.reply.ContentExecuteResult;
 import entities.reply.ContentIsCompleteReply;
@@ -213,43 +214,54 @@ public class JupyterServer {
 	private void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Header parent) {
 		sendStatus(parent, Status.BUSY);
 
-		if (!contentExecuteRequest.isSilent()) {
-			if (contentExecuteRequest.isStoreHistory()) { // why this condition?
-				sendMessage(communication.getIOPubSocket(), new Header(MessageType.EXECUTE_INPUT, parent), parent,
-						new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+		sendMessage(
+			communication.getIOPubSocket(), 
+			new Header(MessageType.EXECUTE_INPUT, parent), 
+			parent,
+			new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber)
+		);
 
-				try {
-					Map<String, String> metadata = new HashMap<>();
-					Map<String, InputStream> data = new HashMap<>();
+		try {
+			Map<String, String> metadata = new HashMap<>();
+			Map<String, InputStream> data = new HashMap<>();
 
-					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
+			this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
 
-					sendStreamData(parent);
-
-					if (!data.isEmpty()) {
-						Map<String, String> output = data.entrySet().stream()
-								.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
-
-						sendMessage(communication.getIOPubSocket(), new Header(MessageType.EXECUTE_RESULT, parent),
-								parent, new ContentExecuteResult(executionNumber, output, metadata));
-					}
-
-					sendMessage(communication.getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parent), parent,
-							new ContentExecuteReplyOk(executionNumber));
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+			if (!contentExecuteRequest.isSilent()) {
+				sendStreamData(parent);
 			}
 
-			executionNumber++;
-		} else {
-			// No broadcast output on the IOPUB channel.
-			// Don't have an execute_result.
-			sendMessage(communication.getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parent), parent,
-					new ContentExecuteReplyOk(executionNumber));
-		}
+			if (!data.isEmpty()) {
+				Map<String, String> output = data.entrySet().stream()
+						.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
-		sendStatus(parent, Status.IDLE);
+				sendMessage(
+					communication.getIOPubSocket(), 
+					new Header(MessageType.EXECUTE_RESULT, parent),
+					parent, 
+					new ContentExecuteResult(executionNumber, output, metadata)
+				);
+			}
+
+			sendMessage(
+				communication.getShellSocket(), 
+				new Header(MessageType.EXECUTE_REPLY, parent), 
+				parent,
+				new ContentExecuteReplyOk(executionNumber)
+			);
+		} 
+		catch (InterruptedException e) {
+			sendMessage(
+				communication.getShellSocket(), 
+				new Header(MessageType.EXECUTE_REPLY, parent), 
+				parent,
+				new ContentExecuteReplyError("interrupted", e.getMessage(), Collections.emptyList())
+			);
+		}
+		finally {
+			executionNumber++;
+			sendStatus(parent, Status.IDLE);
+		}
 	}
 
 	private void processShutdownRequest(Socket socket, ContentShutdownRequest shutdown, Header parent) {
