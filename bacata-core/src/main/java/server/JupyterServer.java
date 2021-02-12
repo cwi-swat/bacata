@@ -117,7 +117,7 @@ public class JupyterServer {
 			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
 
-			sendStatus(new Header(), Status.STARTING);
+			sendStatus(new Header(MessageType.STATUS), Status.STARTING);
 
 			while (true) {
 				poller.poll();
@@ -201,11 +201,11 @@ public class JupyterServer {
 
 		sendMessage(
 			communication.getShellSocket(), 
-			new Header(MessageType.KERNEL_INFO_REPLY, parent), 
+			new Header(MessageType.KERNEL_INFO_REPLY, parent, parent.getMsgId()), 
 			parent,
 			new ContentKernelInfoReply(info))
 		;
-		
+
 		sendStatus(parent, Status.IDLE);
 	}
 

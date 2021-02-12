@@ -5,51 +5,16 @@ package entities.util;
  */
 public class LanguageInfo {
 
+    private final String name;
+    private final String version;
+    private final String mimetype;
+    private final String fileExtension;
 
-    // -----------------------------------------------------------------
-    // Constants
-    // -----------------------------------------------------------------
+    // private final String pygmentsLexer;
 
-    public static final String LANGUAGE_NAME = "rascal";
-
-    public static final String LANGUAGE_VERSION = "0.19.3-SNAPSHOT";
-
-    public static final String LANGUAGE_MIMETYPE = "text/plain";
-
-    public static final String LANGUAGE_EXTENSION = ".rsc";
-
-    // -----------------------------------------------------------------
-    // Fields
-    // -----------------------------------------------------------------
-
-    private String name;
-
-    private String version;
-
-    private String mimetype;
-
-    private String fileExtension;
-
-    // private String pygmentsLexer;
-
-    @SuppressWarnings("unused")
-	private CodeMirrorMode codemirrorMode;
+	private final CodeMirrorMode codemirrorMode;
 
     // private String nbconvertExporter;
-
-    // -----------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------
-
-    public LanguageInfo(String codemirrorName) {
-        this.name = LANGUAGE_NAME;
-        this.version = LANGUAGE_VERSION;
-        this.mimetype = LANGUAGE_MIMETYPE;
-        this.fileExtension = LANGUAGE_EXTENSION;
-        // this.pygmentsLexer = "";
-        this.codemirrorMode = new CodeMirrorMode(codemirrorName);
-        // this.nbconvertExporter = null;
-    }
 
     public LanguageInfo(String name, String version, String mimetype, String file_extension) {
         this.name = name;
@@ -60,10 +25,6 @@ public class LanguageInfo {
         this.codemirrorMode = null;
         // this.nbconvertExporter = null;
     }
-
-    // -----------------------------------------------------------------
-    // Methods
-    // -----------------------------------------------------------------
 
     public String getName() {
         return name;
@@ -79,6 +40,10 @@ public class LanguageInfo {
 
     public String getFile_extension() {
         return fileExtension;
+    }
+
+    public CodeMirrorMode getCodemirrorMode() {
+        return codemirrorMode;
     }
 
     // public String getPygmentsLexer() {

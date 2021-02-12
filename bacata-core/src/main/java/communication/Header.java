@@ -5,24 +5,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 public class Header {
-    private static final String VERSION = "5.3";
-    private static final String USERNAME = "guest";
+    private final String session;
+    private final String msgType;
+    private final String version;
+    private final String username;
+    private final String date;
+    private final String msgId;
 
-    private String session = "";
-    private String msgType = "";
-    private String version = VERSION;
-    private String username = USERNAME;
-    private String date = "";
-    private String msgId = "";
-
-
-    /**
-     * Nullary constructor for deserialization purposes
-     */
-    public Header() {
-
+    public Header(String msgType) {
+        this.session = "";
+        this.msgType = msgType;
+        this.version = "5.3";
+        this.username = "guest";
+        this.date = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+        this.msgId = String.valueOf(UUID.randomUUID());
     }
-
     /**
      * Create header with specific msgType, inheriting properties
      * like session, version and username from the parentHeader.
@@ -36,6 +33,16 @@ public class Header {
         
         this.date = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
         this.msgId = String.valueOf(UUID.randomUUID());
+    }
+
+    public Header(String msgType, Header parentHeader, String msgId) {
+		this.session = parentHeader.getSession();
+		this.msgType = msgType;
+        this.version = parentHeader.getVersion();
+        this.username = parentHeader.getUsername();
+        
+        this.date = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+        this.msgId = msgId;
     }
 
     public String getSession() {
