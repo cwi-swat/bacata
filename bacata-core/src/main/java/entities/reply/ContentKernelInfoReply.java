@@ -22,7 +22,7 @@ public class ContentKernelInfoReply extends Content {
 
     public ContentKernelInfoReply(LanguageInfo language) {
         this.status = "ok";
-        this.protocolVersion = "5.3";
+        this.protocolVersion = "5.2";
         this.implementation = "bacata";
         this.implementationVersion = "0.1";
         this.languageInfo = language;
