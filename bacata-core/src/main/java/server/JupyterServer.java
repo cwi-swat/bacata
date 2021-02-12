@@ -11,7 +11,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -70,51 +69,47 @@ import entities.util.Status;
  * @author Mauricio Verano on 17/01/2017.
  */
 public class JupyterServer {
-	private static final Map<String, String> EMPTY_MAP = (Map<String, String>) Collections.EMPTY_MAP;
 	private static final String DELIMITER = "<IDS|MSG>";
 	private static final String HEARTBEAT_MESSAGE = "ping";
 	private static final String ENCODE_CHARSET = "UTF-8";
 	private static final String HASH_ALGORITHM = "HmacSHA256";
 
-	private static final String STD_ERR_DIV = "output_stderr";
-	private static final String STD_OUT_DIV = "output_stdout";
 	private static final Charset UTF8 = Charset.forName("UTF8");
 	private static final String MIME_TYPE_HTML = "text/html";
 	private static final String MIME_TYPE_PLAIN = "text/plain";
 
-	private Connection connection;
-	private Gson gson;
-	private Communication communication;
-	private ZMQ.Poller poller;
+	private final Gson gson = new GsonBuilder()
+		.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+		.create();
 
 	private final ILanguageProtocol language;
 	private final LanguageInfo info;
+	private final Connection connection;
 
 	private final StringWriter stdout = new StringWriter();
 	private final StringWriter stderr = new StringWriter();
 	private final OutputStream outStream = new WriterOutputStream(stdout, UTF8, 4096, true);
 	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true);
 
+	private Communication communication;
 	private int executionNumber;
 
 	private final SecretKeySpec secret;
 
 	public JupyterServer(String connectionFilePath, ILanguageProtocol language, LanguageInfo info) throws Exception {
-		gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-		connection = gson.fromJson(new FileReader(connectionFilePath), Connection.class);
-		connection.printConnectionSettings();
+		this.connection = gson.fromJson(new FileReader(connectionFilePath), Connection.class);
 		this.secret = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
 		this.language = language;
 		this.info = info;
 		this.language.initialize(new ByteArrayInputStream(new byte[0]), outStream, errStream);
 		executionNumber = 1;
-	} 
+	}
 
 	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException {
 		try (ZContext context = new ZContext(2)) {
 			communication = new Communication(connection, context);
 			// Create the poll to deal with the 4 different sockets
-			poller = context.createPoller(4);
+			ZMQ.Poller poller = context.createPoller(4);
 
 			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN);
 			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN);
@@ -156,8 +151,9 @@ public class JupyterServer {
 
 		switch (requestHeader.getMsgType()) {
 			case MessageType.SHUTDOWN_REQUEST:
-			processShutdownRequest(communication.getControlSocket(), content(ContentShutdownRequest.class, message), requestHeader);
-			break;
+				processShutdownRequest(communication.getControlSocket(), content(ContentShutdownRequest.class, message),
+						requestHeader);
+				break;
 		}
 	}
 
@@ -169,7 +165,8 @@ public class JupyterServer {
 				processKernelInfoRequest(requestHeader);
 				break;
 			case MessageType.SHUTDOWN_REQUEST:
-				processShutdownRequest(communication.getShellSocket(), content(ContentShutdownRequest.class, message), requestHeader);
+				processShutdownRequest(communication.getShellSocket(), content(ContentShutdownRequest.class, message),
+						requestHeader);
 				break;
 			case MessageType.IS_COMPLETE_REQUEST:
 				processIsCompleteRequest(content(ContentIsCompleteRequest.class, message), requestHeader);
@@ -200,22 +197,17 @@ public class JupyterServer {
 
 	private void processKernelInfoRequest(Header parent) {
 		sendStatus(parent, Status.BUSY);
-		sendMessage(
-			communication.getShellSocket(), 
-			new Header(MessageType.KERNEL_INFO_REPLY, parent), 
-			parent, 
-			new ContentKernelInfoReply(info));
+		sendMessage(communication.getShellSocket(), new Header(MessageType.KERNEL_INFO_REPLY, parent), parent,
+				new ContentKernelInfoReply(info));
 		sendStatus(parent, Status.IDLE);
 	}
 
 	private void processIsCompleteRequest(ContentIsCompleteRequest content, Header parent) {
 		boolean isComplete = language.isStatementComplete(content.getCode());
 
-		sendMessage(
-			communication.getShellSocket(), 
-			new Header(MessageType.IS_COMPLETE_REPLY, parent), 
-			parent, 
-			new ContentIsCompleteReply(isComplete ? Status.COMPLETE : Status.INCOMPLETE, isComplete ? "" : "??????"));
+		sendMessage(communication.getShellSocket(), new Header(MessageType.IS_COMPLETE_REPLY, parent), parent,
+				new ContentIsCompleteReply(isComplete ? Status.COMPLETE : Status.INCOMPLETE,
+						isComplete ? "" : "??????"));
 	}
 
 	private void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Header parent) {
@@ -223,36 +215,27 @@ public class JupyterServer {
 
 		if (!contentExecuteRequest.isSilent()) {
 			if (contentExecuteRequest.isStoreHistory()) { // why this condition?
-				sendMessage(
-					communication.getIOPubSocket(), 
-					new Header(MessageType.EXECUTE_INPUT, parent), 
-					parent,
-					new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
+				sendMessage(communication.getIOPubSocket(), new Header(MessageType.EXECUTE_INPUT, parent), parent,
+						new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber));
 
 				try {
 					Map<String, String> metadata = new HashMap<>();
 					Map<String, InputStream> data = new HashMap<>();
-			
-					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata); 
 
-					sendStreamData(parent); 
+					this.language.handleInput(contentExecuteRequest.getCode(), data, metadata);
+
+					sendStreamData(parent);
 
 					if (!data.isEmpty()) {
 						Map<String, String> output = data.entrySet().stream()
 								.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
-						sendMessage(
-							communication.getIOPubSocket(), 
-							new Header(MessageType.EXECUTE_RESULT, parent), 
-							parent, 
-							new ContentExecuteResult(executionNumber, output, metadata));
+						sendMessage(communication.getIOPubSocket(), new Header(MessageType.EXECUTE_RESULT, parent),
+								parent, new ContentExecuteResult(executionNumber, output, metadata));
 					}
 
-					sendMessage(
-						communication.getShellSocket(), 
-						new Header(MessageType.EXECUTE_REPLY, parent),
-						parent, 
-						new ContentExecuteReplyOk(executionNumber));
+					sendMessage(communication.getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parent), parent,
+							new ContentExecuteReplyOk(executionNumber));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -262,11 +245,8 @@ public class JupyterServer {
 		} else {
 			// No broadcast output on the IOPUB channel.
 			// Don't have an execute_result.
-			sendMessage(
-				communication.getShellSocket(), 
-				new Header(MessageType.EXECUTE_REPLY, parent), 
-				parent,
-				new ContentExecuteReplyOk(executionNumber));
+			sendMessage(communication.getShellSocket(), new Header(MessageType.EXECUTE_REPLY, parent), parent,
+					new ContentExecuteReplyOk(executionNumber));
 		}
 
 		sendStatus(parent, Status.IDLE);
@@ -278,12 +258,8 @@ public class JupyterServer {
 		if (!restart) {
 			language.stop();
 		}
-				
-		sendMessage(
-			socket, 
-			new Header(MessageType.SHUTDOWN_REPLY, parent), 
-			parent, 
-			new ContentShutdownReply(restart));
+
+		sendMessage(socket, new Header(MessageType.SHUTDOWN_REPLY, parent), parent, new ContentShutdownReply(restart));
 
 		if (!restart) {
 			closeAllSockets();
@@ -295,31 +271,17 @@ public class JupyterServer {
 		Content reply;
 
 		CompletionResult result = this.language.completeFragment(content.getCode(), content.getCursorPosition());
-		
+
 		if (result != null) {
-			reply = new ContentCompleteReply(
-				result.getSuggestions().stream().collect(Collectors.toList()), 
-				result.getOffset(), 
-				Math.max(content.getCursorPosition(), result.getOffset()), 
-				EMPTY_MAP, 
-				Status.OK
-			);
+			reply = new ContentCompleteReply(result.getSuggestions().stream().collect(Collectors.toList()),
+					result.getOffset(), Math.max(content.getCursorPosition(), result.getOffset()),
+					Collections.emptyMap(), Status.OK);
+		} else {
+			reply = new ContentCompleteReply(Collections.emptyList(), content.getCursorPosition(),
+					content.getCursorPosition(), Collections.emptyMap(), Status.OK);
 		}
-		else {
-			reply = new ContentCompleteReply(
-				Collections.emptyList(), 
-				content.getCursorPosition(),
-				content.getCursorPosition(), 
-				Collections.emptyMap(), 
-				Status.OK);
-		}
-		
-		
-		sendMessage(
-			communication.getShellSocket(), 
-			new Header(MessageType.COMPLETE_REPLY, parent), 
-			parent, 
-			reply);
+
+		sendMessage(communication.getShellSocket(), new Header(MessageType.COMPLETE_REPLY, parent), parent, reply);
 	}
 
 	private void processHeartbeat() {
@@ -359,7 +321,7 @@ public class JupyterServer {
 	}
 
 	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
-		Map<String, String> metadata = EMPTY_MAP;
+		Map<String, String> metadata = Collections.emptyMap();
 		sendMessage(socket, header, parent, metadata, content);
 	}
 
@@ -367,7 +329,8 @@ public class JupyterServer {
 	 * This method sends a message according to the Wire Protocol through the socket
 	 * received as parameter.
 	 */
-	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Map<String, String> metadata, Content content) {
+	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Map<String, String> metadata,
+			Content content) {
 		try {
 			// Serialize the message as JSON
 			String jsonHeader = gson.toJson(header);
@@ -375,10 +338,8 @@ public class JupyterServer {
 			String jsonMetaData = gson.toJson(metadata);
 			String jsonContent = gson.toJson(content);
 
-			System.err.println("sending message..." 
-				+ "\n\theader: " + jsonHeader 
-				+ "\n\tparent: " + jsonParent 
-				+ "\n\tcontent: " + jsonContent);
+			System.err.println("sending message..." + "\n\theader: " + jsonHeader + "\n\tparent: " + jsonParent
+					+ "\n\tcontent: " + jsonContent);
 
 			// Sign the message
 			Mac encoder = Mac.getInstance(HASH_ALGORITHM);
@@ -399,15 +360,12 @@ public class JupyterServer {
 			socket.send(jsonContent, ZMQ.DONTWAIT);
 		} catch (NoSuchAlgorithmException | InvalidKeyException e) {
 			throw new RuntimeException("this should never happen", e);
-		} 
+		}
 	}
 
 	private void sendStatus(Header parentHeader, String status) {
-		sendMessage(
-			communication.getIOPubSocket(), 
-			new Header(MessageType.STATUS, parentHeader), 
-			parentHeader, 
-			new ContentStatus(status));
+		sendMessage(communication.getIOPubSocket(), new Header(MessageType.STATUS, parentHeader), parentHeader,
+				new ContentStatus(status));
 	}
 
 	private void sendStreamData(Header parentHeader) {
@@ -425,16 +383,14 @@ public class JupyterServer {
 	private void sendOutputStream(String stream, Header parentHeader) {
 		boolean isStdOut = stream.equals(ContentStream.STD_OUT);
 		String output = isStdOut ? stdout.toString() : stderr.toString();
-		
+
 		if (output.contains("http://")) {
 			output = replaceLocs2html(output);
 		}
-			
-		sendMessage(
-			communication.getIOPubSocket(), 
-			new Header(MessageType.DISPLAY_DATA, parentHeader), 
-			parentHeader,
-			new ContentDisplayData(Collections.singletonMap(isStdOut ? MIME_TYPE_PLAIN : MIME_TYPE_HTML, output), EMPTY_MAP, EMPTY_MAP));
+
+		sendMessage(communication.getIOPubSocket(), new Header(MessageType.DISPLAY_DATA, parentHeader), parentHeader,
+				new ContentDisplayData(Collections.singletonMap(isStdOut ? MIME_TYPE_PLAIN : MIME_TYPE_HTML, output),
+						Collections.emptyMap(), Collections.emptyMap()));
 
 		flushStreams();
 	}
