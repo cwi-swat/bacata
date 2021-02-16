@@ -382,8 +382,12 @@ public class JupyterServer {
 	}
 
 	private void sendStatus(Header parentHeader, String status) {
-		sendMessage(communication.getIOPubSocket(), new Header(MessageType.STATUS, parentHeader), parentHeader,
-				new ContentStatus(status));
+		sendMessage(
+			communication.getIOPubSocket(), 
+			new Header(MessageType.STATUS, parentHeader), 
+			parentHeader,
+			new ContentStatus(status)
+		);
 	}
 
 	private void sendStreamData(Header parentHeader) {
