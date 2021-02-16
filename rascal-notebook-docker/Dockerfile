@@ -16,6 +16,8 @@ WORKDIR $HOME
 
 RUN apt-get update
 
+RUN apt-get -yq install tcpdump
+
 # Python
 
 RUN apt-get install software-properties-common -y
@@ -43,10 +45,15 @@ RUN pip3 install notebook==${notebookVersion}
 USER guest
 WORKDIR $HOME
 
+RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
+WORKDIR bacata
+RUN mvn dependency:go-offline
+
+WORKDIR ..
+RUN rm -rf bacata
 ADD https://nexus.usethesource.io/content/repositories/snapshots/org/rascalmpl/rascal/0.19.3-SNAPSHOT/maven-metadata.xml lastRascalBuild.xml
 ADD https://api.github.com/repos/cwi-swat/bacata/git/refs/heads/master version.json
 RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
-
 WORKDIR bacata
 
 RUN mvn clean install
@@ -67,15 +74,26 @@ RUN chmod -R u+rw *
 RUN chmod -R u+rw .*
 
 USER guest
+RUN umask 002
 RUN mkdir workspace
 
 WORKDIR workspace
 
-COPY ./Example.ipynb .
+COPY ./RascalDemo.ipynb .
+COPY ./DemoStateMachineDSL.ipynb .
+USER root
+RUN chown guest RascalDemo.ipynb
+USER guest
 
+# for the Jupyter webserver
 EXPOSE 8888
 EXPOSE 3434
+
+# for Rascal's app server
 EXPOSE 9050-10050
+
+# for JVM debugging
 EXPOSE 8000
 
-CMD ["jupyter", "notebook", "--ip","0.0.0.0", "--debug", "--no-browser"]
+CMD ["jupyter", "notebook", "--ip", "0.0.0.0", "--debug", "--no-browser", "--port", "8888"]
+
