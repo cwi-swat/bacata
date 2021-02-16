@@ -1,6 +1,7 @@
 FROM maven:3.6.0-jdk-8 as mavenBuild
 
 ARG notebookVersion=6.1.2
+ARG rascalNotebookVersion=0.0.1-SNAPSHOT
 ARG RASCAL_USER=guest
 ARG RASCAL_UID=1000
 ENV USER ${RASCAL_USER}
@@ -45,21 +46,25 @@ RUN pip3 install notebook==${notebookVersion}
 USER guest
 WORKDIR $HOME
 
-RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
-WORKDIR bacata
-RUN mvn dependency:go-offline
+#RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
+#WORKDIR bacata
+#RUN mvn dependency:go-offline
 
-WORKDIR ..
-RUN rm -rf bacata
-ADD https://nexus.usethesource.io/content/repositories/snapshots/org/rascalmpl/rascal/0.19.3-SNAPSHOT/maven-metadata.xml lastRascalBuild.xml
-ADD https://api.github.com/repos/cwi-swat/bacata/git/refs/heads/master version.json
-RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
-WORKDIR bacata
+#WORKDIR ..
+#RUN rm -rf bacata
+#ADD https://nexus.usethesource.io/content/repositories/snapshots/org/rascalmpl/rascal/0.19.3-SNAPSHOT/maven-metadata.xml lastRascalBuild.xml
+#ADD https://api.github.com/repos/cwi-swat/bacata/git/refs/heads/master version.json
+#RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
+#WORKDIR bacata
 
-RUN mvn clean install
+#RUN mvn clean install
 
-WORKDIR bacata-rascal/rascal-kernel
 USER root
+RUN mkdir -p /rascal-kernel
+COPY ./rascal-notebook/target/rascal-notebook-${rascalNotebookVersion}.jar /rascal-kernel/rascal-notebook.jar
+RUN mkdir -p /rascal-kernel/rascal
+COPY ./rascal-notebook-docker/kernel/rascal/ /rascal-kernel/rascal/
+WORKDIR /rascal-kernel
 RUN jupyter kernelspec install rascal
 
 #WORKDIR $HOME/bacata
@@ -68,19 +73,16 @@ RUN jupyter kernelspec install rascal
 # Set a new workspace
 USER root
 WORKDIR $HOME
-RUN chown -R guest *
-RUN chown -R guest .*
-RUN chmod -R u+rw *
-RUN chmod -R u+rw .*
 
+RUN chown -R guest .*
 USER guest
 RUN umask 002
 RUN mkdir workspace
 
 WORKDIR workspace
 
-COPY ./RascalDemo.ipynb .
-COPY ./DemoStateMachineDSL.ipynb .
+COPY ./rascal-notebook-docker/RascalDemo.ipynb .
+COPY ./rascal-notebook-docker/DemoStateMachineDSL.ipynb .
 USER root
 RUN chown guest RascalDemo.ipynb
 USER guest
