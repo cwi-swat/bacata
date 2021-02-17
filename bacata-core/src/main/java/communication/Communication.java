@@ -1,9 +1,12 @@
 package communication;
 
+import static entities.util.GSON.fromJson;
+
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.crypto.Mac;
@@ -26,6 +29,25 @@ public class Communication {
     private static final String HEARTBEAT_MESSAGE = "ping";
     private static final String ENCODE_CHARSET = ZMQ.CHARSET.name();
     private static final String HASH_ALGORITHM = "HmacSHA256";
+
+    // b'u-u-i-d', # zmq identity(ies)
+    // b'<IDS|MSG>', # delimiter
+    // b'baddad42', # HMAC signature
+    // b'{header}', # serialized header dict
+    // b'{parent_header}', # serialized parent header dict
+    // b'{metadata}', # serialized metadata dict
+    // b'{content}', # serialized content dict
+    // b'\xf0\x9f\x90\xb1' # extra raw data buffer(s)
+    private static final class MessageParts {
+        public static final int sessionId = 0;
+        // public static final int DELIMETER = 1;
+        public static final int HMAC = 2;
+        public static final int HEADER = 3;
+        public static final int PARENT_HEADER = 4;
+        public static final int METADATA = 5;
+        public static final int CONTENT = 6;
+        // public static final int EXTRA = 7;
+    }
 
     /**
      * This socket is the ‘broadcast channel’ where the kernel publishes all side
@@ -67,17 +89,18 @@ public class Communication {
     private String shellRouterId = "NO_ID";
 
     public Communication(Connection connection, ZContext context) throws UnsupportedEncodingException {
-        this.secret = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);;
+        this.secret = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
+        ;
         this.context = context;
 
-    	// Create sockets in the context received as parameter.
+        // Create sockets in the context received as parameter.
         this.ioPubSocket = context.createSocket(SocketType.PUB);
         this.shellSocket = context.createSocket(SocketType.ROUTER);
         this.shellSocket.setRouterMandatory(true); // to help debugging the identity aspect of ROUTER
         this.controlSocket = context.createSocket(SocketType.ROUTER);
         this.stdinSocket = context.createSocket(SocketType.ROUTER);
         this.heartBeatSocket = context.createSocket(SocketType.REP);
-        
+
         // Bind each socket to their corresponding URI.
         this.ioPubSocket.bind(connection.getIOPubURI());
         this.shellSocket.bind(connection.getShellURI());
@@ -187,7 +210,19 @@ public class Communication {
         if (zmsg.size() < 7) {
             throw new RuntimeException("Missing information from the Jupyter client");
         }
-        return new Message(zFrames);
+
+        String rawMetadata = new String(zFrames[MessageParts.METADATA].getData(), ZMQ.CHARSET);
+        String rawParent = new String(zFrames[MessageParts.PARENT_HEADER].getData(), ZMQ.CHARSET);
+        String rawHeader = new String(zFrames[MessageParts.HEADER].getData(), ZMQ.CHARSET);
+
+        String sessionId = new String(zFrames[MessageParts.sessionId].getData(), ZMQ.CHARSET);
+        byte[] hmacSignature = zFrames[MessageParts.HMAC].getData();
+        Header header = fromJson(rawHeader, Header.class);
+        Header parentHeader = fromJson(rawParent, Header.class);
+        Map<String, String> metadata = (Map<String,String>) fromJson(rawMetadata, Map.class);
+        String rawContent = new String(zFrames[MessageParts.CONTENT].getData());
+
+        return new Message(sessionId, hmacSignature, header, parentHeader, rawContent, metadata);
     }
 
     public void close() {
