@@ -1,6 +1,7 @@
 package entities.reply;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,10 +13,6 @@ import java.util.Map;
  */
 public class ContentExecuteReplyOk extends Content {
 
-    // -----------------------------------------------------------------
-    // Fields
-    // ----------------------------------------------------------------
-	
     private String status;
 
     /**
@@ -36,10 +33,6 @@ public class ContentExecuteReplyOk extends Content {
     @SuppressWarnings("unused")
 	private Map<String, String> userExpressions;
 
-    // -----------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------
-
     public ContentExecuteReplyOk(int executionCount) {
         this.status = "ok";
         this.executionCount = executionCount;
@@ -47,15 +40,16 @@ public class ContentExecuteReplyOk extends Content {
         this.userExpressions = new HashMap<String, String>();
     }
 
-    // -----------------------------------------------------------------
-    // Methods
-    // -----------------------------------------------------------------
-
     public String getStatus() {
         return status;
     }
 
     public int getExecutionCount() {
         return executionCount;
+    }
+
+    @Override
+    public String getMessageType() {
+        return MessageType.EXECUTE_REPLY;
     }
 }

@@ -1,27 +1,24 @@
 package entities.reply;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Mauricio on 31/01/2017.
- */
 public class ContentHistoryReply extends Content {
+	private final List<String> history;
 
-    // -----------------------------------------------------------------
-    // Fields
-    // -----------------------------------------------------------------
-
-    @SuppressWarnings("unused")
-	private List<String> history;
-
-    // -----------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------
     public ContentHistoryReply() {
         this.history = new ArrayList<String>();
     }
     
+    @Override
+    public String getMessageType() {
+        return MessageType.HISTORY_REPLY;
+    }
+
+    public List<String> getHistory() {
+        return history;
+    }
 }

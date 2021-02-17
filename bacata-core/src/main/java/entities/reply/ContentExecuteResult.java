@@ -1,30 +1,14 @@
 package entities.reply;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 import java.util.Map;
 
-/**
- * Created by Mauricio on 31/01/2017.
- */
 public class ContentExecuteResult extends Content {
-
-    // -----------------------------------------------------------------
-    // Fields
-    // -----------------------------------------------------------------
-
-    @SuppressWarnings("unused")
-	private int executionCount;
-
-    @SuppressWarnings("unused")
-    private Map<String, String> data;
-
-    @SuppressWarnings("unused")
-    private Map<String, String> metadata;
-
-    // -----------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------
+	private final int executionCount;
+    private final Map<String, String> data;
+    private final Map<String, String> metadata;
 
     public ContentExecuteResult(int executionCount, Map<String, String> data, Map<String, String> metadata) {
         this.executionCount = executionCount;
@@ -32,8 +16,20 @@ public class ContentExecuteResult extends Content {
         this.metadata = metadata;
     }
 
+    @Override
+    public String getMessageType() {
+        return MessageType.EXECUTE_RESULT;
+    }
 
-    // -----------------------------------------------------------------
-    // Methods
-    // -----------------------------------------------------------------
+    public int getExecutionCount() {
+        return executionCount;
+    }
+
+    public Map<String, String> getData() {
+        return data;
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
 }

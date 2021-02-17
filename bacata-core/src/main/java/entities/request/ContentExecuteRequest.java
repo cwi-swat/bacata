@@ -1,6 +1,7 @@
 package entities.request;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 import java.util.Map;
 
@@ -93,4 +94,8 @@ public class ContentExecuteRequest extends Content {
 		return currentCell;
 	}
 	
+    @Override
+    public String getMessageType() {
+        return MessageType.EXECUTE_REQUEST;
+    }
 }

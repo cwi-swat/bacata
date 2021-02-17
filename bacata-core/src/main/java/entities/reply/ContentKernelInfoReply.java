@@ -6,6 +6,7 @@ import java.util.List;
 import entities.util.Content;
 import entities.util.HelpLinks;
 import entities.util.LanguageInfo;
+import entities.util.MessageType;
 
 /**
  * Created by Mauricio on 26/01/2017.
@@ -31,7 +32,35 @@ public class ContentKernelInfoReply extends Content {
     }
 
     @Override
-    public String toString() {
-       return status + protocolVersion + implementation + implementationVersion + languageInfo + banner + helpLinks;
+    public String getMessageType() {
+        return MessageType.KERNEL_INFO_REPLY;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getProtocolVersion() {
+        return protocolVersion;
+    }
+
+    public String getImplementation() {
+        return implementation;
+    }
+
+    public String getImplementationVersion() {
+        return implementationVersion;
+    }
+
+    public LanguageInfo getLanguageInfo() {
+        return languageInfo;
+    }
+
+    public String getBanner() {
+        return banner;
+    }
+
+    public List<HelpLinks> getHelpLinks() {
+        return helpLinks;
     }
 }

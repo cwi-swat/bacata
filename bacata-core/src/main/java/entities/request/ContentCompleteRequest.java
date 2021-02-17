@@ -1,6 +1,7 @@
 package entities.request;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 public class ContentCompleteRequest extends Content{
 	
@@ -36,6 +37,11 @@ public class ContentCompleteRequest extends Content{
 	 */
 	public int getCursorPosition() {
 		return cursorPos;
+	}
+
+	@Override
+	public String getMessageType() {
+		return MessageType.COMPLETE_REQUEST;
 	}
 	
 }

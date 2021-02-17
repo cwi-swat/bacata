@@ -1,6 +1,7 @@
 package entities;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 public class ContentExecuteInput extends Content{
 
@@ -15,4 +16,8 @@ public class ContentExecuteInput extends Content{
 		this.executionCount = executionCount;
 	}
 	
+	@Override
+	public String getMessageType() {
+		return MessageType.EXECUTE_INPUT;
+	}
 }

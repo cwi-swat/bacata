@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 public class ContentCompleteReply extends Content{
 	
@@ -64,6 +65,11 @@ public class ContentCompleteReply extends Content{
 
 	public String getStatus() {
 		return status;
+	}
+
+	@Override
+	public String getMessageType() {
+		return MessageType.COMPLETE_REPLY;
 	}
 	
 }

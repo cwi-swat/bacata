@@ -3,13 +3,10 @@ package entities.reply;
 import java.util.Map;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 public class ContentDisplayData extends Content{
 	
-	// -----------------------------------------------------------------
-    // Fields
-    // -----------------------------------------------------------------
-
     @SuppressWarnings("unused")
 	private Map<String, String> data;
 
@@ -27,6 +24,11 @@ public class ContentDisplayData extends Content{
         this.data = data;
         this.metadata = metadata;
         this.trancient = trancient;
+    }
+
+    @Override
+    public String getMessageType() {
+        return MessageType.DISPLAY_DATA;
     }
 
 }

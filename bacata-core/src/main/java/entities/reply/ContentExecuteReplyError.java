@@ -1,6 +1,7 @@
 package entities.reply;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 import java.util.List;
 
@@ -35,5 +36,10 @@ public class ContentExecuteReplyError extends Content {
         this.ename = ename;
         this.evalue = evalue;
         this.traceback = traceback;
+    }
+
+    @Override
+    public String getMessageType() {
+        return MessageType.EXECUTE_REPLY;
     }
 }

@@ -1,6 +1,7 @@
 package entities.request;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 /**
  * Created by Mauricio on 31/01/2017.
@@ -38,8 +39,9 @@ public class ContentHistoryRequest extends Content {
     @SuppressWarnings("unused")
 	private boolean unique;
 
-    // -----------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------
+    @Override
+    public String getMessageType() {
+        return MessageType.HISTORY_REQUEST;
+    }
 
 }

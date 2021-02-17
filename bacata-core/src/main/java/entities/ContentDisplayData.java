@@ -1,6 +1,7 @@
 package entities;
 
 import entities.util.Content;
+import entities.util.MessageType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,5 +62,10 @@ public class ContentDisplayData extends Content {
 	public Map<String, String> getData() {
 		return data;
 	}
+
+    @Override
+    public String getMessageType() {
+        return MessageType.DISPLAY_DATA;
+    }
     
 }

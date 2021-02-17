@@ -6,33 +6,22 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.output.WriterOutputStream;
 import org.rascalmpl.repl.CompletionResult;
 import org.rascalmpl.repl.ILanguageProtocol;
 import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 import communication.Communication;
 import communication.Connection;
@@ -54,34 +43,26 @@ import entities.request.ContentIsCompleteRequest;
 import entities.request.ContentShutdownRequest;
 import entities.util.Content;
 import entities.util.ContentStatus;
+import entities.util.GSON;
 import entities.util.LanguageInfo;
 import entities.util.MessageType;
 import entities.util.Status;
 
 /**
- * This server mediates between a Jupyter notebook application and an implementation
- * of the Bacatá/Rascal ILanguageProtocol. An ILanguageProtocol is a
- * Java interface to a language REPL interface with typical actions
- * such as executing input code and auto-completing code fragments.
+ * This server mediates between a Jupyter notebook application and an
+ * implementation of the Bacatá/Rascal ILanguageProtocol. An ILanguageProtocol
+ * is a Java interface to a language REPL interface with typical actions such as
+ * executing input code and auto-completing code fragments.
  * 
- * The server uses ILanguageInfo to supply meta-data about the language
- * which is implements by the ILanguageProtocol.
+ * The server uses ILanguageInfo to supply meta-data about the language which is
+ * implements by the ILanguageProtocol.
  * 
  * @author Mauricio Verano on 17/01/2017.
  */
 public class JupyterServer {
-	private static final String DELIMITER = "<IDS|MSG>";
-	private static final String HEARTBEAT_MESSAGE = "ping";
-	private static final String ENCODE_CHARSET = "UTF-8";
-	private static final String HASH_ALGORITHM = "HmacSHA256";
-
 	private static final Charset UTF8 = Charset.forName("UTF8");
 	private static final String MIME_TYPE_HTML = "text/html";
 	private static final String MIME_TYPE_PLAIN = "text/plain";
-
-	private final Gson gson = new GsonBuilder()
-		.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-		.create();
 
 	private final ILanguageProtocol language;
 	private final LanguageInfo info;
@@ -92,30 +73,22 @@ public class JupyterServer {
 	private final OutputStream outStream = new WriterOutputStream(stdout, UTF8, 4096, true);
 	private final OutputStream errStream = new WriterOutputStream(stderr, UTF8, 4096, true);
 
-	private Communication communication;
+	private Communication comms;
 	private int executionNumber;
 
-	private final SecretKeySpec secret;
-
 	public JupyterServer(String connectionFilePath, ILanguageProtocol language, LanguageInfo info) throws Exception {
-		this.connection = gson.fromJson(new FileReader(connectionFilePath), Connection.class);
-		this.secret = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
+		this.connection = GSON.fromJson(new FileReader(connectionFilePath), Connection.class);
 		this.language = language;
 		this.info = info;
 		this.language.initialize(new ByteArrayInputStream(new byte[0]), outStream, errStream);
 		executionNumber = 1;
 	}
 
-	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException {
+	public void startServer() throws JsonSyntaxException, JsonIOException, FileNotFoundException, RuntimeException, UnsupportedEncodingException {
 		try (ZContext context = new ZContext(2)) {
-			communication = new Communication(connection, context);
+			comms = new Communication(connection, context);
 			// Create the poll to deal with the 4 different sockets
-			ZMQ.Poller poller = context.createPoller(4);
-
-			poller.register(communication.getShellSocket(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getControlSocket(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getIOPubSocket(), ZMQ.Poller.POLLIN);
-			poller.register(communication.getHeartbeatSocket(), ZMQ.Poller.POLLIN);
+			ZMQ.Poller poller = comms.createPoller();
 
 			sendStatus(new Header(MessageType.STATUS), Status.STARTING);
 
@@ -123,25 +96,25 @@ public class JupyterServer {
 				poller.poll();
 
 				if (poller.pollin(0)) {
-					Message message = receiveMessage(communication.getShellSocket());
+					Message message = comms.receiveShellMessage();
 					System.err.println("received shell: " + message);
 					processShellMessage(message);
 				}
 
 				if (poller.pollin(1)) {
-					Message message = receiveMessage(communication.getControlSocket());
+					Message message = comms.receiveControlMessage();
 					System.err.println("received control: " + message);
 					processControlMessage(message);
 				}
 
 				if (poller.pollin(2)) {
-					Message message = receiveMessage(communication.getIOPubSocket());
+					Message message = comms.receiveIOMessage();
 					System.err.println("received IO: " + message);
 				}
 
 				if (poller.pollin(3)) {
 					System.err.println("received heartbeat");
-					processHeartbeat();
+					comms.processHeartbeat();
 				}
 			}
 		}
@@ -152,8 +125,7 @@ public class JupyterServer {
 
 		switch (requestHeader.getMsgType()) {
 			case MessageType.SHUTDOWN_REQUEST:
-				processShutdownRequest(communication.getControlSocket(), content(ContentShutdownRequest.class, message),
-						requestHeader);
+				processShutdownRequest(content(ContentShutdownRequest.class, message), requestHeader);
 				break;
 		}
 	}
@@ -164,10 +136,6 @@ public class JupyterServer {
 		switch (requestHeader.getMsgType()) {
 			case MessageType.KERNEL_INFO_REQUEST:
 				processKernelInfoRequest(requestHeader);
-				break;
-			case MessageType.SHUTDOWN_REQUEST:
-				processShutdownRequest(communication.getShellSocket(), content(ContentShutdownRequest.class, message),
-						requestHeader);
 				break;
 			case MessageType.IS_COMPLETE_REQUEST:
 				processIsCompleteRequest(content(ContentIsCompleteRequest.class, message), requestHeader);
@@ -199,12 +167,10 @@ public class JupyterServer {
 	private void processKernelInfoRequest(Header parent) {
 		sendStatus(parent, Status.BUSY);
 
-		sendMessage(
-			communication.getShellSocket(), 
-			new Header(MessageType.KERNEL_INFO_REPLY, parent, parent.getMsgId()), 
+		comms.replyShellMessage(
 			parent,
-			new ContentKernelInfoReply(info))
-		;
+			new ContentKernelInfoReply(info)
+		);
 
 		sendStatus(parent, Status.IDLE);
 	}
@@ -212,17 +178,16 @@ public class JupyterServer {
 	private void processIsCompleteRequest(ContentIsCompleteRequest content, Header parent) {
 		boolean isComplete = language.isStatementComplete(content.getCode());
 
-		sendMessage(communication.getShellSocket(), new Header(MessageType.IS_COMPLETE_REPLY, parent), parent,
-				new ContentIsCompleteReply(isComplete ? Status.COMPLETE : Status.INCOMPLETE,
-						isComplete ? "" : "??????"));
+		comms.replyShellMessage(
+			parent,
+			new ContentIsCompleteReply(isComplete ? Status.COMPLETE : Status.INCOMPLETE, isComplete ? "" : "??????")
+		);
 	}
 
 	private void processExecuteRequest(ContentExecuteRequest contentExecuteRequest, Header parent) {
 		sendStatus(parent, Status.BUSY);
 
-		sendMessage(
-			communication.getIOPubSocket(), 
-			new Header(MessageType.EXECUTE_INPUT, parent), 
+		comms.sendIOMessage(
 			parent,
 			new ContentExecuteInput(contentExecuteRequest.getCode(), executionNumber)
 		);
@@ -241,25 +206,19 @@ public class JupyterServer {
 				Map<String, String> output = data.entrySet().stream()
 						.collect(Collectors.toMap(e -> e.getKey(), e -> convertStreamToString(e.getValue())));
 
-				sendMessage(
-					communication.getIOPubSocket(), 
-					new Header(MessageType.EXECUTE_RESULT, parent),
+				comms.sendIOMessage(
 					parent, 
 					new ContentExecuteResult(executionNumber, output, metadata)
 				);
 			}
 
-			sendMessage(
-				communication.getShellSocket(), 
-				new Header(MessageType.EXECUTE_REPLY, parent), 
+			comms.replyShellMessage(
 				parent,
 				new ContentExecuteReplyOk(executionNumber)
 			);
 		} 
 		catch (InterruptedException e) {
-			sendMessage(
-				communication.getShellSocket(), 
-				new Header(MessageType.EXECUTE_REPLY, parent), 
+			comms.replyShellMessage(
 				parent,
 				new ContentExecuteReplyError("interrupted", e.getMessage(), Collections.emptyList())
 			);
@@ -270,17 +229,17 @@ public class JupyterServer {
 		}
 	}
 
-	private void processShutdownRequest(Socket socket, ContentShutdownRequest shutdown, Header parent) {
+	private void processShutdownRequest(ContentShutdownRequest shutdown, Header parent) {
 		boolean restart = shutdown.getRestart();
 
 		if (!restart) {
 			language.stop();
 		}
 
-		sendMessage(socket, new Header(MessageType.SHUTDOWN_REPLY, parent), parent, new ContentShutdownReply(restart));
+		comms.replyControlMessage(parent, new ContentShutdownReply(restart));
 
 		if (!restart) {
-			closeAllSockets();
+			comms.close();
 			System.exit(0);
 		}
 	}
@@ -299,92 +258,18 @@ public class JupyterServer {
 					content.getCursorPosition(), Collections.emptyMap(), Status.OK);
 		}
 
-		sendMessage(communication.getShellSocket(), new Header(MessageType.COMPLETE_REPLY, parent), parent, reply);
-	}
-
-	private void processHeartbeat() {
-		@SuppressWarnings("unused")
-		byte[] ping;
-		while ((ping = communication.getHeartbeatSocket().recv(ZMQ.DONTWAIT)) != null) {
-			communication.getHeartbeatSocket().send(HEARTBEAT_MESSAGE);
-		}
+		comms.replyShellMessage(parent, reply);
 	}
 
 	/**
 	 * Utility to parse content of a message
 	 */
 	private <T extends Content> T content(Class<T> clazz, Message msg) {
-		return gson.fromJson(msg.getRawContent(), clazz);
-	}
-
-	/**
-	 * This method reads the data received from the socket given as parameter and
-	 * encapsulates it into a Message object.
-	 * 
-	 * @param socket
-	 * @return Message with the information of the received data.
-	 */
-	private Message receiveMessage(ZMQ.Socket socket) throws RuntimeException {
-		ZMsg zmsg = ZMsg.recvMsg(socket, false); // Non-blocking recv
-
-		ZFrame[] zFrames = new ZFrame[zmsg.size()];
-		zmsg.toArray(zFrames);
-
-		// Jupyter description says that the client should always send at least 7 chunks
-		// of information.
-		if (zmsg.size() < 7) {
-			throw new RuntimeException("Missing information from the Jupyter client");
-		}
-		return new Message(zFrames);
-	}
-
-	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Content content) {
-		Map<String, String> metadata = Collections.emptyMap();
-		sendMessage(socket, header, parent, metadata, content);
-	}
-
-	/**
-	 * This method sends a message according to the Wire Protocol through the socket
-	 * received as parameter.
-	 */
-	private void sendMessage(ZMQ.Socket socket, Header header, Header parent, Map<String, String> metadata,
-			Content content) {
-		try {
-			// Serialize the message as JSON
-			String jsonHeader = gson.toJson(header);
-			String jsonParent = gson.toJson(parent);
-			String jsonMetaData = gson.toJson(metadata);
-			String jsonContent = gson.toJson(content);
-
-			System.err.println("sending message..." + "\n\theader: " + jsonHeader + "\n\tparent: " + jsonParent
-					+ "\n\tcontent: " + jsonContent);
-
-			// Sign the message
-			Mac encoder = Mac.getInstance(HASH_ALGORITHM);
-			encoder.init(secret);
-			encoder.update(jsonHeader.getBytes());
-			encoder.update(jsonParent.getBytes());
-			encoder.update(jsonMetaData.getBytes());
-			encoder.update(jsonContent.getBytes());
-			String signedMessage = new String(Hex.encodeHex(encoder.doFinal()));
-
-			// Send the message
-			socket.sendMore(header.getSession().getBytes());
-			socket.sendMore(DELIMITER.getBytes());
-			socket.sendMore(signedMessage.getBytes());
-			socket.sendMore(jsonHeader.getBytes());
-			socket.sendMore(jsonParent);
-			socket.sendMore(jsonMetaData);
-			socket.send(jsonContent, ZMQ.DONTWAIT);
-		} catch (NoSuchAlgorithmException | InvalidKeyException e) {
-			throw new RuntimeException("this should never happen", e);
-		}
+		return GSON.fromJson(msg.getRawContent(), clazz);
 	}
 
 	private void sendStatus(Header parentHeader, String status) {
-		sendMessage(
-			communication.getIOPubSocket(), 
-			new Header(MessageType.STATUS, parentHeader), 
+		comms.sendIOMessage(
 			parentHeader,
 			new ContentStatus(status)
 		);
@@ -410,9 +295,12 @@ public class JupyterServer {
 			output = replaceLocs2html(output);
 		}
 
-		sendMessage(communication.getIOPubSocket(), new Header(MessageType.DISPLAY_DATA, parentHeader), parentHeader,
-				new ContentDisplayData(Collections.singletonMap(isStdOut ? MIME_TYPE_PLAIN : MIME_TYPE_HTML, output),
-						Collections.emptyMap(), Collections.emptyMap()));
+		comms.sendIOMessage(
+			parentHeader,
+			new ContentDisplayData(Collections.singletonMap(isStdOut ? MIME_TYPE_PLAIN : MIME_TYPE_HTML, output),
+					Collections.emptyMap(), Collections.emptyMap()
+				)
+			);
 
 		flushStreams();
 	}
@@ -439,13 +327,5 @@ public class JupyterServer {
 		stdout.flush();
 		stderr.getBuffer().setLength(0);
 		stderr.flush();
-	}
-
-	private void closeAllSockets() {
-		communication.getControlSocket().close();
-		communication.getHeartbeatSocket().close();
-		communication.getIOPubSocket().close();
-		communication.getShellSocket().close();
-		communication.getStdinSocket().close();
 	}
 }

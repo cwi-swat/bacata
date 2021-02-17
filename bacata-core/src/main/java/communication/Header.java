@@ -12,6 +12,15 @@ public class Header {
     private final String date;
     private final String msgId;
 
+    public Header(String session, String msgType, String version, String username, String date, String msgId) {
+        this.session = session;
+        this.msgType = msgType;
+        this.version = version;
+        this.username = username;
+        this.date = date;
+        this.msgId = msgId;
+    }
+    
     public Header(String msgType) {
         this.session = "";
         this.msgType = msgType;
@@ -35,14 +44,14 @@ public class Header {
         this.msgId = String.valueOf(UUID.randomUUID());
     }
 
-    public Header(String msgType, Header parentHeader, String msgId) {
-		this.session = parentHeader.getSession();
+    public Header(String msgType, Header parentHeader, String sessionId) {
+		this.session = sessionId;
 		this.msgType = msgType;
         this.version = parentHeader.getVersion();
         this.username = parentHeader.getUsername();
         
         this.date = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
-        this.msgId = msgId;
+        this.msgId = String.valueOf(UUID.randomUUID());
     }
 
     public String getSession() {
