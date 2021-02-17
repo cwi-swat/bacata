@@ -6,14 +6,14 @@ import communication.Header;
 
 
 public class Message {
-    private final String sessionId;
+    private final byte[] sessionId;
     private final byte[] hmacSignature;
     private final Header header;
     private final Header parentHeader;
     private final String rawContent;
     private final Map<String,String> metadata;
 
-    public Message(String sessionId, byte[] hmacSignature, Header header, Header parentHeader, String rawContent, Map<String,String> metadata) {
+    public Message(byte[] sessionId, byte[] hmacSignature, Header header, Header parentHeader, String rawContent, Map<String,String> metadata) {
         this.sessionId = sessionId;
         this.hmacSignature = hmacSignature;
         this.header = header;
@@ -22,7 +22,7 @@ public class Message {
         this.metadata = metadata;
     }
 
-    public String getSessionId() {
+    public byte[] getSessionId() {
         return sessionId;
     }
 

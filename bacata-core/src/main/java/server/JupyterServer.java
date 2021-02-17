@@ -97,13 +97,11 @@ public class JupyterServer {
 
 				if (poller.pollin(0)) {
 					Message message = comms.receiveShellMessage();
-					System.err.println("received shell: " + message);
 					processShellMessage(message);
 				}
 
 				if (poller.pollin(1)) {
 					Message message = comms.receiveControlMessage();
-					System.err.println("received control: " + message);
 					processControlMessage(message);
 				}
 
@@ -113,7 +111,6 @@ public class JupyterServer {
 				}
 
 				if (poller.pollin(3)) {
-					System.err.println("received heartbeat");
 					comms.processHeartbeat();
 				}
 			}

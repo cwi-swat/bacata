@@ -86,17 +86,18 @@ public class Communication {
 
     private final SecretKeySpec secret;
     private final ZContext context;
-    private String shellRouterId = "NO_ID";
+
+    private Map<ZMQ.Socket, byte[]> routerIds = new HashMap<>();
 
     public Communication(Connection connection, ZContext context) throws UnsupportedEncodingException {
         this.secret = new SecretKeySpec(connection.getKey().getBytes(ENCODE_CHARSET), HASH_ALGORITHM);
-        ;
         this.context = context;
 
         // Create sockets in the context received as parameter.
         this.ioPubSocket = context.createSocket(SocketType.PUB);
         this.shellSocket = context.createSocket(SocketType.ROUTER);
-        this.shellSocket.setRouterMandatory(true); // to help debugging the identity aspect of ROUTER
+        // this.shellSocket.setRouterMandatory(true); // to help debugging the identity aspect of ROUTER
+
         this.controlSocket = context.createSocket(SocketType.ROUTER);
         this.stdinSocket = context.createSocket(SocketType.ROUTER);
         this.heartBeatSocket = context.createSocket(SocketType.REP);
@@ -107,6 +108,12 @@ public class Communication {
         this.controlSocket.bind(connection.getControlURI());
         this.stdinSocket.bind(connection.getStdinURI());
         this.heartBeatSocket.bind(connection.getHbURI());
+
+        routerIds.put(shellSocket, new byte[0]);
+        routerIds.put(ioPubSocket, new byte[0]);
+        routerIds.put(controlSocket, new byte[0]);
+        routerIds.put(stdinSocket, new byte[0]);
+        routerIds.put(heartBeatSocket, new byte[0]);
     }
 
     public Poller createPoller() {
@@ -150,9 +157,6 @@ public class Communication {
             String jsonMetaData = GSON.toJson(metadata);
             String jsonContent = GSON.toJson(content);
 
-            System.err.println("sending message..." + "\n\theader: " + jsonHeader + "\n\tparent: " + jsonParent
-                    + "\n\tcontent: " + jsonContent);
-
             // Sign the message
             Mac encoder = Mac.getInstance(HASH_ALGORITHM);
             encoder.init(secret);
@@ -163,8 +167,7 @@ public class Communication {
             String signedMessage = new String(Hex.encodeHex(encoder.doFinal()));
 
             // Send the message
-            System.err.println("Shell router id: " + shellRouterId);
-            socket.sendMore(shellRouterId);
+            socket.sendMore(routerIds.get(socket));
             socket.sendMore(DELIMITER);
             socket.sendMore(signedMessage);
             socket.sendMore(jsonHeader);
@@ -179,8 +182,7 @@ public class Communication {
 
     public Message receiveShellMessage() throws RuntimeException, UnsupportedEncodingException {
         Message msg = receiveMessage(shellSocket);
-        this.shellRouterId = msg.getSessionId();
-        shellSocket.setIdentity(msg.getSessionId().getBytes(ENCODE_CHARSET));
+        // shellSocket.setIdentity(msg.getSessionId().getBytes(ENCODE_CHARSET));
         return msg;
     }
 
@@ -210,17 +212,19 @@ public class Communication {
         if (zmsg.size() < 7) {
             throw new RuntimeException("Missing information from the Jupyter client");
         }
-
+        
         String rawMetadata = new String(zFrames[MessageParts.METADATA].getData(), ZMQ.CHARSET);
         String rawParent = new String(zFrames[MessageParts.PARENT_HEADER].getData(), ZMQ.CHARSET);
         String rawHeader = new String(zFrames[MessageParts.HEADER].getData(), ZMQ.CHARSET);
 
-        String sessionId = new String(zFrames[MessageParts.sessionId].getData(), ZMQ.CHARSET);
+        byte[] sessionId = zFrames[MessageParts.sessionId].getData();
         byte[] hmacSignature = zFrames[MessageParts.HMAC].getData();
         Header header = fromJson(rawHeader, Header.class);
         Header parentHeader = fromJson(rawParent, Header.class);
         Map<String, String> metadata = (Map<String,String>) fromJson(rawMetadata, Map.class);
         String rawContent = new String(zFrames[MessageParts.CONTENT].getData());
+
+        routerIds.put(socket, sessionId);
 
         return new Message(sessionId, hmacSignature, header, parentHeader, rawContent, metadata);
     }
