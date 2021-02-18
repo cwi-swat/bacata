@@ -1,7 +1,7 @@
 FROM maven:3.6.0-jdk-8 as mavenBuild
 
 ARG notebookVersion=6.1.2
-ARG rascalNotebookVersion=0.0.1-SNAPSHOT
+ARG rascalNotebookVersion=0.0.1
 ARG RASCAL_USER=guest
 ARG RASCAL_UID=1000
 ENV USER ${RASCAL_USER}
