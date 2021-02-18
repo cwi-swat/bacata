@@ -61,21 +61,15 @@ RUN mkdir workspace
 
 WORKDIR workspace
 
-COPY ./rascal-notebook-docker/RascalDemo.ipynb .
-COPY ./rascal-notebook-docker/DemoStateMachineDSL.ipynb .
-USER root
-RUN chown guest RascalDemo.ipynb
-USER guest
-
 # for the Jupyter webserver
 EXPOSE 8888
 EXPOSE 3434
 
-# for Rascal's app server
+# a hundred ports for Rascal's web app server
 EXPOSE 9050-10050
 
 # for JVM debugging
-EXPOSE 8000
+# EXPOSE 8000
 
 CMD ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--port", "8888"]
 
