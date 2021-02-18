@@ -17,47 +17,27 @@ WORKDIR $HOME
 
 RUN apt-get update
 
-RUN apt-get -yq install tcpdump
-
 # Python
 
 RUN apt-get install software-properties-common -y
- 
 RUN apt-get install -y python3-pip
-
 RUN pip3 install six==1.13.0
 
 # Node 
 
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -  && apt-get install -y nodejs
-
 RUN npm install -g bower
 
 # Jupyter
 
 RUN python3 -m pip install --upgrade pip
-
 RUN pip3 install --upgrade setuptools pip
-
 RUN pip3 install notebook==${notebookVersion}
 
 # Bacata 
 
 USER guest
 WORKDIR $HOME
-
-#RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
-#WORKDIR bacata
-#RUN mvn dependency:go-offline
-
-#WORKDIR ..
-#RUN rm -rf bacata
-#ADD https://nexus.usethesource.io/content/repositories/snapshots/org/rascalmpl/rascal/0.19.3-SNAPSHOT/maven-metadata.xml lastRascalBuild.xml
-#ADD https://api.github.com/repos/cwi-swat/bacata/git/refs/heads/master version.json
-#RUN git clone --depth 1 https://github.com/cwi-swat/bacata.git 
-#WORKDIR bacata
-
-#RUN mvn clean install
 
 USER root
 RUN mkdir -p /rascal-kernel
@@ -67,8 +47,8 @@ COPY ./rascal-notebook-docker/kernel/rascal/ /rascal-kernel/rascal/
 WORKDIR /rascal-kernel
 RUN jupyter kernelspec install rascal
 
-#WORKDIR $HOME/bacata
-#RUN cp -a rascal-codemirror/. /notebook/notebook/static/components/codemirror/mode/
+RUN mkdir -p /usr/local/lib/python3.5/dist-packages/notebook/static/components/codemirror/mode/rascal
+COPY ./rascal-codemirror/rascal/rascal.js /usr/local/lib/python3.5/dist-packages/notebook/static/components/codemirror/mode/rascal/rascal.js
 
 # Set a new workspace
 USER root
@@ -97,5 +77,5 @@ EXPOSE 9050-10050
 # for JVM debugging
 EXPOSE 8000
 
-CMD ["jupyter", "notebook", "--ip", "0.0.0.0", "--debug", "--no-browser", "--port", "8888"]
+CMD ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--port", "8888"]
 
