@@ -1,4 +1,6 @@
-[![DOI](https://zenodo.org/badge/112358270.svg)](https://zenodo.org/badge/latestdoi/112358270)
+**Paper**: [![DOI](https://img.shields.io/badge/doi-10.22152%2Fprogramming--journal.org%2F2020%2F4%2F11-blue.svg)](https://doi.org/10.22152/programming-journal.org/2020/4/11)
+
+**Artifact**: [![DOI](https://zenodo.org/badge/112358270.svg)](https://zenodo.org/badge/latestdoi/112358270)
 
 # Bacatá
 Jupyter language kernel generator for DSLs developed using the [Rascal Language Workbench](http://rascal-mpl.org/).
